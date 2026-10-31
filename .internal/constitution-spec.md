@@ -48,6 +48,17 @@ Manual.
 - **P7. Framework and data models.** Build the agent around Pydantic AI. Prefer Pydantic models for configuration, interaction contracts, and results.
 - **P8. General-purpose reasoning.** The agent should solve tasks through model reasoning and ordinary observations and tool results, without reference answers, private evaluator data, or benchmark-specific solvers.
 - **P9. Dependency boundaries.** Keep benchmark-specific integration code separate from the reusable decision engine. The solution should not depend on the identity or implementation of a validation service.
+- **P10. Observability.** Write detailed, structured logs for each task episode and each decision, action, tool invocation, and model request. Logs should allow a reader to reconstruct the observable execution sequence and diagnose failures. Include:
+  - Task and episode identifiers, linked operation and attempt identifiers, event order, start and end times, durations, and concurrent-operation relationships.
+  - Task inputs, effective configuration, implementation and dependency versions, requested model and provider identifiers, available provider-reported identifiers, prompt versions, and configured random seeds.
+  - Model request messages, tool descriptions, generation settings, public responses, reported usage, finish reasons, and request errors. Do not require or retain private model reasoning.
+  - Action and tool arguments, returned observations, errors, execution status, and any reported or uncertain side effects. Distinguish a failed operation from an operation whose outcome is unknown.
+  - Observable task-state updates, context truncation or summarization, loaded skills and resources, and tool availability changes. Record explicit plans or checks when the implementation uses them, without treating them as proof of correctness.
+  - Retries, recovery steps, cancellations, timeouts, output parsing or schema failures, repairs, budget use, and termination reasons. Preserve failed and interrupted attempts, not only successful ones.
+  - Completion declarations, final answers, confidence, likely incorrect flags, and their reasons. Distinguish the agent's completion claim from any externally established task outcome.
+  - Links to retained artifacts and explicit indications of unavailable, omitted, truncated, redacted, or lost log data.
+
+  Logging detail, destinations, and retention should be configurable. Redact credentials and protect sensitive task content before persistence or export. Logs are diagnostic evidence supplied by the solution, not independently verified validation metrics; they should not require a model gateway or changes to the validation boundary.
 
 ### 3. Acceptance criteria
 
