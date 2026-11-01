@@ -26,14 +26,14 @@ Manual.
 
 #### 2.1. Functional requirements
 
-- **FR1. Task success rate.** The agent must successfully complete at least 95% of tasks under the baseline evaluation conditions.
-- **FR2. Error awareness.** At least 80% of tasks flagged by the agent as likely incorrect must be unsuccessful, and the agent must flag at least 50% of unsuccessful tasks.
+- **FR1. Overall success rate.** The agent must achieve an overall success rate of at least 95% under unperturbed evaluation conditions.
+- **FR2. Error awareness.** At least 80% of episodes flagged by the agent as likely incorrect must be unsuccessful, and the agent must flag at least 50% of unsuccessful episodes.
 
 #### 2.2. Non-functional requirements
 
-- **NFR1. Consistency.** The difference between the highest and lowest task success rates across repeated evaluation runs under unchanged conditions must not exceed 5 percentage points.
-- **NFR2. Prompt robustness.** For each meaning-preserving prompt variant, the task success rate must be no more than 5 percentage points below the baseline success rate.
-- **NFR3. Resilience.** For each transient tool or environment failure scenario, the task success rate must be no more than 5 percentage points below the baseline success rate.
+- **NFR1. Consistency.** The difference between the highest and lowest overall success rates across repeated evaluation runs under unchanged conditions must not exceed 5 percentage points.
+- **NFR2. Prompt robustness.** For each meaning-preserving prompt variant, the overall success rate must be no more than 5 percentage points below the unperturbed overall success rate. The difference between the highest and lowest overall success rates across the original prompt and all variants must also not exceed 5 percentage points.
+- **NFR3. Resilience.** For each transient tool or environment failure scenario, the overall success rate must be no more than 5 percentage points below the unperturbed overall success rate. The difference between the highest and lowest overall success rates across unperturbed execution and all failure scenarios must also not exceed 5 percentage points.
 - **NFR4. Action budget.** The agent must use no more than 50 environment action attempts per task, including failed attempts and retries.
 - **NFR5. Time performance.** At least 95% of task episodes must terminate within 300 seconds, measured from receipt of the task to the final response, including self-assessment. Episodes that reach the time limit without a final response count as unsuccessful.
 
