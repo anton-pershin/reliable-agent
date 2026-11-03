@@ -90,7 +90,7 @@ Expect a JSON response with `profile`, `validation_scope` (`full` or `partial`),
   "AC1": {
     "status": "accepted",
     "metrics_status": {
-      "VM1": {
+      "VM1/unperturbed_overall_success_rate": {
         "computation_status": "computed",
         "acceptance_status": "accepted",
         "computed_value": 0.96,
