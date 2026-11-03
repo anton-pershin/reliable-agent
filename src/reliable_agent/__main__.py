@@ -13,7 +13,7 @@ from .config import config_from_overrides
 from .engine import DecisionEngine
 from .errors import ProtocolError
 from .model import PydanticAIModelClient
-from .observability import EventLogger
+from .observability import EventLogger, configured_secrets, redact_text
 from .protocol import JsonLinesToolExecutor, JsonLinesTransport
 from .runner import TaskRunner
 
@@ -57,7 +57,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     "event": "protocol_error",
                     "level": "ERROR",
                     "error_type": type(exc).__name__,
-                    "error_message": str(exc),
+                    "error_message": redact_text(str(exc), configured_secrets(config)),
                 }
             ),
             file=sys.stderr,
@@ -70,7 +70,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     "event": "internal_error",
                     "level": "ERROR",
                     "error_type": type(exc).__name__,
-                    "error_message": str(exc),
+                    "error_message": redact_text(str(exc), configured_secrets(config)),
                 }
             ),
             file=sys.stderr,

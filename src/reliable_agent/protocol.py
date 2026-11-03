@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import sys
+import threading
 from typing import Any, TextIO
 
 from .contracts import ActionBatch, FinalDecision, Observation, Task
@@ -79,7 +81,7 @@ class JsonLinesTransport:
         if len(line.encode("utf-8")) > self.max_message_bytes:
             raise ProtocolError("Input message exceeds the configured byte limit")
         try:
-            message = json.loads(line)
+            message = json.loads(line, parse_constant=_reject_json_constant)
         except (ValueError, UnicodeError, RecursionError) as exc:
             raise ProtocolError("Input is not valid JSON") from exc
         if not isinstance(message, dict):
@@ -87,7 +89,10 @@ class JsonLinesTransport:
         return message
 
     def _write(self, message: dict[str, Any]) -> None:
-        encoded = json.dumps(message, ensure_ascii=False) + "\n"
+        try:
+            encoded = json.dumps(message, ensure_ascii=False, allow_nan=False) + "\n"
+        except ValueError as exc:
+            raise ProtocolError("Output contains a non-JSON numeric value") from exc
         if len(encoded.encode("utf-8")) > self.max_message_bytes:
             raise ProtocolError("Output message exceeds the configured byte limit")
         self.writer.write(encoded)
@@ -99,5 +104,43 @@ class JsonLinesToolExecutor:
         self.transport = transport
 
     async def execute(self, batch: ActionBatch) -> Observation:
-        self.transport.write_actions(batch)
-        return self.transport.read_observation()
+        await _run_blocking(self.transport.write_actions, batch)
+        return await _run_blocking(self.transport.read_observation)
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"Non-JSON numeric constant: {value}")
+
+
+async def _run_blocking(function, *args):
+    """Run blocking stream I/O in a daemon thread so timeouts can yield control."""
+    loop = asyncio.get_running_loop()
+    future = loop.create_future()
+
+    def run() -> None:
+        try:
+            result = function(*args)
+        except Exception as exc:
+            captured_error = exc
+
+            def set_error(error=captured_error) -> None:
+                if not future.cancelled():
+                    future.set_exception(error)
+
+            try:
+                loop.call_soon_threadsafe(set_error)
+            except RuntimeError:
+                pass
+        else:
+
+            def set_result() -> None:
+                if not future.cancelled():
+                    future.set_result(result)
+
+            try:
+                loop.call_soon_threadsafe(set_result)
+            except RuntimeError:
+                pass
+
+    threading.Thread(target=run, daemon=True).start()
+    return await future

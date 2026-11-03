@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import time
 
 from jsonschema import ValidationError, validators
@@ -10,9 +9,9 @@ from jsonschema import ValidationError, validators
 from .contracts import (
     ActionAttempt,
     ActionDecision,
-    ActionRequest,
     Decision,
     FinalDecision,
+    PendingRetry,
     Task,
     TaskState,
 )
@@ -39,31 +38,35 @@ class DecisionEngine:
         return state
 
     async def next_decision(self, state: TaskState) -> Decision:
-        if state.pending_retry_actions:
-            actions = list(state.pending_retry_actions)
-            state.pending_retry_actions = []
-            for action in actions:
-                signature = action_signature(action)
-                state.transient_retries[signature] = state.transient_retries.get(signature, 0) + 1
-            self.logger.log(
-                "transient_retry",
-                actions=[action.model_dump() for action in actions],
-                retry_numbers=[
-                    state.transient_retries[action_signature(action)] for action in actions
-                ],
-            )
-            return ActionDecision(actions=actions)
-
         fallback = self._budget_fallback(state)
         if fallback is not None:
             return fallback
 
+        if state.pending_retry_actions:
+            pending = list(state.pending_retry_actions)
+            state.pending_retry_actions = []
+            for item in pending:
+                state.transient_retries[item.occurrence_id] = item.retry_number
+            self.logger.log(
+                "transient_retry",
+                actions=[item.action.model_dump() for item in pending],
+                occurrence_ids=[item.occurrence_id for item in pending],
+                retry_numbers=[item.retry_number for item in pending],
+            )
+            return ActionDecision(actions=[item.action for item in pending])
+
         while True:
+            fallback = self._budget_fallback(state)
+            if fallback is not None:
+                return fallback
             remaining = self._remaining(state) - state.config.final_response_reserve_seconds
             try:
                 decision = await self.model.decide(state, remaining)
             except ModelRequestError as exc:
                 return self.stop(state, "model_request_error", str(exc))
+            fallback = self._budget_fallback(state)
+            if fallback is not None:
+                return fallback
             if isinstance(decision, FinalDecision):
                 self.logger.log("final_decision", decision=decision.model_dump())
                 state.termination_reason = "completed" if decision.completed else "stopped"
@@ -99,12 +102,24 @@ class DecisionEngine:
             attempt=attempt.model_dump(),
             total_action_attempts=state.action_attempts,
         )
+        occurrence_ids = attempt.occurrence_ids or [
+            f"{attempt.call_id}:{index}" for index in range(len(attempt.actions))
+        ]
         pending = []
-        for action, result in zip(attempt.actions, attempt.results, strict=False):
+        for index, (action, result) in enumerate(
+            zip(attempt.actions, attempt.results, strict=False)
+        ):
             if result.error and result.error.type == "transient_failure":
-                signature = action_signature(action)
-                if state.transient_retries.get(signature, 0) < state.config.max_transient_retries:
-                    pending.append(action)
+                occurrence_id = occurrence_ids[index]
+                used = state.transient_retries.get(occurrence_id, 0)
+                if used < state.config.max_transient_retries:
+                    pending.append(
+                        PendingRetry(
+                            occurrence_id=occurrence_id,
+                            action=action,
+                            retry_number=used + 1,
+                        )
+                    )
         state.pending_retry_actions = pending
 
     def stop(self, state: TaskState, reason: str, details: str | None = None) -> FinalDecision:
@@ -170,7 +185,3 @@ class DecisionEngine:
                     f"Schema validation unavailable for {action.name}: {type(exc).__name__}"
                 )
         return errors
-
-
-def action_signature(action: ActionRequest) -> str:
-    return action.name + ":" + json.dumps(action.arguments, sort_keys=True, default=str)

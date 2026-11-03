@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 
 
 class ContractModel(BaseModel):
@@ -55,6 +55,12 @@ class ActionRequest(ContractModel):
     arguments: dict[str, Any] = Field(default_factory=dict)
 
 
+class PendingRetry(ContractModel):
+    occurrence_id: str
+    action: ActionRequest
+    retry_number: int = Field(ge=1)
+
+
 class ActionBatch(ContractModel):
     call_id: str
     actions: list[ActionRequest] = Field(min_length=1)
@@ -77,10 +83,10 @@ class Observation(ContractModel):
 
 
 class FinalResponse(ContractModel):
-    completed: bool
+    completed: StrictBool
     answer: str
     confidence: float = Field(ge=0, le=1)
-    likely_incorrect: bool
+    likely_incorrect: StrictBool
     reason: str
 
 
@@ -91,10 +97,10 @@ class ActionDecision(ContractModel):
 
 class FinalDecision(ContractModel):
     kind: Literal["final"] = "final"
-    completed: bool
+    completed: StrictBool
     answer: str
     confidence: float = Field(ge=0, le=1)
-    likely_incorrect: bool
+    likely_incorrect: StrictBool
     reason: str
 
     def to_response(self) -> FinalResponse:
@@ -107,6 +113,7 @@ Decision = Annotated[ActionDecision | FinalDecision, Field(discriminator="kind")
 class ActionAttempt(ContractModel):
     call_id: str
     actions: list[ActionRequest]
+    occurrence_ids: list[str] = Field(default_factory=list)
     results: list[ActionResult] = Field(default_factory=list)
     retry_number: int = 0
 
@@ -129,7 +136,7 @@ class TaskState(ContractModel):
     rejected_decisions: int = 0
     validation_feedback: list[str] = Field(default_factory=list)
     transient_retries: dict[str, int] = Field(default_factory=dict)
-    pending_retry_actions: list[ActionRequest] = Field(default_factory=list)
+    pending_retry_actions: list[PendingRetry] = Field(default_factory=list)
     termination_reason: str | None = None
 
     @property

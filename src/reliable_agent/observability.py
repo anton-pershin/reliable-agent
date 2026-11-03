@@ -20,24 +20,30 @@ _SECRET_KEY = re.compile(
     re.I,
 )
 _SECRET_ASSIGNMENT = re.compile(
-    r"((?:API[-_]?KEY|TOKEN|PASSWORD|SECRET|AUTHORIZATION)\s*=\s*)([^\s]+)", re.I
+    r"((?:API[-_]?KEY|TOKEN|PASSWORD|SECRET|AUTHORIZATION)\s*[:=]\s*[\"']?)([^\"',\s}]+)",
+    re.I,
 )
 _BEARER = re.compile(r"(Bearer\s+)[^\s]+", re.I)
-_STRUCTURED_STRING_KEYS = {
-    "event",
-    "episode_id",
-    "operation_id",
-    "attempt_id",
-    "call_id",
-    "status",
-    "type",
-    "kind",
-    "termination_reason",
-    "prompt_version",
-    "model",
-    "provider",
-    "level",
-}
+
+
+def configured_secrets(config: AgentConfig) -> set[str]:
+    return {
+        value
+        for value in (
+            *config.sensitive_values,
+            os.environ.get("OPENAI_API_KEY", ""),
+            os.environ.get("ANTHROPIC_API_KEY", ""),
+        )
+        if value
+    }
+
+
+def redact_text(value: str, secrets: set[str]) -> str:
+    redacted = _SECRET_ASSIGNMENT.sub(r"\1<redacted>", value)
+    redacted = _BEARER.sub(r"\1<redacted>", redacted)
+    for secret in sorted(secrets, key=len, reverse=True):
+        redacted = redacted.replace(secret, "<redacted>")
+    return redacted
 
 
 class EventLogger:
@@ -55,15 +61,7 @@ class EventLogger:
         self.started = clock()
         self._sequence = 0
         self._lock = threading.Lock()
-        self._secrets = {
-            value
-            for value in (
-                *config.sensitive_values,
-                os.environ.get("OPENAI_API_KEY", ""),
-                os.environ.get("ANTHROPIC_API_KEY", ""),
-            )
-            if value
-        }
+        self._secrets = configured_secrets(config)
 
     def log(self, event: str, **data: Any) -> None:
         level = data.pop("level", "INFO")
@@ -116,11 +114,5 @@ class EventLogger:
         if isinstance(value, (list, tuple)):
             return [self._redact(item, key) for item in value]
         if isinstance(value, str):
-            if key in _STRUCTURED_STRING_KEYS:
-                return value
-            redacted = _SECRET_ASSIGNMENT.sub(r"\1<redacted>", value)
-            redacted = _BEARER.sub(r"\1<redacted>", redacted)
-            for secret in sorted(self._secrets, key=len, reverse=True):
-                redacted = redacted.replace(secret, "<redacted>")
-            return redacted
+            return redact_text(value, self._secrets)
         return value

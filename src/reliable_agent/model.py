@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from pydantic_ai import Agent, ModelSettings
+from pydantic_ai.messages import RetryFeedbackPart, RetryPromptPart, ToolReturnPart
 from pydantic_ai.models import Model
 
 from .config import validate_config
@@ -56,6 +57,7 @@ class PydanticAIModelClient:
                 model_settings=ModelSettings(
                     temperature=self.config.temperature,
                     max_tokens=self.config.max_output_tokens,
+                    seed=self.config.random_seed,
                 ),
                 retries=self.config.max_decision_retries,
             )
@@ -74,6 +76,7 @@ class PydanticAIModelClient:
             )
             raise ModelRequestError(f"Model request failed: {type(exc).__name__}: {exc}") from exc
         response = result.response
+        self._log_repairs(result, operation_id)
         usage = self._usage(result.usage)
         reported_model = getattr(response, "model_id", None) or getattr(
             response, "model_name", None
@@ -105,6 +108,20 @@ class PydanticAIModelClient:
             private_reasoning="not-retained",
         )
         return result.output
+
+    def _log_repairs(self, result, operation_id: str) -> None:
+        for message in result.new_messages():
+            for part in message.parts:
+                if isinstance(part, (RetryPromptPart, RetryFeedbackPart)) or (
+                    isinstance(part, ToolReturnPart) and part.outcome == "retried"
+                ):
+                    self.logger.log(
+                        "model_repair",
+                        operation_id=operation_id,
+                        repair_type=type(part).__name__,
+                        validation_feedback=part.content,
+                        retry_details=str(getattr(part, "retry", None)),
+                    )
 
     def _prompt(self, state: TaskState) -> str:
         history = state.public_history()

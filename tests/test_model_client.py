@@ -87,3 +87,31 @@ async def test_structured_output_error_is_wrapped_and_logged(task, final_decisio
         await client.decide(state, 30)
     event = next(event for event in read_logs(stream) if event["event"] == "model_error")
     assert event["error_type"] == "UnexpectedModelBehavior"
+
+
+async def test_successful_output_repair_is_logged(task, action, final_decision) -> None:
+    calls = 0
+
+    def respond(messages, info):
+        nonlocal calls
+        calls += 1
+        tool = next(tool for tool in info.output_tools if "ActionDecision" in tool.name)
+        output = (
+            final_decision.model_dump()
+            if calls == 1
+            else ActionDecision(actions=[action]).model_dump()
+        )
+        return ModelResponse(
+            parts=[ToolCallPart(tool_name=tool.name, args=output)],
+            model_name="test",
+            provider_name="test",
+        )
+
+    event_logger, stream = logger(config(max_decision_retries=1))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    decision = await client.decide(state, 30)
+    assert isinstance(decision, ActionDecision)
+    assert calls == 2
+    event = next(event for event in read_logs(stream) if event["event"] == "model_repair")
+    assert event["validation_feedback"]
