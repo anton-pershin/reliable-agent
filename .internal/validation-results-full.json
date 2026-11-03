@@ -1,0 +1,123 @@
+{
+  "profile": "default",
+  "validation_scope": "full",
+  "AC1": {
+    "status": "valid",
+    "metrics_status": {
+      "VM1": {
+        "computation_status": "computed",
+        "acceptance_status": "rejected",
+        "computed_value": 0.9,
+        "expected_value_or_threshold": ">= 0.95",
+        "error_message": null
+      }
+    }
+  },
+  "AC2": {
+    "status": "accepted",
+    "metrics_status": {
+      "VM2": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 1.0,
+        "expected_value_or_threshold": ">= 0.8",
+        "error_message": null
+      },
+      "VM3": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 1.0,
+        "expected_value_or_threshold": ">= 0.5",
+        "error_message": null
+      }
+    }
+  },
+  "AC3": {
+    "status": "valid",
+    "metrics_status": {
+      "VM4": {
+        "computation_status": "computed",
+        "acceptance_status": "rejected",
+        "computed_value": 0.19999999999999996,
+        "expected_value_or_threshold": "<= 0.05",
+        "error_message": null
+      }
+    }
+  },
+  "AC4": {
+    "status": "valid",
+    "metrics_status": {
+      "VM5/concise": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 0.0,
+        "expected_value_or_threshold": "<= 0.05",
+        "error_message": null
+      },
+      "VM5/formal": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 0.0,
+        "expected_value_or_threshold": "<= 0.05",
+        "error_message": null
+      },
+      "VM6": {
+        "computation_status": "computed",
+        "acceptance_status": "rejected",
+        "computed_value": 0.09999999999999998,
+        "expected_value_or_threshold": "<= 0.05",
+        "error_message": null
+      }
+    }
+  },
+  "AC5": {
+    "status": "accepted",
+    "metrics_status": {
+      "VM7/pick_up_failure": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 0.0,
+        "expected_value_or_threshold": "<= 0.05",
+        "error_message": null
+      },
+      "VM7/unstack_failure": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 0.0,
+        "expected_value_or_threshold": "<= 0.05",
+        "error_message": null
+      },
+      "VM8": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 0.0,
+        "expected_value_or_threshold": "<= 0.05",
+        "error_message": null
+      }
+    }
+  },
+  "AC6": {
+    "status": "accepted",
+    "metrics_status": {
+      "VM9": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 21,
+        "expected_value_or_threshold": "<= 50",
+        "error_message": null
+      }
+    }
+  },
+  "AC7": {
+    "status": "accepted",
+    "metrics_status": {
+      "VM10": {
+        "computation_status": "computed",
+        "acceptance_status": "accepted",
+        "computed_value": 1.0,
+        "expected_value_or_threshold": ">= 0.95",
+        "error_message": null
+      }
+    }
+  }
+}
