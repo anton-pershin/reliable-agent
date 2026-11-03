@@ -20,7 +20,7 @@ _SECRET_KEY = re.compile(
     re.I,
 )
 _SECRET_ASSIGNMENT = re.compile(
-    r"((?:API[-_]?KEY|TOKEN|PASSWORD|SECRET|AUTHORIZATION)\s*[:=]\s*[\"']?)([^\"',\s}]+)",
+    r"((?:API[-_]?KEY|TOKEN|PASSWORD|SECRET|AUTHORIZATION)[\"']?\s*[:=]\s*[\"']?)([^\"',\s}]+)",
     re.I,
 )
 _BEARER = re.compile(r"(Bearer\s+)[^\s]+", re.I)

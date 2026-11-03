@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import signal
 import sys
 import threading
+import time
 from typing import Any, TextIO
 
 from .contracts import ActionBatch, FinalDecision, Observation, Task
@@ -22,6 +24,8 @@ class JsonLinesTransport:
         self.reader = reader or sys.stdin
         self.writer = writer or sys.stdout
         self.max_message_bytes = max_message_bytes
+        self._pending_writes: set[threading.Event] = set()
+        self._io_lock = threading.Lock()
 
     def read_task(self) -> tuple[str, Task]:
         message = self._read()
@@ -67,6 +71,16 @@ class JsonLinesTransport:
             }
         )
 
+    def has_pending_writes(self) -> bool:
+        with self._io_lock:
+            return any(not event.is_set() for event in self._pending_writes)
+
+    async def execute_write(self, batch: ActionBatch) -> None:
+        event = threading.Event()
+        with self._io_lock:
+            self._pending_writes.add(event)
+        await _run_blocking(self.write_actions, batch, done_event=event)
+
     def _validate_envelope(self, message: dict[str, Any], expected_type: str) -> None:
         version = message.get("protocol_version")
         if type(version) is not int or version != 1:
@@ -104,7 +118,7 @@ class JsonLinesToolExecutor:
         self.transport = transport
 
     async def execute(self, batch: ActionBatch) -> Observation:
-        await _run_blocking(self.transport.write_actions, batch)
+        await self.transport.execute_write(batch)
         return await _run_blocking(self.transport.read_observation)
 
 
@@ -112,7 +126,7 @@ def _reject_json_constant(value: str) -> None:
     raise ValueError(f"Non-JSON numeric constant: {value}")
 
 
-async def _run_blocking(function, *args):
+async def _run_blocking(function, *args, done_event: threading.Event | None = None):
     """Run blocking stream I/O in a daemon thread so timeouts can yield control."""
     loop = asyncio.get_running_loop()
     future = loop.create_future()
@@ -141,6 +155,38 @@ async def _run_blocking(function, *args):
                 loop.call_soon_threadsafe(set_result)
             except RuntimeError:
                 pass
+        finally:
+            if done_event is not None:
+                done_event.set()
 
     threading.Thread(target=run, daemon=True).start()
     return await future
+
+
+async def write_final_with_deadline(
+    transport: JsonLinesTransport,
+    decision: FinalDecision,
+    deadline: float,
+) -> bool:
+    """Write final only when no action write is unresolved and time remains."""
+    if transport.has_pending_writes():
+        return False
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        return False
+    if threading.current_thread() is not threading.main_thread():
+        raise ProtocolError("Deadline-controlled final output requires the main thread")
+
+    def timeout_handler(signum, frame) -> None:
+        raise TimeoutError("Final response delivery exceeded the episode budget")
+
+    previous_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    previous_timer = signal.setitimer(signal.ITIMER_REAL, remaining)
+    try:
+        transport.write_final(decision)
+        return True
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        if previous_timer[0] > 0:
+            signal.setitimer(signal.ITIMER_REAL, *previous_timer)

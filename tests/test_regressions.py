@@ -62,6 +62,17 @@ async def test_retry_cannot_exceed_action_budget(task, action) -> None:
     assert len(executor.batches) == 1
 
 
+async def test_pending_retry_batch_cannot_exceed_action_budget(task, action) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(max_action_attempts=3, max_transient_retries=1), clock=clock)
+    model = ScriptedModel([ActionDecision(actions=[action, action])])
+    executor = ScriptedExecutor([transient_observation("episode-test-call-1", 2)])
+    result = await make_runner(model, executor, event_logger, clock).run(task)
+    assert result.completed is False
+    assert len(executor.batches) == 1
+    assert sum(len(batch.actions) for batch in executor.batches) == 2
+
+
 async def test_decision_rejection_rechecks_time_budget(task, action) -> None:
     class LateInvalidModel:
         def __init__(self):
@@ -103,6 +114,73 @@ async def test_blocked_json_read_does_not_block_event_loop(action) -> None:
             executor.execute(ActionBatch(call_id="call-1", actions=[action])), timeout=0.01
         )
     assert time.monotonic() - started < 0.04
+
+
+def protocol_task(task) -> str:
+    return json.dumps(
+        {
+            "protocol_version": 1,
+            "type": "task",
+            "episode_id": "episode-test",
+            "task": task.model_dump(),
+        }
+    )
+
+
+async def test_final_write_is_interrupted_at_deadline(task, final_decision, monkeypatch) -> None:
+    from reliable_agent.__main__ import run_json_episode
+
+    class SleepingWriter:
+        def __init__(self):
+            self.content = ""
+
+        def write(self, value):
+            time.sleep(0.06)
+            self.content += value
+
+        def flush(self):
+            pass
+
+    writer = SleepingWriter()
+    transport = JsonLinesTransport(reader=io.StringIO(protocol_task(task) + "\n"), writer=writer)
+    monkeypatch.setattr(
+        "reliable_agent.__main__.PydanticAIModelClient",
+        lambda logger: ScriptedModel([final_decision]),
+    )
+    started = time.monotonic()
+    await run_json_episode(
+        config(max_episode_seconds=0.01, final_response_reserve_seconds=0), transport
+    )
+    assert time.monotonic() - started < 0.04
+    assert writer.content == ""
+
+
+async def test_timed_out_action_write_cannot_follow_final(task, action, monkeypatch) -> None:
+    from reliable_agent.__main__ import run_json_episode
+
+    class SleepingWriter:
+        def __init__(self):
+            self.messages = []
+
+        def write(self, value):
+            time.sleep(0.06)
+            self.messages.append(value)
+
+        def flush(self):
+            pass
+
+    writer = SleepingWriter()
+    transport = JsonLinesTransport(reader=io.StringIO(protocol_task(task) + "\n"), writer=writer)
+    monkeypatch.setattr(
+        "reliable_agent.__main__.PydanticAIModelClient",
+        lambda logger: ScriptedModel([action_decision(action)]),
+    )
+    await run_json_episode(
+        config(max_episode_seconds=0.01, final_response_reserve_seconds=0), transport
+    )
+    await asyncio.sleep(0.08)
+    message_types = [json.loads(message)["type"] for message in writer.messages]
+    assert message_types == ["actions"]
 
 
 async def test_failed_observation_preserves_requested_attempt(task, action) -> None:
@@ -172,6 +250,15 @@ def test_structured_fields_are_redacted() -> None:
     event_logger.log("task_received", call_id=secret, model=secret, provider=secret)
     raw = stream.getvalue()
     assert secret not in raw
+
+
+def test_quoted_json_credentials_are_redacted() -> None:
+    event_logger, stream = logger(config())
+    payload = '{"api_key": "unlisted-json-secret", "password":"another-secret"}'
+    event_logger.log("task_received", task={"input": payload})
+    raw = stream.getvalue()
+    assert "unlisted-json-secret" not in raw
+    assert "another-secret" not in raw
 
 
 def test_main_fallback_redacts_pydantic_input(task, capsys) -> None:

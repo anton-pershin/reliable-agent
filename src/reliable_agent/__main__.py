@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
+import time
 from collections.abc import Sequence
 
 import pydantic_ai
@@ -14,11 +15,12 @@ from .engine import DecisionEngine
 from .errors import ProtocolError
 from .model import PydanticAIModelClient
 from .observability import EventLogger, configured_secrets, redact_text
-from .protocol import JsonLinesToolExecutor, JsonLinesTransport
+from .protocol import JsonLinesToolExecutor, JsonLinesTransport, write_final_with_deadline
 from .runner import TaskRunner
 
 
 async def run_json_episode(config, transport: JsonLinesTransport) -> None:
+    deadline = time.monotonic() + config.max_episode_seconds
     episode_id, task = transport.read_task()
     logger = EventLogger(episode_id, config)
     engine = DecisionEngine(PydanticAIModelClient(logger), logger)
@@ -34,7 +36,16 @@ async def run_json_episode(config, transport: JsonLinesTransport) -> None:
             error_message=str(exc),
         )
         raise
-    transport.write_final(decision)
+    try:
+        delivered = await write_final_with_deadline(transport, decision, deadline)
+    except TimeoutError:
+        delivered = False
+    if not delivered:
+        logger.log(
+            "final_delivery_skipped",
+            level="ERROR",
+            termination_reason="final_delivery_deadline_or_pending_io",
+        )
 
 
 def main(arguments: Sequence[str] | None = None) -> int:

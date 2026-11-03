@@ -142,7 +142,11 @@ class DecisionEngine:
         return decision
 
     def _budget_fallback(self, state: TaskState) -> FinalDecision | None:
-        if state.action_attempts >= state.config.max_action_attempts:
+        if (
+            state.action_attempts >= state.config.max_action_attempts
+            or state.action_attempts + len(state.pending_retry_actions)
+            > state.config.max_action_attempts
+        ):
             return self.stop(state, "action_budget_exhausted")
         if self._remaining(state) <= state.config.final_response_reserve_seconds:
             return self.stop(state, "episode_time_exhausted")
