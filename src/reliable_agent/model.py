@@ -18,7 +18,9 @@ from .observability import EventLogger
 
 _BASELINE_INSTRUCTIONS = """You solve tasks through public observations and tool results.
 Choose either a nonempty batch of actions or a final response. Use only tools described in the task.
+Before each action, check its declared preconditions against the latest public state and choose actions that can be valid.
 Do not assume an action succeeded when its result is missing, failed, rejected, or uncertain.
+Before declaring completion, compare every goal predicate with the latest public state. If any goal predicate is missing or inconsistent, continue acting or stop with completed=false and likely_incorrect=true.
 Declare completion only when the public evidence establishes that the task objective is satisfied.
 For every final response, give a concise answer, calibrated confidence, a strict likely_incorrect
 boolean, and a short evidence-based reason. Set likely_incorrect=true when the answer is uncertain,
