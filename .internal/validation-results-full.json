@@ -14,7 +14,7 @@
     }
   },
   "AC2": {
-    "status": "accepted",
+    "status": "valid",
     "metrics_status": {
       "VM2/error_flag_precision": {
         "computation_status": "computed",
@@ -25,8 +25,8 @@
       },
       "VM3/error_flag_recall": {
         "computation_status": "computed",
-        "acceptance_status": "accepted",
-        "computed_value": 1.0,
+        "acceptance_status": "rejected",
+        "computed_value": 0.0,
         "expected_value_or_threshold": ">= 0.5",
         "error_message": null
       }
@@ -71,12 +71,12 @@
     }
   },
   "AC5": {
-    "status": "accepted",
+    "status": "valid",
     "metrics_status": {
       "VM7/transient_failure_overall_success_rate_loss/pick_up_failure": {
         "computation_status": "computed",
-        "acceptance_status": "accepted",
-        "computed_value": 0.0,
+        "acceptance_status": "rejected",
+        "computed_value": 0.125,
         "expected_value_or_threshold": "<= 0.05",
         "error_message": null
       },
@@ -102,7 +102,7 @@
       "VM9/maximum_action_attempts": {
         "computation_status": "computed",
         "acceptance_status": "accepted",
-        "computed_value": 18,
+        "computed_value": 19,
         "expected_value_or_threshold": "<= 50",
         "error_message": null
       }
