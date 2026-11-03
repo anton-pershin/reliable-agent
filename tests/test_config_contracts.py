@@ -21,6 +21,8 @@ def test_override_parsing() -> None:
         [
             "--model",
             "openai:test-model",
+            "--output-mode",
+            "text",
             "--max-actions",
             "40",
             "--episode-seconds",
@@ -38,6 +40,7 @@ def test_override_parsing() -> None:
         ]
     )
     assert agent_config.model == "openai:test-model"
+    assert agent_config.output_mode == "text"
     assert agent_config.max_action_attempts == 40
     assert agent_config.max_episode_seconds == 250
     assert agent_config.max_transient_retries == 1
@@ -64,3 +67,5 @@ def test_invalid_configuration_and_contracts(action) -> None:
         ActionBatch(call_id="empty", actions=[])
     with pytest.raises(ValueError):
         config(max_action_attempts=51)
+    with pytest.raises(SystemExit):
+        config_from_overrides(["--model", "test", "--output-mode", "invalid"])

@@ -4,7 +4,8 @@ import json
 
 import pytest
 from conftest import config, logger, read_logs
-from pydantic_ai.messages import ModelResponse, ToolCallPart
+from pydantic_ai.exceptions import ModelRequestRejectedError
+from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
 from pydantic_ai.models.test import TestModel
 
@@ -115,3 +116,62 @@ async def test_successful_output_repair_is_logged(task, action, final_decision) 
     assert calls == 2
     event = next(event for event in read_logs(stream) if event["event"] == "model_repair")
     assert event["validation_feedback"]
+
+
+async def test_tool_rejection_activates_text_fallback(task, final_decision) -> None:
+    calls = 0
+    seen_tool_choice = None
+
+    def respond(messages, info):
+        nonlocal calls, seen_tool_choice
+        calls += 1
+        if calls == 1:
+            raise ModelRequestRejectedError("test", "tool_choice is unsupported")
+        seen_tool_choice = info.model_settings.get("tool_choice")
+        return ModelResponse(
+            parts=[TextPart(content=json.dumps(final_decision.model_dump()))],
+            model_name="test",
+            model_id="test:test",
+            provider_name="test",
+        )
+
+    event_logger, stream = logger(config())
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    decision = await client.decide(state, 30)
+    assert isinstance(decision, FinalDecision)
+    assert calls == 2
+    assert seen_tool_choice == "none"
+    assert any(event["event"] == "text_fallback" for event in read_logs(stream))
+
+
+async def test_text_mode_repairs_and_parses_fenced_json(task, final_decision) -> None:
+    calls = 0
+
+    def respond(messages, info):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            content = "not-json"
+        else:
+            content = "```json\n" + json.dumps(final_decision.model_dump()) + "\n```"
+        return ModelResponse(parts=[TextPart(content=content)], model_name="test")
+
+    event_logger, stream = logger(config(output_mode="text", max_decision_retries=1))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    decision = await client.decide(state, 30)
+    assert isinstance(decision, FinalDecision)
+    assert calls == 2
+    assert any(event["event"] == "model_repair" for event in read_logs(stream))
+
+
+async def test_tool_mode_does_not_fallback(task) -> None:
+    def respond(messages, info):
+        raise ModelRequestRejectedError("test", "tool_choice is unsupported")
+
+    event_logger, _ = logger(config(output_mode="tool"))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    with pytest.raises(ModelRequestError):
+        await client.decide(state, 30)
