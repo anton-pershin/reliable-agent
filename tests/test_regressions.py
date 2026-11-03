@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import io
 import json
+import os
 import time
 
 import pytest
@@ -153,6 +154,48 @@ async def test_final_write_is_interrupted_at_deadline(task, final_decision, monk
     )
     assert time.monotonic() - started < 0.04
     assert writer.content == ""
+
+
+async def test_partial_final_writer_emits_no_malformed_json(
+    task, final_decision, monkeypatch
+) -> None:
+    from reliable_agent.__main__ import run_json_episode
+
+    class PartialWriter:
+        def __init__(self):
+            self.content = ""
+
+        def write(self, value):
+            self.content += value[:5]
+            time.sleep(0.06)
+            self.content += value[5:]
+
+        def flush(self):
+            pass
+
+    writer = PartialWriter()
+    transport = JsonLinesTransport(reader=io.StringIO(protocol_task(task) + "\n"), writer=writer)
+    monkeypatch.setattr(
+        "reliable_agent.__main__.PydanticAIModelClient",
+        lambda logger: ScriptedModel([final_decision]),
+    )
+    await run_json_episode(
+        config(max_episode_seconds=0.01, final_response_reserve_seconds=0), transport
+    )
+    assert writer.content == ""
+
+
+async def test_final_delivery_uses_atomic_file_descriptor_write(final_decision) -> None:
+    from reliable_agent.protocol import write_final_with_deadline
+
+    reader, writer = os.pipe()
+    transport = JsonLinesTransport(writer=os.fdopen(writer, "w"))
+    delivered = await write_final_with_deadline(transport, final_decision, time.monotonic() + 1)
+    assert delivered is True
+    os.close(writer)
+    content = os.read(reader, 10000).decode()
+    os.close(reader)
+    assert json.loads(content)["type"] == "final"
 
 
 async def test_timed_out_action_write_cannot_follow_final(task, action, monkeypatch) -> None:

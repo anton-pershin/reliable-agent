@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import io
 import json
-import signal
+import os
+import select
 import sys
 import threading
 import time
@@ -168,25 +170,35 @@ async def write_final_with_deadline(
     decision: FinalDecision,
     deadline: float,
 ) -> bool:
-    """Write final only when no action write is unresolved and time remains."""
+    """Deliver final atomically, or emit nothing when safe delivery is unavailable."""
     if transport.has_pending_writes():
         return False
     remaining = deadline - time.monotonic()
     if remaining <= 0:
         return False
-    if threading.current_thread() is not threading.main_thread():
-        raise ProtocolError("Deadline-controlled final output requires the main thread")
-
-    def timeout_handler(signum, frame) -> None:
-        raise TimeoutError("Final response delivery exceeded the episode budget")
-
-    previous_handler = signal.signal(signal.SIGALRM, timeout_handler)
-    previous_timer = signal.setitimer(signal.ITIMER_REAL, remaining)
+    message = {
+        "protocol_version": 1,
+        "type": "final",
+        **decision.to_response().model_dump(),
+    }
     try:
-        transport.write_final(decision)
+        encoded = (json.dumps(message, ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
+    except ValueError as exc:
+        raise ProtocolError("Final response contains a non-JSON numeric value") from exc
+    if isinstance(transport.writer, io.StringIO):
+        transport.writer.write(encoded.decode("utf-8"))
+        transport.writer.flush()
         return True
-    finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
-        if previous_timer[0] > 0:
-            signal.setitimer(signal.ITIMER_REAL, *previous_timer)
+    try:
+        descriptor = transport.writer.fileno()
+    except (AttributeError, OSError):
+        return False
+    atomic_limit = getattr(os, "PIPE_BUF", 4096)
+    if len(encoded) > atomic_limit:
+        return False
+    os.set_blocking(descriptor, False)
+    _, writable, _ = select.select([], [descriptor], [], remaining)
+    if not writable:
+        return False
+    written = os.write(descriptor, encoded)
+    return written == len(encoded)
