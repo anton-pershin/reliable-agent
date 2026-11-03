@@ -4,5 +4,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 artifacts/
+build/
+dist/
 *.egg-info/
 .*.swp
