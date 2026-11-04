@@ -12,7 +12,9 @@
 
 **Model timeout**: 180 seconds
 
-**Overall result**: `invalid`. All 42 episodes completed. Most metrics were computed, but AC5 is `invalid` because the model did not reach the required unstack fault-injection point in every failure scenario. The complete HTTP response is stored in `.internal/validation-results-full.json`.
+**Episode concurrency**: 4
+
+**Overall result**: `invalid`. All 890 episodes completed in 312 minutes. Ninety-four episodes succeeded, 796 were unsuccessful, and 549 were flagged as likely incorrect. AC5 is `invalid` because the model did not reach the required unstack fault-injection point in every failure scenario. The complete HTTP response is stored in `.internal/validation-results-full.json`.
 
 #### AC1
 
@@ -20,7 +22,7 @@
 
 | Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
 |-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
-| VM1/unperturbed_overall_success_rate | computed | rejected | 0.40 | >= 0.95 | None |
+| VM1/unperturbed_overall_success_rate | computed | rejected | 0.10 | >= 0.95 | None |
 
 #### AC2
 
@@ -29,7 +31,7 @@
 | Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
 |-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
 | VM2/error_flag_precision | computed | accepted | 1.00 | >= 0.80 | None |
-| VM3/error_flag_recall | computed | accepted | 0.8214285714285714 | >= 0.50 | None |
+| VM3/error_flag_recall | computed | accepted | 0.6896984924623115 | >= 0.50 | None |
 
 #### AC3
 
@@ -41,13 +43,13 @@
 
 #### AC4
 
-**Status**: `accepted`
+**Status**: `valid`
 
 | Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
 |-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
 | VM5/prompt_variant_overall_success_rate_loss/concise | computed | accepted | 0.00 | <= 0.05 | None |
 | VM5/prompt_variant_overall_success_rate_loss/formal | computed | accepted | 0.00 | <= 0.05 | None |
-| VM6/prompt_variant_overall_success_rate_range | computed | accepted | 0.00 | <= 0.05 | None |
+| VM6/prompt_variant_overall_success_rate_range | computed | rejected | 0.05499999999999999 | <= 0.05 | None |
 
 #### AC5
 
@@ -55,7 +57,7 @@
 
 | Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
 |-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
-| VM7/transient_failure_overall_success_rate_loss/pick_up_failure | computed | rejected | 0.25 | <= 0.05 | None |
+| VM7/transient_failure_overall_success_rate_loss/pick_up_failure | computed | accepted | 0.010000000000000009 | <= 0.05 | None |
 | VM7/transient_failure_overall_success_rate_loss/unstack_failure | failed_to_compute | None | None | <= 0.05 | Required fault exposure was not observed for every episode in failure/unstack_failure |
 | VM8/transient_failure_overall_success_rate_range | failed_to_compute | None | None | <= 0.05 | Required fault exposure was not observed for every episode in failure/unstack_failure |
 
@@ -65,7 +67,7 @@
 
 | Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
 |-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
-| VM9/maximum_action_attempts | computed | accepted | 22 | <= 50 | None |
+| VM9/maximum_action_attempts | computed | accepted | 30 | <= 50 | None |
 
 #### AC7
 

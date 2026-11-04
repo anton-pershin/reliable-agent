@@ -7,7 +7,7 @@
       "VM1/unperturbed_overall_success_rate": {
         "computation_status": "computed",
         "acceptance_status": "rejected",
-        "computed_value": 0.4,
+        "computed_value": 0.1,
         "expected_value_or_threshold": ">= 0.95",
         "error_message": null
       }
@@ -26,7 +26,7 @@
       "VM3/error_flag_recall": {
         "computation_status": "computed",
         "acceptance_status": "accepted",
-        "computed_value": 0.8214285714285714,
+        "computed_value": 0.6896984924623115,
         "expected_value_or_threshold": ">= 0.5",
         "error_message": null
       }
@@ -45,7 +45,7 @@
     }
   },
   "AC4": {
-    "status": "accepted",
+    "status": "valid",
     "metrics_status": {
       "VM5/prompt_variant_overall_success_rate_loss/concise": {
         "computation_status": "computed",
@@ -63,8 +63,8 @@
       },
       "VM6/prompt_variant_overall_success_rate_range": {
         "computation_status": "computed",
-        "acceptance_status": "accepted",
-        "computed_value": 0.0,
+        "acceptance_status": "rejected",
+        "computed_value": 0.05499999999999999,
         "expected_value_or_threshold": "<= 0.05",
         "error_message": null
       }
@@ -75,8 +75,8 @@
     "metrics_status": {
       "VM7/transient_failure_overall_success_rate_loss/pick_up_failure": {
         "computation_status": "computed",
-        "acceptance_status": "rejected",
-        "computed_value": 0.25,
+        "acceptance_status": "accepted",
+        "computed_value": 0.010000000000000009,
         "expected_value_or_threshold": "<= 0.05",
         "error_message": null
       },
@@ -102,7 +102,7 @@
       "VM9/maximum_action_attempts": {
         "computation_status": "computed",
         "acceptance_status": "accepted",
-        "computed_value": 22,
+        "computed_value": 30,
         "expected_value_or_threshold": "<= 50",
         "error_message": null
       }
