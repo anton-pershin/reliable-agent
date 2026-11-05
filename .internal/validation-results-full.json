@@ -2,19 +2,19 @@
   "profile": "default",
   "validation_scope": "full",
   "AC1": {
-    "status": "accepted",
+    "status": "valid",
     "metrics_status": {
       "VM1/unperturbed_overall_success_rate": {
         "computation_status": "computed",
-        "acceptance_status": "accepted",
-        "computed_value": 1.0,
+        "acceptance_status": "rejected",
+        "computed_value": 0.1,
         "expected_value_or_threshold": ">= 0.95",
         "error_message": null
       }
     }
   },
   "AC2": {
-    "status": "valid",
+    "status": "accepted",
     "metrics_status": {
       "VM2/error_flag_precision": {
         "computation_status": "computed",
@@ -25,8 +25,8 @@
       },
       "VM3/error_flag_recall": {
         "computation_status": "computed",
-        "acceptance_status": "rejected",
-        "computed_value": 0.0,
+        "acceptance_status": "accepted",
+        "computed_value": 0.6896984924623115,
         "expected_value_or_threshold": ">= 0.5",
         "error_message": null
       }
@@ -45,7 +45,7 @@
     }
   },
   "AC4": {
-    "status": "accepted",
+    "status": "valid",
     "metrics_status": {
       "VM5/prompt_variant_overall_success_rate_loss/concise": {
         "computation_status": "computed",
@@ -63,36 +63,36 @@
       },
       "VM6/prompt_variant_overall_success_rate_range": {
         "computation_status": "computed",
-        "acceptance_status": "accepted",
-        "computed_value": 0.0,
+        "acceptance_status": "rejected",
+        "computed_value": 0.05499999999999999,
         "expected_value_or_threshold": "<= 0.05",
         "error_message": null
       }
     }
   },
   "AC5": {
-    "status": "valid",
+    "status": "invalid",
     "metrics_status": {
       "VM7/transient_failure_overall_success_rate_loss/pick_up_failure": {
         "computation_status": "computed",
-        "acceptance_status": "rejected",
-        "computed_value": 0.125,
+        "acceptance_status": "accepted",
+        "computed_value": 0.010000000000000009,
         "expected_value_or_threshold": "<= 0.05",
         "error_message": null
       },
       "VM7/transient_failure_overall_success_rate_loss/unstack_failure": {
-        "computation_status": "computed",
-        "acceptance_status": "accepted",
-        "computed_value": 0.0,
+        "computation_status": "failed_to_compute",
+        "acceptance_status": null,
+        "computed_value": null,
         "expected_value_or_threshold": "<= 0.05",
-        "error_message": null
+        "error_message": "Required fault exposure was not observed for every episode in failure/unstack_failure"
       },
       "VM8/transient_failure_overall_success_rate_range": {
-        "computation_status": "computed",
-        "acceptance_status": "accepted",
-        "computed_value": 0.0,
+        "computation_status": "failed_to_compute",
+        "acceptance_status": null,
+        "computed_value": null,
         "expected_value_or_threshold": "<= 0.05",
-        "error_message": null
+        "error_message": "Required fault exposure was not observed for every episode in failure/unstack_failure"
       }
     }
   },
@@ -102,7 +102,7 @@
       "VM9/maximum_action_attempts": {
         "computation_status": "computed",
         "acceptance_status": "accepted",
-        "computed_value": 19,
+        "computed_value": 30,
         "expected_value_or_threshold": "<= 50",
         "error_message": null
       }

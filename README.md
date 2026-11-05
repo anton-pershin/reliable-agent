@@ -24,6 +24,16 @@ export RELIABLE_AGENT_MODEL=anthropic:claude-sonnet-4-5
 
 Do not put credentials in `solution_overrides` or task input. Effective configuration never contains `sensitive_values`.
 
+`auto` tries Pydantic AI structured-tool output first and falls back to validated JSON text when the provider rejects the tool contract. `tool` disables fallback, while `text` always uses JSON text. For example, the following model works through the text fallback:
+
+```bash
+python -m reliable_agent \
+  --model openai:alibaba-qwen2-5-coder-7b-instruct-awq \
+  --output-mode auto
+```
+
+Text responses are validated with the same `Decision` schema as tool responses. Markdown fences and repair events are logged.
+
 ## JSON Lines execution
 
 The process entry point is:
@@ -41,6 +51,7 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | Override | Default | Purpose |
 |----------|---------|---------|
 | `--model NAME` | `RELIABLE_AGENT_MODEL` or none | Provider and model identifier |
+| `--output-mode MODE` | `auto` | `auto`, `tool`, or `text` output and fallback behavior |
 | `--temperature N` | `0.0` | Generation temperature |
 | `--max-output-tokens N` | `2000` | Output-token limit |
 | `--prompt-version VERSION` | `baseline-v1` | Prompt version recorded in logs |

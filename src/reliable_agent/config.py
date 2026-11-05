@@ -16,6 +16,7 @@ class ConfigurationError(ValueError):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run one reliable-agent JSON Lines episode")
     parser.add_argument("--model", default=os.environ.get("RELIABLE_AGENT_MODEL"))
+    parser.add_argument("--output-mode", choices=["auto", "tool", "text"])
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--max-output-tokens", type=int)
     parser.add_argument("--prompt-version")

@@ -13,6 +13,7 @@ class ContractModel(BaseModel):
 
 class AgentConfig(ContractModel):
     model: str | None = None
+    output_mode: Literal["auto", "tool", "text"] = "auto"
     temperature: float = Field(default=0.0, ge=0, le=2)
     max_output_tokens: int = Field(default=2000, ge=1)
     prompt_version: str = "baseline-v1"
