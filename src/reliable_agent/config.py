@@ -20,6 +20,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--max-output-tokens", type=int)
     parser.add_argument("--prompt-version")
+    parser.add_argument(
+        "--planning", dest="planning_enabled", action=argparse.BooleanOptionalAction
+    )
+    parser.add_argument("--plan-samples", type=int)
+    parser.add_argument("--max-replans", type=int)
+    parser.add_argument(
+        "--completion-verification",
+        dest="completion_verification",
+        action=argparse.BooleanOptionalAction,
+    )
     parser.add_argument("--tool-binding", action="append", default=[], metavar="NAME=BINDING")
     parser.add_argument("--max-protocol-bytes", type=int)
     parser.add_argument("--sensitive-value", action="append", default=[])

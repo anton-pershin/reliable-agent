@@ -18,6 +18,7 @@ from .contracts import (
 from .errors import ModelRequestError
 from .model import DecisionModel
 from .observability import EventLogger
+from .planning import vote_plans
 
 
 class DecisionEngine:
@@ -59,6 +60,26 @@ class DecisionEngine:
             fallback = self._budget_fallback(state)
             if fallback is not None:
                 return fallback
+
+            if state.plan_actions:
+                return self._emit_plan_action(state)
+
+            if self._needs_plan_vote(state):
+                outcome = await self._plan_round(state)
+                if isinstance(outcome, FinalDecision):
+                    return outcome
+                # Recheck budgets after the vote: it consumes episode time.
+                # A selected plan is emitted at the top of the loop; a reactive
+                # fallback passes through to the model request below.
+                continue
+
+            if self._needs_finalization(state):
+                verified = await self._finalize(state)
+                if not verified:
+                    # Verification rejected the completed plan: re-plan next.
+                    continue
+                # The goal is verified (or unavailable): collect the final response.
+
             remaining = self._remaining(state) - state.config.final_response_reserve_seconds
             try:
                 decision = await self.model.decide(state, remaining)
@@ -68,15 +89,30 @@ class DecisionEngine:
             if fallback is not None:
                 return fallback
             if isinstance(decision, FinalDecision):
-                self.logger.log("final_decision", decision=decision.model_dump())
-                state.termination_reason = "completed" if decision.completed else "stopped"
-                self.logger.log(
-                    "termination",
-                    termination_reason=state.termination_reason,
-                    action_attempts=state.action_attempts,
-                    decision=decision.model_dump(),
+                accepted = await self._handle_final(state, decision)
+                if accepted is None:
+                    continue
+                if accepted is decision:
+                    # The model's own final decision: log it here. Controlled
+                    # stops from _handle_final already logged their termination.
+                    self.logger.log("final_decision", decision=decision.model_dump())
+                    state.termination_reason = "completed" if decision.completed else "stopped"
+                    self.logger.log(
+                        "termination",
+                        termination_reason=state.termination_reason,
+                        action_attempts=state.action_attempts,
+                        decision=decision.model_dump(),
+                    )
+                return accepted
+            if state.completion_verified:
+                feedback = (
+                    "The task goal is already verified as satisfied. "
+                    "Return your final response with the answer, confidence, "
+                    "likely_incorrect, and reason."
                 )
-                return decision
+                if self._reject_decision(state, feedback, decision):
+                    continue
+                state.completion_verified = False
             if len(decision.actions) + state.action_attempts > state.config.max_action_attempts:
                 feedback = (
                     "Action batch exceeds the remaining action budget. "
@@ -96,6 +132,7 @@ class DecisionEngine:
 
     def record_attempt(self, state: TaskState, attempt: ActionAttempt) -> None:
         state.attempts.append(attempt)
+        state.completion_verified = False
         self.logger.log(
             "action_observation",
             call_id=attempt.call_id,
@@ -121,6 +158,7 @@ class DecisionEngine:
                         )
                     )
         state.pending_retry_actions = pending
+        self._update_plan(state, attempt)
 
     def stop(self, state: TaskState, reason: str, details: str | None = None) -> FinalDecision:
         state.termination_reason = reason
@@ -141,6 +179,226 @@ class DecisionEngine:
         )
         return decision
 
+    def _needs_plan_vote(self, state: TaskState) -> bool:
+        if not state.config.planning_enabled or state.reactive_mode:
+            return False
+        if state.plan_actions:
+            return False
+        return state.plan_rounds == 0 or state.plan_broken
+
+    def _needs_finalization(self, state: TaskState) -> bool:
+        return (
+            state.config.planning_enabled
+            and not state.reactive_mode
+            and state.plan_rounds > 0
+            and not state.plan_actions
+            and not state.plan_broken
+            and not state.completion_verified
+            and self._verification_active(state)
+        )
+
+    async def _finalize(self, state: TaskState) -> bool:
+        """Verify a completed plan before any completion declaration.
+
+        Returns True when the goal is verified (the caller collects the final
+        response), False when verification rejected the completion (the caller
+        re-plans), and also True when verification is unavailable (the later
+        completion gate handles the decision as usual).
+        """
+        verdict = await self._verify_completion(state)
+        if verdict is None:
+            return True
+        if verdict.goal_satisfied:
+            state.completion_verified = True
+            return True
+        missing = ", ".join(verdict.missing_predicates) or "unknown"
+        feedback = (
+            f"Completion verification failed. Missing goal predicates: {missing}. {verdict.reason}"
+        )
+        self.logger.log("completion_rejected", level="ERROR", feedback=feedback)
+        state.validation_feedback.append(feedback)
+        state.plan_broken = True
+        state.replan_cause = "verification_failed"
+        return False
+
+    async def _plan_round(self, state: TaskState) -> str | FinalDecision | None:
+        if state.plan_rounds >= 1 + state.config.max_replans:
+            return self.stop(
+                state,
+                "replanning_limit_reached",
+                f"Re-planning limit reached after {state.plan_rounds} plan rounds.",
+            )
+        state.plan_rounds += 1
+        cause = state.replan_cause or "initial"
+        self.logger.log("plan_round", plan_round=state.plan_rounds, cause=cause)
+        plan_method = getattr(self.model, "plan", None)
+        if plan_method is None:
+            state.reactive_mode = True
+            self.logger.log(
+                "reactive_fallback",
+                level="ERROR",
+                reason="Model client does not support plan requests",
+            )
+            return None
+        remaining = self._remaining(state) - state.config.final_response_reserve_seconds
+        try:
+            candidates = await plan_method(state, remaining)
+        except ModelRequestError as exc:
+            state.reactive_mode = True
+            self.logger.log("reactive_fallback", level="ERROR", reason=str(exc))
+            return None
+        valid = [
+            (index, candidate)
+            for index, candidate in candidates
+            if not self._validation_errors(state, ActionDecision(actions=candidate.actions))
+        ]
+        self.logger.log(
+            "plan_candidates",
+            plan_round=state.plan_rounds,
+            samples=len(candidates),
+            valid=len(valid),
+            candidates=[candidate.model_dump() for _, candidate in candidates],
+        )
+        if not valid:
+            state.reactive_mode = True
+            self.logger.log(
+                "reactive_fallback",
+                level="ERROR",
+                reason="No candidate plan passed action validation",
+            )
+            return None
+        winner_index, winner, counts = vote_plans(valid)
+        self.logger.log(
+            "plan_vote",
+            plan_round=state.plan_rounds,
+            winner_sample=winner_index,
+            vote_counts=counts,
+        )
+        state.plan_actions = list(winner.actions)
+        state.plan_broken = False
+        state.replan_cause = None
+        self.logger.log(
+            "plan_selected",
+            plan_round=state.plan_rounds,
+            actions=[action.model_dump() for action in winner.actions],
+        )
+        return "planned"
+
+    def _emit_plan_action(self, state: TaskState) -> Decision:
+        action = state.plan_actions[0]
+        decision = ActionDecision(actions=[action])
+        self.logger.log(
+            "plan_action",
+            plan_round=state.plan_rounds,
+            remaining_plan_actions=len(state.plan_actions),
+            decision=decision.model_dump(),
+        )
+        return decision
+
+    def _update_plan(self, state: TaskState, attempt: ActionAttempt) -> None:
+        if not state.plan_actions or len(attempt.actions) != 1:
+            return
+        if attempt.actions[0] != state.plan_actions[0]:
+            return
+        result = attempt.results[0] if attempt.results else None
+        if result is not None and result.status == "ok":
+            state.plan_actions = state.plan_actions[1:]
+            if not state.plan_actions:
+                self.logger.log("plan_completed", plan_round=state.plan_rounds)
+            return
+        if state.pending_retry_actions:
+            # The plan head waits for its transient-failure retry.
+            return
+        cause = result.error.type if result is not None and result.error else "unknown"
+        dropped = len(state.plan_actions)
+        state.plan_actions = []
+        state.plan_broken = True
+        state.replan_cause = "action_failure"
+        self.logger.log(
+            "plan_abandoned",
+            level="ERROR",
+            plan_round=state.plan_rounds,
+            cause=cause,
+            dropped_actions=dropped,
+        )
+
+    async def _handle_final(
+        self, state: TaskState, decision: FinalDecision
+    ) -> FinalDecision | None:
+        if (
+            decision.completed
+            and not state.completion_verified
+            and self._verification_active(state)
+        ):
+            verdict = await self._verify_completion(state)
+            if verdict is not None and not verdict.goal_satisfied:
+                missing = ", ".join(verdict.missing_predicates) or "unknown"
+                feedback = (
+                    "Completion verification failed. "
+                    f"Missing goal predicates: {missing}. {verdict.reason}"
+                )
+                self.logger.log(
+                    "completion_rejected",
+                    level="ERROR",
+                    feedback=feedback,
+                    decision=decision.model_dump(),
+                )
+                if state.config.planning_enabled and not state.reactive_mode:
+                    state.plan_broken = True
+                    state.replan_cause = "verification_failed"
+                    state.validation_feedback.append(feedback)
+                    return None
+                if self._reject_decision(state, feedback, decision):
+                    return None
+                return self.stop(state, "completion_verification_failed", feedback)
+            if verdict is not None:
+                return decision
+            # Verification unavailable: accept the final decision unchanged.
+        if not decision.completed and self._stop_guard_active(state):
+            feedback = (
+                "No action has succeeded yet and the action and time budgets remain. "
+                "Use the available tools to work toward the objective, or explain why "
+                "no action can help."
+            )
+            if self._reject_decision(state, feedback, decision):
+                return None
+        return decision
+
+    def _verification_active(self, state: TaskState) -> bool:
+        return (
+            state.config.completion_verification and getattr(self.model, "verify", None) is not None
+        )
+
+    def _stop_guard_active(self, state: TaskState) -> bool:
+        succeeded = any(
+            result.status == "ok" for attempt in state.attempts for result in attempt.results
+        )
+        if succeeded:
+            return False
+        if state.action_attempts >= state.config.max_action_attempts:
+            return False
+        return self._remaining(state) > state.config.final_response_reserve_seconds
+
+    async def _verify_completion(self, state: TaskState):
+        remaining = self._remaining(state) - state.config.final_response_reserve_seconds
+        try:
+            verdict = await self.model.verify(state, remaining)
+        except ModelRequestError as exc:
+            self.logger.log(
+                "completion_verification",
+                level="ERROR",
+                verdict="unavailable",
+                error_message=str(exc),
+            )
+            return None
+        self.logger.log(
+            "completion_verification",
+            goal_satisfied=verdict.goal_satisfied,
+            missing_predicates=verdict.missing_predicates,
+            reason=verdict.reason,
+        )
+        return verdict
+
     def _budget_fallback(self, state: TaskState) -> FinalDecision | None:
         if (
             state.action_attempts >= state.config.max_action_attempts
@@ -156,7 +414,7 @@ class DecisionEngine:
         elapsed = max(0.0, self.clock() - state.started_at_monotonic)
         return max(0.0, state.config.max_episode_seconds - elapsed)
 
-    def _reject_decision(self, state: TaskState, feedback: str, decision: ActionDecision) -> bool:
+    def _reject_decision(self, state: TaskState, feedback: str, decision: Decision) -> bool:
         state.rejected_decisions += 1
         state.validation_feedback.append(feedback)
         self.logger.log(

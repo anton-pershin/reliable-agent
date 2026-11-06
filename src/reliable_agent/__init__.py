@@ -11,8 +11,10 @@ from .contracts import (
     FinalDecision,
     FinalResponse,
     Observation,
+    PlanCandidate,
     Task,
     ToolDescription,
+    VerificationResult,
 )
 from .engine import DecisionEngine
 from .model import PydanticAIModelClient
@@ -30,9 +32,11 @@ __all__ = [
     "FinalDecision",
     "FinalResponse",
     "Observation",
+    "PlanCandidate",
     "PydanticAIModelClient",
     "Task",
     "TaskRunner",
     "ToolDescription",
+    "VerificationResult",
     "run_concurrently",
 ]

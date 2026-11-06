@@ -44,7 +44,7 @@
 | Candidate plan | An ordered list of action requests proposed by the model to satisfy the task objective from the current task state. |
 | Plan vote | Deterministic selection of one candidate plan from several model samples by a majority rule over normalized action sequences. |
 | Completion verification | A dedicated model request that checks the task goal against the latest public observations before a completion declaration. |
-| Re-planning | A request for a new candidate plan from the current task state after an action failure, a contradicting observation, plan exhaustion, or a rejected completion verification. |
+| Re-planning | A request for a new candidate plan from the current task state after an action failure, plan exhaustion, or a rejected completion verification. |
 
 ### Model and tool access
 

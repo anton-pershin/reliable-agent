@@ -15,8 +15,12 @@ class AgentConfig(ContractModel):
     model: str | None = None
     output_mode: Literal["auto", "tool", "text"] = "auto"
     temperature: float = Field(default=0.0, ge=0, le=2)
-    max_output_tokens: int = Field(default=2000, ge=1)
-    prompt_version: str = "baseline-v1"
+    max_output_tokens: int = Field(default=8000, ge=1)
+    prompt_version: str = "consistent-planning-v1"
+    planning_enabled: bool = True
+    plan_samples: int = Field(default=3, ge=1, le=10)
+    max_replans: int = Field(default=4, ge=0, le=20)
+    completion_verification: bool = True
     max_action_attempts: int = Field(default=45, ge=1, le=50)
     max_episode_seconds: float = Field(default=270, gt=0, le=300)
     model_timeout_seconds: float = Field(default=60, gt=0)
@@ -111,6 +115,16 @@ class FinalDecision(ContractModel):
 Decision = Annotated[ActionDecision | FinalDecision, Field(discriminator="kind")]
 
 
+class PlanCandidate(ContractModel):
+    actions: list[ActionRequest] = Field(min_length=1)
+
+
+class VerificationResult(ContractModel):
+    goal_satisfied: StrictBool
+    missing_predicates: list[str] = Field(default_factory=list)
+    reason: str
+
+
 class ActionAttempt(ContractModel):
     call_id: str
     actions: list[ActionRequest]
@@ -139,6 +153,12 @@ class TaskState(ContractModel):
     transient_retries: dict[str, int] = Field(default_factory=dict)
     pending_retry_actions: list[PendingRetry] = Field(default_factory=list)
     termination_reason: str | None = None
+    plan_actions: list[ActionRequest] = Field(default_factory=list)
+    plan_rounds: int = 0
+    plan_broken: bool = False
+    replan_cause: str | None = None
+    reactive_mode: bool = False
+    completion_verified: bool = False
 
     @property
     def action_attempts(self) -> int:
