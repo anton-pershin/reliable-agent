@@ -114,24 +114,33 @@ class PydanticAIModelClient:
             )
             return index, candidate
 
-        results = await asyncio.gather(
-            *(sample(index) for index in range(count)), return_exceptions=True
-        )
-        candidates = []
-        for index, result in enumerate(results):
-            if isinstance(result, Exception):
-                self.logger.log(
-                    "plan_sample_error",
-                    level="ERROR",
-                    plan_round=state.plan_rounds,
-                    sample_index=index,
-                    error_type=type(result).__name__,
-                    error_message=str(result),
-                )
-            else:
-                candidates.append(result)
+        # Fire one spare sample and vote with the fastest `count` completions:
+        # this removes the slow tail of the latency distribution from the round.
+        pending = {asyncio.create_task(sample(index)) for index in range(count + 1)}
+        candidates: list[tuple[int, PlanCandidate]] = []
+        try:
+            while pending and len(candidates) < count:
+                done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                for finished in done:
+                    exc = finished.exception()
+                    if exc is not None:
+                        self.logger.log(
+                            "plan_sample_error",
+                            level="ERROR",
+                            plan_round=state.plan_rounds,
+                            error_type=type(exc).__name__,
+                            error_message=str(exc),
+                        )
+                    else:
+                        candidates.append(finished.result())
+        finally:
+            for task in pending:
+                task.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
+        candidates = candidates[:count]
         if not candidates:
-            raise ModelRequestError(f"All {count} plan samples failed")
+            raise ModelRequestError(f"All {count + 1} plan samples failed")
         return candidates
 
     async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
@@ -235,7 +244,7 @@ class PydanticAIModelClient:
                 self.model,
                 output_type=output_type,
                 instructions=instructions,
-                model_settings=self._model_settings(seed=seed),
+                model_settings=self._model_settings(seed=seed, purpose=purpose),
                 retries=self.config.max_decision_retries,
             )
             result = await agent.run(
@@ -285,7 +294,9 @@ class PydanticAIModelClient:
                     self.model,
                     output_type=str,
                     instructions=instructions,
-                    model_settings=self._model_settings(seed=seed, tool_choice="none"),
+                    model_settings=self._model_settings(
+                        seed=seed, purpose=purpose, tool_choice="none"
+                    ),
                     retries=0,
                 )
                 result = await agent.run(
@@ -423,10 +434,19 @@ class PydanticAIModelClient:
             error_message=str(exc),
         )
 
-    def _model_settings(self, seed: int | None = None, **overrides) -> ModelSettings:
+    def _model_settings(
+        self, seed: int | None = None, purpose: str = "decision", **overrides
+    ) -> ModelSettings:
+        # Plans produce small outputs: cap their token limit to cut off rambling
+        # generations and keep plan rounds fast. Verification needs headroom:
+        # a truncated verification is worse than a slow one.
+        token_caps = {"plan": 2000}
+        max_tokens = min(
+            self.config.max_output_tokens, token_caps.get(purpose, self.config.max_output_tokens)
+        )
         values = {
             "temperature": self.config.temperature,
-            "max_tokens": self.config.max_output_tokens,
+            "max_tokens": max_tokens,
             "seed": self.config.random_seed if seed is None else seed,
             **overrides,
         }

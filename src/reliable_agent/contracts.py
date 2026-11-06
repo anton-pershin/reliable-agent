@@ -19,7 +19,7 @@ class AgentConfig(ContractModel):
     prompt_version: str = "consistent-planning-v1"
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
-    max_replans: int = Field(default=4, ge=0, le=20)
+    max_replans: int = Field(default=8, ge=0, le=20)
     completion_verification: bool = True
     max_action_attempts: int = Field(default=45, ge=1, le=50)
     max_episode_seconds: float = Field(default=270, gt=0, le=300)
@@ -158,7 +158,8 @@ class TaskState(ContractModel):
     plan_broken: bool = False
     replan_cause: str | None = None
     reactive_mode: bool = False
-    completion_verified: bool = False
+    active_plan_key: str | None = None
+    failed_plan_keys: list[str] = Field(default_factory=list)
 
     @property
     def action_attempts(self) -> int:

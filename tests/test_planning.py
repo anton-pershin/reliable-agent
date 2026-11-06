@@ -110,16 +110,20 @@ async def test_plan_is_executed_in_order_then_final(task, action, final_decision
     clock = FakeClock()
     event_logger, stream = logger(config(), clock=clock)
     second = ActionRequest(name="pick_up", arguments={"block": "a"})
-    model = ScriptedModel([final_decision], plans=[plan_of(action, second)])
+    model = ScriptedModel([], plans=[plan_of(action, second)])
     executor = ScriptedExecutor()
     result = await runner_for(model, executor, event_logger, clock).run(task)
-    assert result is final_decision
+    assert result.completed is True
+    assert result.likely_incorrect is False
     assert [batch.actions for batch in executor.batches] == [[action], [second]]
     assert len(model.plan_calls) == 1
     assert len(model.verify_calls) == 1
+    assert not model.calls  # a verified plan needs no final model request
     events = read_logs(stream)
     assert any(event["event"] == "plan_selected" for event in events)
     assert any(event["event"] == "plan_completed" for event in events)
+    final = next(event for event in events if event["event"] == "final_decision")
+    assert final["verified"] is True
 
 
 async def test_action_failure_triggers_replan(task, action, final_decision) -> None:
@@ -157,6 +161,34 @@ async def test_transient_retry_keeps_plan_head(task, action, final_decision) -> 
     assert result.completed is True
     assert len(model.plan_calls) == 1
     assert [batch.actions for batch in executor.batches] == [[action], [action], [second]]
+
+
+async def test_replanning_filters_previously_failed_plans(task, action, final_decision) -> None:
+    first = plan_of(action)
+    second = plan_of(ActionRequest(name="pick_up", arguments={"block": "a"}))
+
+    class DiversePlanModel(ScriptedModel):
+        async def plan(self, state, remaining_seconds):
+            self.plan_calls.append({"round": state.plan_rounds})
+            if state.plan_rounds == 1:
+                return [(index, first) for index in range(3)]
+            # `first` wins the raw vote 2-1; filtering removes it instead.
+            return [(0, second), (1, first), (2, first)]
+
+    clock = FakeClock()
+    event_logger, stream = logger(config(), clock=clock)
+    model = DiversePlanModel([final_decision])
+    executor = ScriptedExecutor(
+        [failed_observation("episode-test-call-1"), ok_observation("episode-test-call-2")]
+    )
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    # Round 2 must select `second` although `first` had the majority,
+    # because `first` failed in round 1.
+    assert executor.batches[1].actions == second.actions
+    events = read_logs(stream)
+    candidates = [e for e in events if e["event"] == "plan_candidates"]
+    assert candidates[1]["already_failed"] == 2
 
 
 async def test_replanning_limit_stops_episode(task, action) -> None:
@@ -240,25 +272,9 @@ async def test_verified_plan_needs_no_second_verification(task, action, final_de
     event_logger, _ = logger(config(), clock=clock)
     model = ScriptedModel([final_decision], plans=[plan_of(action)])
     result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
-    assert result is final_decision
+    assert result.completed is True
     assert len(model.verify_calls) == 1
-    assert len(model.calls) == 1
-
-
-async def test_actions_after_positive_verification_are_rejected(
-    task, action, final_decision
-) -> None:
-    clock = FakeClock()
-    event_logger, _ = logger(config(), clock=clock)
-    model = ScriptedModel(
-        [ActionDecision(actions=[action]), final_decision],
-        plans=[plan_of(action)],
-    )
-    executor = ScriptedExecutor()
-    result = await runner_for(model, executor, event_logger, clock).run(task)
-    assert result is final_decision
-    assert len(executor.batches) == 1  # only the plan action; the extra action was rejected
-    assert "already verified" in model.calls[1]["feedback"][-1].lower()
+    assert not model.calls
 
 
 async def test_finalization_verification_unavailable_uses_gate(
@@ -339,10 +355,11 @@ async def test_stop_after_successful_action_is_not_guarded(task, action) -> None
         likely_incorrect=True,
         reason="one action succeeded but the goal is unreachable",
     )
-    model = ScriptedModel([stop], plans=[plan_of(action)])
+    # No scripted plans: the reactive loop decides each step.
+    model = ScriptedModel([ActionDecision(actions=[action]), stop])
     result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
     assert result is stop
-    assert len(model.calls) == 1
+    assert len(model.calls) == 2
 
 
 async def test_invalid_plans_fall_back_to_reactive(task, action, final_decision) -> None:
@@ -488,7 +505,7 @@ def test_planning_defaults() -> None:
     parsed = config_from_overrides(["--model", "test"])
     assert parsed.planning_enabled is True
     assert parsed.plan_samples == 3
-    assert parsed.max_replans == 4
+    assert parsed.max_replans == 8
     assert parsed.completion_verification is True
 
 
@@ -524,13 +541,11 @@ async def test_plan_samples_use_derived_sub_seeds(task) -> None:
     state.plan_rounds = 1
     candidates = await client.plan(state, 30)
     assert len(candidates) == 3
-    assert seen == [5000, 5001, 5002]
+    assert set(seen) <= {5000, 5001, 5002, 5003}  # one spare sample is fired
     requests = [event for event in read_logs(stream) if event["event"] == "model_request"]
-    assert {event["generation_settings"]["random_seed"] for event in requests} == {
-        5000,
-        5001,
-        5002,
-    }
+    logged_seeds = {event["generation_settings"]["random_seed"] for event in requests}
+    assert logged_seeds <= {5000, 5001, 5002, 5003}
+    assert {index for index, _ in candidates} <= {0, 1, 2, 3}
 
 
 async def test_plan_text_mode_parses_fenced_json(task, action) -> None:
@@ -566,4 +581,4 @@ async def test_all_failed_plan_samples_raise(task) -> None:
     with pytest.raises(ModelRequestError):
         await client.plan(state, 30)
     errors = [event for event in read_logs(stream) if event["event"] == "plan_sample_error"]
-    assert len(errors) == 2
+    assert len(errors) == 3  # plan_samples=2 plus one spare sample

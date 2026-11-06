@@ -15,6 +15,11 @@ def normalize_plan(candidate: PlanCandidate) -> tuple[tuple[str, str], ...]:
     )
 
 
+def plan_key(candidate: PlanCandidate) -> str:
+    """Return the normalized plan as one stable string."""
+    return format_plan(normalize_plan(candidate))
+
+
 def vote_plans(
     candidates: list[tuple[int, PlanCandidate]],
 ) -> tuple[int, PlanCandidate, dict[str, int]]:
