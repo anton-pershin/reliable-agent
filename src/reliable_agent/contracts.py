@@ -19,6 +19,7 @@ class AgentConfig(ContractModel):
     prompt_version: str = "consistent-planning-v1"
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
+    verification_samples: int = Field(default=2, ge=1, le=5)
     max_replans: int = Field(default=8, ge=0, le=20)
     completion_verification: bool = True
     max_action_attempts: int = Field(default=45, ge=1, le=50)

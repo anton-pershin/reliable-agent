@@ -97,27 +97,84 @@ class PydanticAIModelClient:
     async def plan(
         self, state: TaskState, remaining_seconds: float
     ) -> list[tuple[int, PlanCandidate]]:
-        count = self.config.plan_samples
+        candidates = await self._race_samples(
+            state,
+            remaining_seconds,
+            count=self.config.plan_samples,
+            spares=1,
+            purpose="plan",
+            output_type=PlanCandidate,
+            adapter=_PLAN_ADAPTER,
+            instructions=_PLAN_INSTRUCTIONS,
+            format_hint="Return PlanCandidate only",
+            operation_prefix=f"plan-{state.plan_rounds}",
+            seed_offset=0,
+        )
+        if not candidates:
+            raise ModelRequestError(f"All {self.config.plan_samples + 1} plan samples failed")
+        return candidates
 
-        async def sample(index: int) -> tuple[int, PlanCandidate]:
-            seed = derive_sub_seed(self.config.random_seed, index)
-            candidate = await self._structured(
-                output_type=PlanCandidate,
-                adapter=_PLAN_ADAPTER,
-                instructions=_PLAN_INSTRUCTIONS,
-                purpose="plan",
-                format_hint="Return PlanCandidate only",
+    async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
+        verdicts = await self._race_samples(
+            state,
+            remaining_seconds,
+            count=1,
+            spares=self.config.verification_samples - 1,
+            purpose="verification",
+            output_type=VerificationResult,
+            adapter=_VERIFICATION_ADAPTER,
+            instructions=_VERIFY_INSTRUCTIONS,
+            format_hint="Return VerificationResult only",
+            operation_prefix=self._operation_id(state, prefix="verify"),
+            seed_offset=500,
+            prompt=self._verification_prompt(state),
+        )
+        if not verdicts:
+            raise ModelRequestError("All verification samples failed")
+        return verdicts[0][1]
+
+    async def _race_samples(
+        self,
+        state: TaskState,
+        remaining_seconds: float,
+        *,
+        count: int,
+        spares: int,
+        purpose: str,
+        output_type: Any,
+        adapter: TypeAdapter,
+        instructions: str,
+        format_hint: str,
+        operation_prefix: str,
+        seed_offset: int,
+        prompt: str | None = None,
+    ) -> list[tuple[int, Any]]:
+        """Fire `count + spares` concurrent samples and keep the fastest `count`.
+
+        The spare samples remove the slow tail of the latency distribution from
+        the critical path. Every sample uses a deterministic sub-seed.
+        """
+
+        async def sample(index: int) -> tuple[int, Any]:
+            seed = derive_sub_seed(self.config.random_seed, seed_offset + index)
+            output = await self._structured(
+                output_type=output_type,
+                adapter=adapter,
+                instructions=instructions,
+                purpose=purpose,
+                format_hint=format_hint,
                 state=state,
                 remaining_seconds=remaining_seconds,
-                operation_id=f"plan-{state.plan_rounds}-sample-{index + 1}",
+                operation_id=f"{operation_prefix}-sample-{index + 1}",
                 seed=seed,
+                prompt=prompt,
             )
-            return index, candidate
+            return index, output
 
-        # Fire one spare sample and vote with the fastest `count` completions:
-        # this removes the slow tail of the latency distribution from the round.
-        pending = {asyncio.create_task(sample(index)) for index in range(count + 1)}
-        candidates: list[tuple[int, PlanCandidate]] = []
+        pending = {
+            asyncio.create_task(sample(index)) for index in range(count + spares)
+        }
+        candidates: list[tuple[int, Any]] = []
         try:
             while pending and len(candidates) < count:
                 done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
@@ -125,7 +182,7 @@ class PydanticAIModelClient:
                     exc = finished.exception()
                     if exc is not None:
                         self.logger.log(
-                            "plan_sample_error",
+                            f"{purpose}_sample_error",
                             level="ERROR",
                             plan_round=state.plan_rounds,
                             error_type=type(exc).__name__,
@@ -138,24 +195,7 @@ class PydanticAIModelClient:
                 task.cancel()
             if pending:
                 await asyncio.gather(*pending, return_exceptions=True)
-        candidates = candidates[:count]
-        if not candidates:
-            raise ModelRequestError(f"All {count + 1} plan samples failed")
-        return candidates
-
-    async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
-        return await self._structured(
-            output_type=VerificationResult,
-            adapter=_VERIFICATION_ADAPTER,
-            instructions=_VERIFY_INSTRUCTIONS,
-            purpose="verification",
-            format_hint="Return VerificationResult only",
-            state=state,
-            remaining_seconds=remaining_seconds,
-            operation_id=self._operation_id(state, prefix="verify"),
-            seed=None,
-            prompt=self._verification_prompt(state),
-        )
+        return candidates[:count]
 
     async def _structured(
         self,
