@@ -161,7 +161,7 @@ async def test_final_response_reserve_prevents_model_request(task, action) -> No
     class AdvancingExecutor(ScriptedExecutor):
         async def execute(self, batch):
             observation = await super().execute(batch)
-            clock.advance(250)
+            clock.advance(265)
             return observation
 
     result = await runner_for(model, AdvancingExecutor(), event_logger, clock).run(task)
@@ -238,4 +238,4 @@ async def test_logs_redact_credentials_and_keep_event_links(task, final_decision
     assert all(event["episode_id"] == "episode-test" for event in events)
     assert [event["event_index"] for event in events] == list(range(1, len(events) + 1))
     configuration = next(event for event in events if event["event"] == "configuration")
-    assert configuration["config"]["max_output_tokens"] == 2000
+    assert configuration["config"]["max_output_tokens"] == 8000

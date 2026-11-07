@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any, Protocol
 
@@ -12,9 +13,16 @@ from pydantic_ai.messages import RetryFeedbackPart, RetryPromptPart, ToolReturnP
 from pydantic_ai.models import Model
 
 from .config import validate_config
-from .contracts import Decision, ModelMetadata, TaskState
+from .contracts import (
+    Decision,
+    ModelMetadata,
+    PlanCandidate,
+    TaskState,
+    VerificationResult,
+)
 from .errors import ModelRequestError
 from .observability import EventLogger
+from .planning import derive_sub_seed
 
 _BASELINE_INSTRUCTIONS = """You solve tasks through public observations and tool results.
 Choose either a nonempty batch of actions or a final response. Use only tools described in the task.
@@ -26,11 +34,43 @@ For every final response, give a concise answer, calibrated confidence, a strict
 boolean, and a short evidence-based reason. Set likely_incorrect=true when the answer is uncertain,
 incomplete, or based on failed or missing evidence. Never ask for private scores or reference plans.
 """
+_PLAN_INSTRUCTIONS = """You plan tasks through public observations and tool results.
+Return one complete plan: an ordered list of actions that satisfies the task objective
+from the current public state. Use only the tools described in the task and give every
+action the arguments its schema requires. Before each planned action, check its declared
+preconditions against the state that the earlier planned actions produce. Every action
+must be valid at the moment it runs in the order of the plan. Do not include actions
+that the objective does not need. Do not declare completion inside a plan.
+Predicate argument order matters: a goal predicate holds only with its exact arguments
+in their exact order. For each goal predicate with several arguments, choose the actions
+whose effects produce exactly that argument order, and check the direction again before
+you return the plan.
+"""
+_VERIFY_INSTRUCTIONS = """You verify whether public evidence satisfies the task goal.
+Extract every goal predicate from the task input. For each goal predicate, search the
+latest observation for the exact same text: the same predicate name and the same
+arguments in the same order. A goal predicate (pred x y) matches only a state line with
+the same name and the same arguments in the same order; (pred y x) is a different
+predicate. List in missing_predicates every goal predicate that has no exact match in
+the latest observation. When latest_observation is null, compare the goal with the
+initial state in the task input instead. Set goal_satisfied=true only when
+missing_predicates is empty. Use only public task information and observations.
+"""
 _DECISION_ADAPTER = TypeAdapter(Decision)
+_PLAN_ADAPTER = TypeAdapter(PlanCandidate)
+_VERIFICATION_ADAPTER = TypeAdapter(VerificationResult)
 
 
 class DecisionModel(Protocol):
     async def decide(self, state: TaskState, remaining_seconds: float) -> Decision:
+        pass
+
+    async def plan(
+        self, state: TaskState, remaining_seconds: float
+    ) -> list[tuple[int, PlanCandidate]]:
+        pass
+
+    async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
         pass
 
 
@@ -42,37 +82,212 @@ class PydanticAIModelClient:
         validate_config(self.config)
 
     async def decide(self, state: TaskState, remaining_seconds: float) -> Decision:
-        if self.config.output_mode == "text":
-            return await self._decide_text(state, remaining_seconds)
+        return await self._structured(
+            output_type=Decision,
+            adapter=_DECISION_ADAPTER,
+            instructions=_BASELINE_INSTRUCTIONS,
+            purpose="decision",
+            format_hint="Return ActionDecision or FinalDecision only",
+            state=state,
+            remaining_seconds=remaining_seconds,
+            operation_id=self._operation_id(state),
+            seed=None,
+        )
+
+    async def plan(
+        self, state: TaskState, remaining_seconds: float
+    ) -> list[tuple[int, PlanCandidate]]:
+        candidates = await self._race_samples(
+            state,
+            remaining_seconds,
+            count=self.config.plan_samples,
+            spares=1,
+            purpose="plan",
+            output_type=PlanCandidate,
+            adapter=_PLAN_ADAPTER,
+            instructions=_PLAN_INSTRUCTIONS,
+            format_hint="Return PlanCandidate only",
+            operation_prefix=f"plan-{state.plan_rounds}",
+            seed_offset=0,
+        )
+        if not candidates:
+            raise ModelRequestError(f"All {self.config.plan_samples + 1} plan samples failed")
+        return candidates
+
+    async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
+        verdicts = await self._race_samples(
+            state,
+            remaining_seconds,
+            count=1,
+            spares=self.config.verification_samples - 1,
+            purpose="verification",
+            output_type=VerificationResult,
+            adapter=_VERIFICATION_ADAPTER,
+            instructions=_VERIFY_INSTRUCTIONS,
+            format_hint="Return VerificationResult only",
+            operation_prefix=self._operation_id(state, prefix="verify"),
+            seed_offset=500,
+            prompt=self._verification_prompt(state),
+        )
+        if not verdicts:
+            raise ModelRequestError("All verification samples failed")
+        return verdicts[0][1]
+
+    async def _race_samples(
+        self,
+        state: TaskState,
+        remaining_seconds: float,
+        *,
+        count: int,
+        spares: int,
+        purpose: str,
+        output_type: Any,
+        adapter: TypeAdapter,
+        instructions: str,
+        format_hint: str,
+        operation_prefix: str,
+        seed_offset: int,
+        prompt: str | None = None,
+    ) -> list[tuple[int, Any]]:
+        """Fire `count + spares` concurrent samples and keep the fastest `count`.
+
+        The spare samples remove the slow tail of the latency distribution from
+        the critical path. Every sample uses a deterministic sub-seed.
+        """
+
+        async def sample(index: int) -> tuple[int, Any]:
+            seed = derive_sub_seed(self.config.random_seed, seed_offset + index)
+            sample_timeout = min(self.config.model_timeout_seconds, remaining_seconds)
+            if purpose == "verification":
+                sample_timeout = min(sample_timeout, self.config.verification_timeout_seconds)
+            output = await self._structured(
+                output_type=output_type,
+                adapter=adapter,
+                instructions=instructions,
+                purpose=purpose,
+                format_hint=format_hint,
+                state=state,
+                remaining_seconds=sample_timeout,
+                operation_id=f"{operation_prefix}-sample-{index + 1}",
+                seed=seed,
+                prompt=prompt,
+            )
+            return index, output
+
+        pending = {
+            asyncio.create_task(sample(index)) for index in range(count + spares)
+        }
+        candidates: list[tuple[int, Any]] = []
         try:
-            return await self._decide_tool(state, remaining_seconds)
+            while pending and len(candidates) < count:
+                done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                for finished in done:
+                    exc = finished.exception()
+                    if exc is not None:
+                        self.logger.log(
+                            f"{purpose}_sample_error",
+                            level="ERROR",
+                            plan_round=state.plan_rounds,
+                            error_type=type(exc).__name__,
+                            error_message=str(exc),
+                        )
+                    else:
+                        candidates.append(finished.result())
+        finally:
+            for task in pending:
+                task.cancel()
+            if pending:
+                await asyncio.gather(*pending, return_exceptions=True)
+        return candidates[:count]
+
+    async def _structured(
+        self,
+        *,
+        output_type: Any,
+        adapter: TypeAdapter,
+        instructions: str,
+        purpose: str,
+        format_hint: str,
+        state: TaskState,
+        remaining_seconds: float,
+        operation_id: str,
+        seed: int | None,
+        prompt: str | None = None,
+    ) -> Any:
+        if self.config.output_mode == "text":
+            return await self._text_output(
+                adapter=adapter,
+                instructions=instructions,
+                purpose=purpose,
+                format_hint=format_hint,
+                state=state,
+                remaining_seconds=remaining_seconds,
+                operation_id=operation_id,
+                seed=seed,
+                prompt=prompt,
+            )
+        try:
+            return await self._tool_output(
+                output_type=output_type,
+                instructions=instructions,
+                purpose=purpose,
+                format_hint=format_hint,
+                state=state,
+                remaining_seconds=remaining_seconds,
+                operation_id=operation_id,
+                seed=seed,
+                prompt=prompt,
+            )
         except ModelRequestRejectedError as exc:
             if self.config.output_mode != "auto":
                 raise ModelRequestError(f"Tool output was rejected: {exc}") from exc
             self.logger.log(
                 "text_fallback",
+                purpose=purpose,
                 reason="Provider rejected the tool-output contract",
                 error_type=type(exc).__name__,
             )
-            return await self._decide_text(state, remaining_seconds)
+            return await self._text_output(
+                adapter=adapter,
+                instructions=instructions,
+                purpose=purpose,
+                format_hint=format_hint,
+                state=state,
+                remaining_seconds=remaining_seconds,
+                operation_id=operation_id,
+                seed=seed,
+                prompt=prompt,
+            )
 
-    async def _decide_tool(self, state: TaskState, remaining_seconds: float) -> Decision:
-        prompt = self._prompt(state)
-        operation_id = self._operation_id(state)
+    async def _tool_output(
+        self,
+        *,
+        output_type: Any,
+        instructions: str,
+        purpose: str,
+        format_hint: str,
+        state: TaskState,
+        remaining_seconds: float,
+        operation_id: str,
+        seed: int | None,
+        prompt: str | None = None,
+    ) -> Any:
+        prompt = prompt if prompt is not None else self._prompt(state, format_hint)
         self.logger.log(
             "model_request",
             operation_id=operation_id,
+            purpose=purpose,
             output_mode="tool",
             requested_model=self.config.model,
             prompt=prompt,
-            generation_settings=self._generation_settings(),
+            generation_settings=self._generation_settings(seed),
         )
         try:
             agent = Agent(
                 self.model,
-                output_type=Decision,
-                instructions=_BASELINE_INSTRUCTIONS,
-                model_settings=self._model_settings(),
+                output_type=output_type,
+                instructions=instructions,
+                model_settings=self._model_settings(seed=seed, purpose=purpose),
                 retries=self.config.max_decision_retries,
             )
             result = await agent.run(
@@ -85,30 +300,46 @@ class PydanticAIModelClient:
             self._log_model_error(operation_id, exc)
             raise ModelRequestError(f"Model request failed: {type(exc).__name__}: {exc}") from exc
         self._log_repairs(result, operation_id)
-        self._log_result(result, operation_id, "tool")
+        self._log_result(result, operation_id, "tool", purpose)
         return result.output
 
-    async def _decide_text(self, state: TaskState, remaining_seconds: float) -> Decision:
-        base_prompt = self._prompt(state) + "\nReturn only one JSON object matching this schema:\n"
-        schema = json.dumps(_DECISION_ADAPTER.json_schema(), ensure_ascii=False)
+    async def _text_output(
+        self,
+        *,
+        adapter: TypeAdapter,
+        instructions: str,
+        purpose: str,
+        format_hint: str,
+        state: TaskState,
+        remaining_seconds: float,
+        operation_id: str,
+        seed: int | None,
+        prompt: str | None = None,
+    ) -> Any:
+        base_prompt = (prompt if prompt is not None else self._prompt(state, format_hint)) + (
+            "\nReturn only one JSON object matching this schema:\n"
+        )
+        schema = json.dumps(adapter.json_schema(), ensure_ascii=False)
         feedback = ""
-        operation_id = self._operation_id(state)
         for attempt in range(self.config.max_decision_retries + 1):
             prompt = base_prompt + schema + feedback
             self.logger.log(
                 "model_request",
                 operation_id=f"{operation_id}-text-{attempt + 1}",
+                purpose=purpose,
                 output_mode="text",
                 requested_model=self.config.model,
                 prompt=prompt,
-                generation_settings=self._generation_settings(),
+                generation_settings=self._generation_settings(seed),
             )
             try:
                 agent = Agent(
                     self.model,
                     output_type=str,
-                    instructions=_BASELINE_INSTRUCTIONS,
-                    model_settings=self._model_settings(tool_choice="none"),
+                    instructions=instructions,
+                    model_settings=self._model_settings(
+                        seed=seed, purpose=purpose, tool_choice="none"
+                    ),
                     retries=0,
                 )
                 result = await agent.run(
@@ -122,27 +353,28 @@ class PydanticAIModelClient:
                 ) from exc
             text = result.output
             try:
-                decision = _DECISION_ADAPTER.validate_python(
-                    json.loads(self._strip_markdown_fence(text))
-                )
+                output = adapter.validate_python(json.loads(self._strip_markdown_fence(text)))
             except (ValueError, TypeError, RecursionError) as exc:
                 feedback = (
-                    f"\nThe previous response was not valid for the decision schema: {exc}\n"
+                    f"\nThe previous response was not valid for the {purpose} schema: {exc}\n"
                     "Return only corrected JSON without Markdown or commentary."
                 )
                 self.logger.log(
                     "model_repair",
                     operation_id=operation_id,
+                    purpose=purpose,
                     repair_type="text_json_validation",
                     validation_feedback=str(exc),
                     attempt=attempt + 1,
                 )
                 continue
-            self._log_result(result, operation_id, "text")
-            return decision
-        raise ModelRequestError("Text output did not satisfy the decision schema")
+            self._log_result(result, operation_id, "text", purpose)
+            return output
+        raise ModelRequestError(f"Text output did not satisfy the {purpose} schema")
 
-    def _prompt(self, state: TaskState) -> str:
+    def _prompt(
+        self, state: TaskState, format_hint: str = "Return ActionDecision or FinalDecision only"
+    ) -> str:
         history = state.public_history()
         if len(history) > self.config.max_context_items:
             omitted = len(history) - self.config.max_context_items
@@ -162,13 +394,31 @@ class PydanticAIModelClient:
                 "history": history,
                 "validation_feedback": state.validation_feedback,
                 "prompt_version": self.config.prompt_version,
-                "format": "Return ActionDecision or FinalDecision only",
+                "format": format_hint,
             },
             ensure_ascii=False,
             default=str,
         )
 
-    def _log_result(self, result, operation_id: str, output_mode: str) -> None:
+    def _verification_prompt(self, state: TaskState) -> str:
+        latest_results = None
+        if state.attempts:
+            latest_results = [result.model_dump() for result in state.attempts[-1].results]
+        return json.dumps(
+            {
+                "task": {
+                    "id": state.task.id,
+                    "instructions": state.task.instructions,
+                    "input": state.task.input,
+                },
+                "latest_observation": latest_results,
+                "format": "Return VerificationResult only",
+            },
+            ensure_ascii=False,
+            default=str,
+        )
+
+    def _log_result(self, result, operation_id: str, output_mode: str, purpose: str) -> None:
         response = result.response
         reported_model = getattr(response, "model_id", None) or getattr(
             response, "model_name", None
@@ -196,6 +446,7 @@ class PydanticAIModelClient:
         self.logger.log(
             "model_response",
             operation_id=operation_id,
+            purpose=purpose,
             output_mode=output_mode,
             metadata=metadata.model_dump(),
             public_output=output.model_dump() if hasattr(output, "model_dump") else output,
@@ -226,25 +477,34 @@ class PydanticAIModelClient:
             error_message=str(exc),
         )
 
-    def _model_settings(self, **overrides) -> ModelSettings:
+    def _model_settings(
+        self, seed: int | None = None, purpose: str = "decision", **overrides
+    ) -> ModelSettings:
+        # Plans produce small outputs: cap their token limit to cut off rambling
+        # generations and keep plan rounds fast. Verification needs headroom:
+        # a truncated verification is worse than a slow one.
+        token_caps = {"plan": 2000}
+        max_tokens = min(
+            self.config.max_output_tokens, token_caps.get(purpose, self.config.max_output_tokens)
+        )
         values = {
             "temperature": self.config.temperature,
-            "max_tokens": self.config.max_output_tokens,
-            "seed": self.config.random_seed,
+            "max_tokens": max_tokens,
+            "seed": self.config.random_seed if seed is None else seed,
             **overrides,
         }
         return ModelSettings(**values)
 
-    def _generation_settings(self) -> dict[str, Any]:
+    def _generation_settings(self, seed: int | None = None) -> dict[str, Any]:
         return {
             "temperature": self.config.temperature,
             "max_output_tokens": self.config.max_output_tokens,
-            "random_seed": self.config.random_seed,
+            "random_seed": self.config.random_seed if seed is None else seed,
             "output_mode": self.config.output_mode,
         }
 
-    def _operation_id(self, state: TaskState) -> str:
-        return f"model-{len(state.attempts) + len(state.validation_feedback) + 1}"
+    def _operation_id(self, state: TaskState, prefix: str = "model") -> str:
+        return f"{prefix}-{len(state.attempts) + len(state.validation_feedback) + 1}"
 
     @staticmethod
     def _strip_markdown_fence(text: str) -> str:
