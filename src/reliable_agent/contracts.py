@@ -20,11 +20,12 @@ class AgentConfig(ContractModel):
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
     verification_samples: int = Field(default=2, ge=1, le=5)
-    max_replans: int = Field(default=8, ge=0, le=20)
+    max_replans: int = Field(default=12, ge=0, le=20)
     completion_verification: bool = True
     max_action_attempts: int = Field(default=45, ge=1, le=50)
-    max_episode_seconds: float = Field(default=270, gt=0, le=300)
+    max_episode_seconds: float = Field(default=285, gt=0, le=300)
     model_timeout_seconds: float = Field(default=60, gt=0)
+    verification_timeout_seconds: float = Field(default=90, gt=0)
     max_transient_retries: int = Field(default=2, ge=0, le=10)
     max_decision_retries: int = Field(default=2, ge=0, le=10)
     max_decision_rejections: int = Field(default=2, ge=1, le=10)

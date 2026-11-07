@@ -161,7 +161,7 @@ async def test_final_response_reserve_prevents_model_request(task, action) -> No
     class AdvancingExecutor(ScriptedExecutor):
         async def execute(self, batch):
             observation = await super().execute(batch)
-            clock.advance(250)
+            clock.advance(265)
             return observation
 
     result = await runner_for(model, AdvancingExecutor(), event_logger, clock).run(task)

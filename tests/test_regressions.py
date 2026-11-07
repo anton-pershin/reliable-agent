@@ -81,7 +81,7 @@ async def test_decision_rejection_rechecks_time_budget(task, action) -> None:
 
         async def decide(self, state, remaining_seconds):
             self.calls += 1
-            clock.advance(250)
+            clock.advance(265)
             return ActionDecision(actions=[ActionRequest(name="unknown", arguments={})])
 
     clock = FakeClock()

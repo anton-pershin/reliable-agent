@@ -415,7 +415,7 @@ async def test_plan_sampling_respects_episode_budget(task, action) -> None:
 
     class SlowPlanModel:
         async def plan(self, state, remaining_seconds):
-            clock.advance(250)
+            clock.advance(265)
             raise ModelRequestError("too slow")
 
         async def decide(self, state, remaining_seconds):
@@ -505,7 +505,7 @@ def test_planning_defaults() -> None:
     parsed = config_from_overrides(["--model", "test"])
     assert parsed.planning_enabled is True
     assert parsed.plan_samples == 3
-    assert parsed.max_replans == 8
+    assert parsed.max_replans == 12
     assert parsed.completion_verification is True
 
 

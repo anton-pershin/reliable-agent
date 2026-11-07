@@ -37,6 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-actions", dest="max_action_attempts", type=int)
     parser.add_argument("--episode-seconds", dest="max_episode_seconds", type=float)
     parser.add_argument("--model-timeout", dest="model_timeout_seconds", type=float)
+    parser.add_argument("--verification-timeout", dest="verification_timeout_seconds", type=float)
     parser.add_argument("--transient-retries", dest="max_transient_retries", type=int)
     parser.add_argument("--decision-retries", dest="max_decision_retries", type=int)
     parser.add_argument("--decision-rejections", dest="max_decision_rejections", type=int)

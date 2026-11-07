@@ -157,6 +157,9 @@ class PydanticAIModelClient:
 
         async def sample(index: int) -> tuple[int, Any]:
             seed = derive_sub_seed(self.config.random_seed, seed_offset + index)
+            sample_timeout = min(self.config.model_timeout_seconds, remaining_seconds)
+            if purpose == "verification":
+                sample_timeout = min(sample_timeout, self.config.verification_timeout_seconds)
             output = await self._structured(
                 output_type=output_type,
                 adapter=adapter,
@@ -164,7 +167,7 @@ class PydanticAIModelClient:
                 purpose=purpose,
                 format_hint=format_hint,
                 state=state,
-                remaining_seconds=remaining_seconds,
+                remaining_seconds=sample_timeout,
                 operation_id=f"{operation_prefix}-sample-{index + 1}",
                 seed=seed,
                 prompt=prompt,

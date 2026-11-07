@@ -62,10 +62,11 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--planning / --no-planning` | on | Plan-vote-execute decision flow |
 | `--plan-samples N` | `3` | Candidate plans per vote; one spare sample is fired |
 | `--verification-samples N` | `2` | Concurrent verification samples; the fastest verdict wins |
-| `--max-replans N` | `8` | Re-planning rounds per episode after the first plan |
+| `--max-replans N` | `12` | Re-planning rounds per episode after the first plan |
 | `--completion-verification / --no-completion-verification` | on | Goal verification before completion declarations |
+| `--verification-timeout N` | `90` | Verification sample timeout |
 | `--max-actions N` | `45` | Emitted environment-action budget, maximum 50 |
-| `--episode-seconds N` | `270` | End-to-end episode budget, maximum 300 |
+| `--episode-seconds N` | `285` | End-to-end episode budget, maximum 300 |
 | `--model-timeout N` | `60` | Model request timeout |
 | `--transient-retries N` | `2` | Identical retries per action after transient failure |
 | `--decision-retries N` | `2` | Pydantic AI structured-output retries |

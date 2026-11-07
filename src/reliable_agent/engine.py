@@ -80,7 +80,7 @@ class DecisionEngine:
                 # Rejected or unavailable verification: re-plan next round.
                 continue
 
-            remaining = self._remaining(state) - state.config.final_response_reserve_seconds
+            remaining = self._remaining(state) - self._reserve(state)
             try:
                 decision = await self.model.decide(state, remaining)
             except ModelRequestError as exc:
@@ -254,7 +254,7 @@ class DecisionEngine:
                 reason="Model client does not support plan requests",
             )
             return None
-        remaining = self._remaining(state) - state.config.final_response_reserve_seconds
+        remaining = self._remaining(state) - self._reserve(state)
         try:
             candidates = await plan_method(state, remaining)
         except ModelRequestError as exc:
@@ -402,10 +402,10 @@ class DecisionEngine:
             return False
         if state.action_attempts >= state.config.max_action_attempts:
             return False
-        return self._remaining(state) > state.config.final_response_reserve_seconds
+        return self._remaining(state) > self._reserve(state)
 
     async def _verify_completion(self, state: TaskState):
-        remaining = self._remaining(state) - state.config.final_response_reserve_seconds
+        remaining = self._remaining(state) - self._reserve(state)
         try:
             verdict = await self.model.verify(state, remaining)
         except ModelRequestError as exc:
@@ -431,9 +431,21 @@ class DecisionEngine:
             > state.config.max_action_attempts
         ):
             return self.stop(state, "action_budget_exhausted")
-        if self._remaining(state) <= state.config.final_response_reserve_seconds:
+        if self._remaining(state) <= self._reserve(state):
             return self.stop(state, "episode_time_exhausted")
         return None
+
+    def _reserve(self, state: TaskState) -> float:
+        # Plan mode synthesizes its final responses: no model request must fit
+        # in the reserve. Reactive mode writes its final response through the
+        # model, so it keeps the full reserve.
+        if (
+            state.config.planning_enabled
+            and not state.reactive_mode
+            and self._verification_active(state)
+        ):
+            return min(state.config.final_response_reserve_seconds, 2.0)
+        return state.config.final_response_reserve_seconds
 
     def _remaining(self, state: TaskState) -> float:
         elapsed = max(0.0, self.clock() - state.started_at_monotonic)
