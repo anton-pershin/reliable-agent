@@ -47,6 +47,7 @@
 | Re-planning | A request for a new candidate plan from the current task state after an action failure, plan exhaustion, or a rejected completion verification. |
 | Reactive fallback | The switch from plan-based decisions to per-step decisions for the rest of an episode, used when no valid candidate plan is available. |
 | Reactive mode | The episode state after a reactive fallback: the engine asks the model for the next decision after every observation instead of executing a selected plan. |
+| Plan mode | The default episode state: the engine selects a candidate plan by a plan vote and executes it in order, with completion verification and re-planning. |
 
 ### Model and tool access
 
