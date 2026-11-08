@@ -123,3 +123,55 @@ flowchart TD
 ```
 
 Plan sampling reuses the configured temperature and sampling settings for every candidate. Only the seed differs: sample `i` uses a deterministic sub-seed derived from the configured random seed and `i`. Every vote fires one spare sample and keeps the fastest completions, and verification fires two samples and keeps the fastest verdict, so that a slow request does not block the episode. All samples for one decision run concurrently and write no shared state. The vote compares normalized action sequences, excludes plans that already failed in the same episode while fresh candidates remain, and uses the lowest sample index to break ties. The completion verification request contains the task input and the latest observation without the earlier history, and it returns a satisfied or not-satisfied verdict with the missing goal predicates and a short reason. A completion declaration in plan mode is synthesized by the engine from a satisfied verdict; a rejected or unavailable verification starts a new plan round.
+
+A candidate plan is a JSON object with one ordered list of action requests. Example:
+
+```json
+{
+  "actions": [
+    {"name": "unstack", "arguments": {"block": "b", "other_block": "c"}},
+    {"name": "put_down", "arguments": {"block": "b"}},
+    {"name": "pick_up", "arguments": {"block": "c"}},
+    {"name": "stack", "arguments": {"block": "c", "other_block": "a"}}
+  ]
+}
+```
+
+The majority vote needs an exact equivalence rule because two sampled plans can differ by details that do not matter, such as the key order inside an `arguments` object. The engine normalizes each action to the pair `(name, canonical JSON of arguments)`: the arguments are serialized with sorted keys, so `{"block": "c", "other_block": "a"}` and `{"other_block": "a", "block": "c"}` normalize to the same value. A whole plan normalizes to the ordered sequence of these pairs. Two candidate plans are equivalent exactly when their normalized sequences are identical, element by element: same action names, same argument values, same order. Any other difference, however small, makes two plans different.
+
+The vote counts the candidates in each equivalence class. The class with the most candidates wins. Example: samples return plans A, B, A; A wins 2:1. If every plan is different (A, B, C), there is no majority: the tie rule selects the plan with the lowest sample index, which keeps the result deterministic. Candidates equivalent to a plan that already failed in the same episode are removed before the count; if nothing remains, the removal is canceled for that round.
+
+The first diagram shows the model client as modified. The next diagram shows what changed inside it. The client has three entry points: `decide` (the per-step decision used in reactive mode), `plan` (candidate plans for one vote), and `verify` (the goal verdict). All three share the structured-output dispatcher, which tries the tool-output contract first and falls back to validated JSON text in `auto` mode. `plan` and `verify` go through the sample racer, which fires the configured number of samples plus spares concurrently, keeps the fastest completions, and assigns every sample its derived sub-seed. Per-purpose limits keep the episode fast: plan samples use a lower output-token cap, and verification samples use a shorter timeout.
+
+```mermaid
+flowchart TD
+  Engine[Decision engine]
+  subgraph Client[Model client]
+    Decide[decide: per-step decision]
+    Plan[plan: candidate plans]
+    Verify[verify: goal verdict]
+    Race[Sample racer: N samples plus spares, keep fastest N]
+    Seeds[Deterministic sub-seed per sample]
+    Dispatch[Structured-output dispatcher]
+    Tool[Tool output mode]
+    Text[Text JSON fallback mode]
+    Caps[Per-purpose token and timeout caps]
+  end
+  Provider[Model provider]
+
+  Engine --> Decide
+  Engine --> Plan
+  Engine --> Verify
+  Plan --> Race
+  Verify --> Race
+  Race --> Seeds
+  Race --> Dispatch
+  Decide --> Dispatch
+  Dispatch --> Tool
+  Dispatch -->|provider rejects the tool contract| Text
+  Dispatch --> Caps
+  Tool --> Provider
+  Text --> Provider
+  classDef modified fill:#fff2cc,stroke:#d6b656,color:#000000
+  class Plan,Verify,Race,Seeds,Caps modified
+```
