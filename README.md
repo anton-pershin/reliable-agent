@@ -34,6 +34,10 @@ python -m reliable_agent \
 
 Text responses are validated with the same `Decision` schema as tool responses. Markdown fences and repair events are logged.
 
+## Consistent planning
+
+By default, the agent plans before it acts. It fires several concurrent candidate-plan samples plus one spare, keeps the fastest completions, and selects one plan by a majority vote. The runner executes the selected plan in order. Action failures, plan exhaustion without completion, and rejected or unavailable completion verifications start a new plan round from the current task state, up to the re-planning limit. Plans that already failed in the episode are excluded from later votes while fresh candidates remain. When a plan finishes, concurrent verification samples check the task goal against the latest observation; only a satisfied verdict produces a completion declaration. If planning is unavailable or disabled with `--no-planning`, the engine uses per-step decisions. Plan votes, selected plans, re-planning causes, and verification results are logged with their episode identifiers.
+
 ## JSON Lines execution
 
 The process entry point is:
@@ -53,10 +57,16 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--model NAME` | `RELIABLE_AGENT_MODEL` or none | Provider and model identifier |
 | `--output-mode MODE` | `auto` | `auto`, `tool`, or `text` output and fallback behavior |
 | `--temperature N` | `0.0` | Generation temperature |
-| `--max-output-tokens N` | `2000` | Output-token limit |
-| `--prompt-version VERSION` | `baseline-v1` | Prompt version recorded in logs |
+| `--max-output-tokens N` | `8000` | Output-token limit |
+| `--prompt-version VERSION` | `consistent-planning-v1` | Prompt version recorded in logs |
+| `--planning / --no-planning` | on | Plan-vote-execute decision flow |
+| `--plan-samples N` | `3` | Candidate plans per vote; one spare sample is fired |
+| `--verification-samples N` | `2` | Concurrent verification samples; the fastest verdict wins |
+| `--max-replans N` | `12` | Re-planning rounds per episode after the first plan |
+| `--completion-verification / --no-completion-verification` | on | Goal verification before completion declarations |
+| `--verification-timeout N` | `90` | Verification sample timeout |
 | `--max-actions N` | `45` | Emitted environment-action budget, maximum 50 |
-| `--episode-seconds N` | `270` | End-to-end episode budget, maximum 300 |
+| `--episode-seconds N` | `285` | End-to-end episode budget, maximum 300 |
 | `--model-timeout N` | `60` | Model request timeout |
 | `--transient-retries N` | `2` | Identical retries per action after transient failure |
 | `--decision-retries N` | `2` | Pydantic AI structured-output retries |

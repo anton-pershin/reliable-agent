@@ -15,7 +15,9 @@ from reliable_agent.contracts import (
     Observation,
     Task,
     ToolDescription,
+    VerificationResult,
 )
+from reliable_agent.errors import ModelRequestError
 from reliable_agent.observability import EventLogger
 
 
@@ -31,9 +33,13 @@ class FakeClock:
 
 
 class ScriptedModel:
-    def __init__(self, decisions) -> None:
+    def __init__(self, decisions, plans=None, verifications=None) -> None:
         self.decisions = list(decisions)
+        self.plans = list(plans or [])
+        self.verifications = list(verifications or [])
         self.calls = []
+        self.plan_calls = []
+        self.verify_calls = []
 
     async def decide(self, state, remaining_seconds):
         self.calls.append(
@@ -48,6 +54,30 @@ class ScriptedModel:
         if isinstance(decision, Exception):
             raise decision
         return decision
+
+    async def plan(self, state, remaining_seconds):
+        self.plan_calls.append(
+            {
+                "round": state.plan_rounds,
+                "attempts": len(state.attempts),
+                "remaining": remaining_seconds,
+            }
+        )
+        if not self.plans:
+            raise ModelRequestError("no scripted plan")
+        plan = self.plans.pop(0)
+        if isinstance(plan, Exception):
+            raise plan
+        return [(index, plan) for index in range(state.config.plan_samples)]
+
+    async def verify(self, state, remaining_seconds):
+        self.verify_calls.append({"attempts": len(state.attempts)})
+        if self.verifications:
+            verdict = self.verifications.pop(0)
+            if isinstance(verdict, Exception):
+                raise verdict
+            return verdict
+        return VerificationResult(goal_satisfied=True, reason="scripted default")
 
 
 class ScriptedExecutor:

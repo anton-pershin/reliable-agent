@@ -20,12 +20,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--max-output-tokens", type=int)
     parser.add_argument("--prompt-version")
+    parser.add_argument(
+        "--planning", dest="planning_enabled", action=argparse.BooleanOptionalAction
+    )
+    parser.add_argument("--plan-samples", type=int)
+    parser.add_argument("--verification-samples", type=int)
+    parser.add_argument("--max-replans", type=int)
+    parser.add_argument(
+        "--completion-verification",
+        dest="completion_verification",
+        action=argparse.BooleanOptionalAction,
+    )
     parser.add_argument("--tool-binding", action="append", default=[], metavar="NAME=BINDING")
     parser.add_argument("--max-protocol-bytes", type=int)
     parser.add_argument("--sensitive-value", action="append", default=[])
     parser.add_argument("--max-actions", dest="max_action_attempts", type=int)
     parser.add_argument("--episode-seconds", dest="max_episode_seconds", type=float)
     parser.add_argument("--model-timeout", dest="model_timeout_seconds", type=float)
+    parser.add_argument("--verification-timeout", dest="verification_timeout_seconds", type=float)
     parser.add_argument("--transient-retries", dest="max_transient_retries", type=int)
     parser.add_argument("--decision-retries", dest="max_decision_retries", type=int)
     parser.add_argument("--decision-rejections", dest="max_decision_rejections", type=int)

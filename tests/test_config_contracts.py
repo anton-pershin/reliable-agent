@@ -10,7 +10,7 @@ from reliable_agent.contracts import ActionBatch, FinalResponse
 def test_defaults_and_public_configuration() -> None:
     agent_config = config(sensitive_values=["secret"])
     assert agent_config.max_action_attempts == 45
-    assert agent_config.max_episode_seconds == 270
+    assert agent_config.max_episode_seconds == 285
     assert agent_config.max_transient_retries == 2
     assert "sensitive_values" not in agent_config.public_dict()
     validate_config(agent_config)
@@ -54,7 +54,7 @@ def test_invalid_configuration_and_contracts(action) -> None:
     with pytest.raises(ConfigurationError):
         validate_config(config(model=None))
     with pytest.raises(ConfigurationError):
-        validate_config(config(final_response_reserve_seconds=270))
+        validate_config(config(final_response_reserve_seconds=285))
     with pytest.raises(ValueError):
         FinalResponse(
             completed=True,
