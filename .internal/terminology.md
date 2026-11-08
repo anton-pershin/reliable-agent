@@ -45,6 +45,8 @@
 | Plan vote | Deterministic selection of one candidate plan from several model samples by a majority rule over normalized action sequences. |
 | Completion verification | A dedicated model request that checks the task goal against the latest public observations before a completion declaration. |
 | Re-planning | A request for a new candidate plan from the current task state after an action failure, plan exhaustion, or a rejected completion verification. |
+| Reactive fallback | The switch from plan-based decisions to per-step decisions for the rest of an episode, used when no valid candidate plan is available. |
+| Reactive mode | The episode state after a reactive fallback: the engine asks the model for the next decision after every observation instead of executing a selected plan. |
 
 ### Model and tool access
 
