@@ -1,4 +1,103 @@
-## Qwen3.5-9B validation results
+## Qwen3.5-9B validation results, blocksworld_hard profile
+
+### Spec 03: Consistent planning
+
+**Commit**: `9036c1505c34d81b1c63cb25c6da2ef07ca5695b`
+
+**Run ID**: `20261109T031132-994501Z-f22e7aa722f7`
+
+**Validation scope**: `full`
+
+**Validation implementation**: `agent-validation` service at `http://127.0.0.1:8678`, profile `blocksworld_hard` (sha256 `8a26b371d66cd9ef5e731704feed63da71f48cf258db5386d06c5272106af244`)
+
+**Model**: `openai:qwen/qwen3.5-9b`
+
+**Output mode**: `auto`
+
+**Temperature**: 0.7
+
+**Random seeds**: 1 through 10, selected by repeat number. Plan samples and verification samples use deterministic derived sub-seeds, recorded in the episode logs.
+
+**Model timeout**: 180 seconds. **Verification sample timeout**: 90 seconds.
+
+**Episode concurrency**: 4
+
+**Evidence directory**: `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261109T031132-994501Z-f22e7aa722f7/`
+
+**Overall result**: `valid`. All 890 episodes completed in 828 minutes. There were 491 successful episodes and 399 unsuccessful episodes; 397 episodes were flagged as likely incorrect. One episode (`prompt/concise`, task `rebuild_06`) ended with the solution exiting with status 0 before a final response; no other infrastructure, authentication, or metric-computation failures occurred. Four criteria are `accepted`; AC1, AC3, and AC4 are `valid`; AC5 is `invalid` because fault exposure was not observed in every failure episode, so the VM7 and VM8 instances failed to compute. The complete HTTP response is stored in `.internal/validation-results-blocksworld-hard-full.json`.
+
+The `blocksworld_hard` profile is substantially harder than `default`: its 20 tasks have optimal plan lengths of 8, 10, or 12 movement actions (mean 10). The unperturbed success rate dropped from 0.99 on `default` to 0.535 on `blocksworld_hard`, and repeat-to-repeat variance grew accordingly.
+
+#### AC1
+
+**Status**: `valid`
+
+| Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
+|-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
+| VM1/unperturbed_overall_success_rate | computed | rejected | 0.5349999999999999 | >= 0.95 | None |
+
+#### AC2
+
+**Status**: `accepted`
+
+| Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
+|-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
+| VM2/error_flag_precision | computed | accepted | 1.00 | >= 0.80 | None |
+| VM3/error_flag_recall | computed | accepted | 0.9949874686716792 | >= 0.50 | None |
+
+#### AC3
+
+**Status**: `valid`
+
+The unperturbed success rates for repeats 1 through 10 were 0.60, 0.55, 0.70, 0.60, 0.60, 0.70, 0.30, 0.35, 0.35, and 0.60.
+
+| Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
+|-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
+| VM4/repeated_run_overall_success_rate_range | computed | rejected | 0.39999999999999997 | <= 0.05 | None |
+
+#### AC4
+
+**Status**: `valid`
+
+The negative VM5 value for the formal variant represents a success-rate gain of 0.03.
+
+| Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
+|-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
+| VM5/prompt_variant_overall_success_rate_loss/concise | computed | accepted | 0.02499999999999991 | <= 0.05 | None |
+| VM5/prompt_variant_overall_success_rate_loss/formal | computed | accepted | -0.030000000000000138 | <= 0.05 | None |
+| VM6/prompt_variant_overall_success_rate_range | computed | rejected | 0.05500000000000005 | <= 0.05 | None |
+
+#### AC5
+
+**Status**: `invalid`
+
+Required fault exposure was not observed for every failure episode: 191 of 200 `pick_up_failure` episodes and 88 of 90 `unstack_failure` episodes were exposed. In the remaining episodes the agent finished before attempting the fault-injected action, so the VM7 and VM8 instances could not be computed.
+
+| Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
+|-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
+| VM7/transient_failure_overall_success_rate_loss/pick_up_failure | failed_to_compute | None | None | <= 0.05 | Required fault exposure was not observed for every episode in failure/pick_up_failure |
+| VM7/transient_failure_overall_success_rate_loss/unstack_failure | failed_to_compute | None | None | <= 0.05 | Required fault exposure was not observed for every episode in failure/unstack_failure |
+| VM8/transient_failure_overall_success_rate_range | failed_to_compute | None | None | <= 0.05 | Required fault exposure was not observed for every episode in failure/pick_up_failure |
+
+#### AC6
+
+**Status**: `accepted`
+
+| Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
+|-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
+| VM9/maximum_action_attempts | computed | accepted | 38 | <= 50 | None |
+
+#### AC7
+
+**Status**: `accepted`
+
+The single late final response corresponds to the `prompt/concise` episode on task `rebuild_06` where the solution exited with status 0 before a final response.
+
+| Validation metric | Computation status | Acceptance status | Computed value | Expected value or threshold | Error message |
+|-------------------|--------------------|-------------------|----------------|-----------------------------|---------------|
+| VM10/timely_final_response_rate | computed | accepted | 0.998876404494382 | >= 0.95 | None |
+
+## Qwen3.5-9B validation results (superseded `default` profile)
 
 ### Spec 03: Consistent planning
 
