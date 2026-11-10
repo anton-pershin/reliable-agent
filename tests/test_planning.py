@@ -15,6 +15,7 @@ from conftest import (
 )
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
+from pydantic_ai.models.test import TestModel
 
 from reliable_agent.config import config_from_overrides
 from reliable_agent.contracts import (
@@ -24,6 +25,7 @@ from reliable_agent.contracts import (
     ActionResult,
     Observation,
     PlanCandidate,
+    PlanReview,
     VerificationResult,
 )
 from reliable_agent.engine import DecisionEngine
@@ -39,6 +41,10 @@ def runner_for(model, executor, event_logger, clock):
 
 def plan_of(*actions: ActionRequest) -> PlanCandidate:
     return PlanCandidate(actions=list(actions))
+
+
+def partial_plan_of(*actions: ActionRequest) -> PlanCandidate:
+    return PlanCandidate(actions=list(actions), reaches_goal=False)
 
 
 def ok_observation(call_id: str, count: int = 1) -> Observation:
@@ -98,9 +104,10 @@ def test_derive_sub_seed_is_deterministic() -> None:
     assert derive_sub_seed(8, 0) != derive_sub_seed(7, 0)
 
 
-def test_plan_candidate_requires_nonempty_actions() -> None:
-    with pytest.raises(ValueError):
-        PlanCandidate(actions=[])
+def test_plan_candidate_allows_empty_completion_claim() -> None:
+    candidate = PlanCandidate(actions=[], reaches_goal=True)
+    assert candidate.reaches_goal is True
+    assert PlanCandidate(actions=[]).reaches_goal is True
 
 
 # AC2: execution and re-planning
@@ -143,6 +150,10 @@ async def test_action_failure_triggers_replan(task, action, final_decision) -> N
     assert model.plan_calls[1]["round"] == 2
     abandoned = next(event for event in read_logs(stream) if event["event"] == "plan_abandoned")
     assert abandoned["cause"] == "precondition_failed"
+    feedback = model.plan_calls[1]["feedback"]
+    assert len(feedback) == 1
+    assert "get_action_catalog" in feedback[0]
+    assert "public failure" in feedback[0]
 
 
 async def test_transient_retry_keeps_plan_head(task, action, final_decision) -> None:
@@ -275,6 +286,181 @@ async def test_verified_plan_needs_no_second_verification(task, action, final_de
     assert result.completed is True
     assert len(model.verify_calls) == 1
     assert not model.calls
+
+
+async def test_partial_plan_exhaustion_skips_verification(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(config(plan_horizon=2), clock=clock)
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    model = ScriptedModel(
+        [final_decision],
+        plans=[partial_plan_of(action), plan_of(second)],
+    )
+    executor = ScriptedExecutor(
+        [ok_observation("episode-test-call-1"), ok_observation("episode-test-call-2")]
+    )
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 2
+    assert len(model.verify_calls) == 1  # only the completing plan is verified
+    events = read_logs(stream)
+    assert any(event["event"] == "plan_exhausted" for event in events)
+    replans = [event for event in events if event["event"] == "plan_round"]
+    assert replans[1]["cause"] == "plan_exhausted"
+    # The exhausted partial plan made progress: no failure feedback.
+    assert model.plan_calls[1]["feedback"] == []
+
+
+async def test_empty_completion_claim_triggers_verification(task, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(plan_horizon=2), clock=clock)
+    model = ScriptedModel([final_decision], plans=[PlanCandidate(actions=[], reaches_goal=True)])
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.verify_calls) == 1
+    assert not executor.batches  # no action ever ran
+
+
+async def test_empty_non_reaching_candidate_is_excluded(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(config(plan_horizon=2), clock=clock)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[PlanCandidate(actions=[], reaches_goal=False)],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    # No valid candidate: reactive fallback completes through the decision path.
+    assert result is final_decision
+    assert len(model.calls) == 1
+    assert any(event["event"] == "reactive_fallback" for event in read_logs(stream))
+
+
+async def test_horizon_instructions_mention_horizon_and_flag(task) -> None:
+    event_logger, _ = logger(config(plan_horizon=2))
+    client = PydanticAIModelClient(event_logger, model=TestModel())
+    instructions = client._plan_instructions()
+    assert "at most 2 actions" in instructions
+    assert "reaches_goal" in instructions
+    default_logger, _ = logger(config())
+    default_client = PydanticAIModelClient(default_logger, model=TestModel())
+    assert "one complete plan" in default_client._plan_instructions()
+
+
+# AC7 (spec 04): plan review
+
+
+async def test_review_rejects_candidate_from_vote(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(config(), clock=clock)
+    good = ActionRequest(name="pick_up", arguments={"block": "a"})
+    bad_plan = plan_of(action)
+    good_plan = plan_of(good)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[[bad_plan, good_plan, good_plan]],
+        reviews=[
+            {
+                0: PlanReview(valid=False, first_invalid_action_index=0, reason="bad first step"),
+                1: PlanReview(valid=True, reason="fine"),
+                2: PlanReview(valid=True, reason="fine"),
+            }
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[good]]
+    events = read_logs(stream)
+    review = next(event for event in events if event["event"] == "plan_review")
+    assert review["rejected"] == 1
+    vote = next(event for event in events if event["event"] == "plan_vote")
+    assert "get_action_catalog" not in str(vote["vote_counts"])
+
+
+async def test_all_rejected_candidates_trigger_replan_with_feedback(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(config(), clock=clock)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action), plan_of(action)],
+        reviews=[
+            {
+                index: PlanReview(valid=False, first_invalid_action_index=0, reason="bad")
+                for index in range(3)
+            },
+            {index: PlanReview(valid=True) for index in range(3)},
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 2
+    feedback = model.plan_calls[1]["feedback"]
+    assert any("validity review" in entry for entry in feedback)
+    assert any("first invalid action at index 0" in entry for entry in feedback)
+    events = read_logs(stream)
+    assert any(event["event"] == "plan_review_rejected" for event in events)
+
+
+async def test_review_failure_keeps_candidates(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(config(), clock=clock)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action)],
+        reviews=[ModelRequestError("review unavailable")],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action]]
+    assert any(event["event"] == "plan_review_error" for event in read_logs(stream))
+
+
+async def test_review_disabled_by_config(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(plan_review_enabled=False), clock=clock)
+    model = ScriptedModel([final_decision], plans=[plan_of(action)])
+    result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
+    assert result.completed is True
+    assert not model.review_calls
+
+
+async def test_review_truncates_plan_at_first_invalid_action(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(config(), clock=clock)
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    third = ActionRequest(name="pick_up", arguments={"block": "b"})
+    # Round 1: one candidate, invalid at index 1: only the first action survives.
+    # Round 2: a valid completing plan.
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action, second), plan_of(third)],
+        reviews=[
+            {
+                index: PlanReview(
+                    valid=False, first_invalid_action_index=1, reason="bad second step"
+                )
+                for index in range(3)
+            },
+            {0: PlanReview(valid=True), 1: PlanReview(valid=True), 2: PlanReview(valid=True)},
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    # The truncated prefix ran, exhausted without verification, then replanned.
+    assert [batch.actions for batch in executor.batches] == [[action], [third]]
+    assert len(model.verify_calls) == 1
+    events = read_logs(stream)
+    truncated = next(event for event in events if event["event"] == "plan_review_truncated")
+    assert truncated["truncated"] == 3
+    assert truncated["dropped"] == 0
+    assert any(event["event"] == "plan_exhausted" for event in events)
 
 
 async def test_finalization_verification_unavailable_uses_gate(

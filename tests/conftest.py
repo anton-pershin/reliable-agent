@@ -13,6 +13,7 @@ from reliable_agent.contracts import (
     AgentConfig,
     FinalDecision,
     Observation,
+    PlanReview,
     Task,
     ToolDescription,
     VerificationResult,
@@ -33,13 +34,15 @@ class FakeClock:
 
 
 class ScriptedModel:
-    def __init__(self, decisions, plans=None, verifications=None) -> None:
+    def __init__(self, decisions, plans=None, verifications=None, reviews=None) -> None:
         self.decisions = list(decisions)
         self.plans = list(plans or [])
         self.verifications = list(verifications or [])
+        self.reviews = list(reviews or [])
         self.calls = []
         self.plan_calls = []
         self.verify_calls = []
+        self.review_calls = []
 
     async def decide(self, state, remaining_seconds):
         self.calls.append(
@@ -61,6 +64,7 @@ class ScriptedModel:
                 "round": state.plan_rounds,
                 "attempts": len(state.attempts),
                 "remaining": remaining_seconds,
+                "feedback": list(state.validation_feedback),
             }
         )
         if not self.plans:
@@ -68,7 +72,19 @@ class ScriptedModel:
         plan = self.plans.pop(0)
         if isinstance(plan, Exception):
             raise plan
+        if isinstance(plan, list):
+            # A list entry scripts one distinct candidate per sample index.
+            return [(index, candidate) for index, candidate in enumerate(plan)]
         return [(index, plan) for index in range(state.config.plan_samples)]
+
+    async def review_plans(self, state, candidates, remaining_seconds):
+        self.review_calls.append([index for index, _ in candidates])
+        if self.reviews:
+            scripted = self.reviews.pop(0)
+            if isinstance(scripted, Exception):
+                raise scripted
+            return scripted
+        return {index: PlanReview(valid=True) for index, _ in candidates}
 
     async def verify(self, state, remaining_seconds):
         self.verify_calls.append({"attempts": len(state.attempts)})

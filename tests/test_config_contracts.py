@@ -12,8 +12,36 @@ def test_defaults_and_public_configuration() -> None:
     assert agent_config.max_action_attempts == 45
     assert agent_config.max_episode_seconds == 285
     assert agent_config.max_transient_retries == 2
+    assert agent_config.plan_max_output_tokens == 0
+    assert agent_config.sample_retries == 1
     assert "sensitive_values" not in agent_config.public_dict()
     validate_config(agent_config)
+
+
+def test_sample_configuration_overrides_parse() -> None:
+    agent_config = config_from_overrides(
+        [
+            "--model",
+            "test",
+            "--plan-max-output-tokens",
+            "4000",
+            "--sample-retries",
+            "2",
+            "--plan-spares",
+            "2",
+            "--no-plan-review",
+        ]
+    )
+    assert agent_config.plan_max_output_tokens == 4000
+    assert agent_config.sample_retries == 2
+    assert agent_config.plan_spares == 2
+    assert agent_config.plan_review_enabled is False
+    with pytest.raises(ValueError):
+        config(plan_max_output_tokens=-1)
+    with pytest.raises(ValueError):
+        config(sample_retries=6)
+    with pytest.raises(ValueError):
+        config(plan_spares=-1)
 
 
 def test_override_parsing() -> None:

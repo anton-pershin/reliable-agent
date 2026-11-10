@@ -4,12 +4,22 @@ import json
 
 import pytest
 from conftest import config, logger, read_logs
-from pydantic_ai.exceptions import ModelRequestRejectedError
+from pydantic_ai.exceptions import (
+    ModelHTTPError,
+    ModelRequestRejectedError,
+    RunTimedOut,
+    UnexpectedModelBehavior,
+)
 from pydantic_ai.messages import ModelResponse, TextPart, ToolCallPart
 from pydantic_ai.models.function import FunctionModel
 from pydantic_ai.models.test import TestModel
 
-from reliable_agent.contracts import ActionAttempt, ActionDecision, FinalDecision
+from reliable_agent.contracts import (
+    ActionAttempt,
+    ActionDecision,
+    FinalDecision,
+    PlanCandidate,
+)
 from reliable_agent.errors import ModelRequestError
 from reliable_agent.model import PydanticAIModelClient
 
@@ -175,3 +185,159 @@ async def test_tool_mode_does_not_fallback(task) -> None:
     state = client_decision_state(event_logger, task)
     with pytest.raises(ModelRequestError):
         await client.decide(state, 30)
+
+
+def _plan_response(messages, info):
+    tool = info.output_tools[0]
+    return ModelResponse(
+        parts=[
+            ToolCallPart(
+                tool_name=tool.name,
+                args={"actions": [{"name": "get_action_catalog", "arguments": {}}]},
+            )
+        ],
+        model_name="test",
+        model_id="test:test",
+        provider_name="test",
+    )
+
+
+async def test_plan_token_cap_defaults_to_global_limit(task) -> None:
+    seen = []
+
+    def respond(messages, info):
+        seen.append(info.model_settings.get("max_tokens"))
+        return _plan_response(messages, info)
+
+    event_logger, _ = logger(config(max_output_tokens=8000))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    await client.plan(state, 30)
+    assert seen and all(value == 8000 for value in seen)
+
+
+async def test_plan_token_cap_override_applies_to_plans_only(task, final_decision) -> None:
+    seen = {}
+
+    def respond(messages, info):
+        # A single-output request (plan) has one output tool; the decision
+        # union has one tool per member.
+        purpose = "plan" if len(info.output_tools) == 1 else "decision"
+        seen.setdefault(purpose, []).append(info.model_settings.get("max_tokens"))
+        if purpose == "plan":
+            return _plan_response(messages, info)
+        tool = next(tool for tool in info.output_tools if "FinalDecision" in tool.name)
+        return ModelResponse(
+            parts=[ToolCallPart(tool_name=tool.name, args=final_decision.model_dump())],
+            model_name="test",
+        )
+
+    event_logger, _ = logger(config(max_output_tokens=8000, plan_max_output_tokens=1500))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    await client.plan(state, 30)
+    await client.decide(state, 30)
+    assert seen["plan"] and all(value == 1500 for value in seen["plan"])
+    assert seen["decision"] and all(value == 8000 for value in seen["decision"])
+
+
+async def test_review_plans_returns_verdicts(task) -> None:
+    def respond(messages, info):
+        tool = info.output_tools[0]
+        return ModelResponse(
+            parts=[
+                ToolCallPart(
+                    tool_name=tool.name,
+                    args={"valid": False, "first_invalid_action_index": 1, "reason": "bad"},
+                )
+            ],
+            model_name="test",
+        )
+
+    event_logger, _ = logger(config())
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    candidates = [(0, PlanCandidate(actions=[{"name": "pick_up", "arguments": {"block": "a"}}]))]
+    reviews = await client.review_plans(state, candidates, 60)
+    assert reviews[0].valid is False
+    assert reviews[0].first_invalid_action_index == 1
+
+
+async def test_sample_retries_transient_failure_with_same_seed(task) -> None:
+    calls = []
+
+    def respond(messages, info):
+        calls.append(info.model_settings.get("seed"))
+        if len(calls) <= 2:
+            # The first attempt of every sample fails transiently.
+            raise ModelHTTPError(status_code=503, model_name="test", body="overloaded")
+        return _plan_response(messages, info)
+
+    event_logger, stream = logger(config(plan_samples=1, sample_retries=1))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    candidates = await client.plan(state, 30)
+    assert len(candidates) == 1
+    events = read_logs(stream)
+    retries = [event for event in events if event["event"] == "sample_retry"]
+    assert len(retries) >= 1
+    assert all(event["purpose"] == "plan" for event in retries)
+    assert {event["attempt"] for event in retries} == {2}
+    # Both samples fired (1 + 1 spare) and every retry reused its sample's
+    # derived sub-seed, so only two distinct seeds ever appear.
+    assert len(calls) >= 3
+    assert len(set(calls)) == 2
+
+
+async def test_sample_retry_budget_is_bounded(task) -> None:
+    calls = 0
+
+    def respond(messages, info):
+        nonlocal calls
+        calls += 1
+        raise RunTimedOut("The agent run timed out.")
+
+    event_logger, stream = logger(config(plan_samples=1, sample_retries=1))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    with pytest.raises(ModelRequestError):
+        await client.plan(state, 30)
+    # 2 samples (1 + 1 spare), each with 1 initial attempt + 1 retry.
+    assert calls == 4
+    events = read_logs(stream)
+    assert sum(1 for event in events if event["event"] == "sample_retry") == 2
+
+
+async def test_token_limit_failure_does_not_retry(task) -> None:
+    calls = 0
+
+    def respond(messages, info):
+        nonlocal calls
+        calls += 1
+        raise UnexpectedModelBehavior("Model token limit exceeded before any response")
+
+    event_logger, stream = logger(config(plan_samples=1, sample_retries=3))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    with pytest.raises(ModelRequestError):
+        await client.plan(state, 30)
+    # 2 samples (1 + 1 spare), no retries for deterministic failures.
+    assert calls == 2
+    assert not any(event["event"] == "sample_retry" for event in read_logs(stream))
+
+
+async def test_sample_retries_disabled_by_zero(task) -> None:
+    calls = 0
+
+    def respond(messages, info):
+        nonlocal calls
+        calls += 1
+        raise ModelHTTPError(status_code=503, model_name="test", body="overloaded")
+
+    event_logger, stream = logger(config(plan_samples=1, sample_retries=0))
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    with pytest.raises(ModelRequestError):
+        await client.plan(state, 30)
+    assert calls == 2
+    assert not any(event["event"] == "sample_retry" for event in read_logs(stream))

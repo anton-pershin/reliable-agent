@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 
 from jsonschema import ValidationError, validators
@@ -261,11 +262,16 @@ class DecisionEngine:
             state.reactive_mode = True
             self.logger.log("reactive_fallback", level="ERROR", reason=str(exc))
             return None
-        valid = [
-            (index, candidate)
-            for index, candidate in candidates
-            if not self._validation_errors(state, ActionDecision(actions=candidate.actions))
-        ]
+        valid = []
+        for index, candidate in candidates:
+            if not candidate.actions:
+                # An empty candidate is valid only as a completion claim: the
+                # objective is already satisfied and must be verified now.
+                if candidate.reaches_goal:
+                    valid.append((index, candidate))
+                continue
+            if not self._validation_errors(state, ActionDecision(actions=candidate.actions)):
+                valid.append((index, candidate))
         fresh = [
             (index, candidate)
             for index, candidate in valid
@@ -287,6 +293,105 @@ class DecisionEngine:
                 reason="No candidate plan passed action validation",
             )
             return None
+        if self._plan_review_active(state):
+            remaining = self._remaining(state) - self._reserve(state)
+            review_method = getattr(self.model, "review_plans", None)
+            try:
+                reviews = await review_method(state, valid, remaining)
+            except ModelRequestError as exc:
+                # A wholesale review failure must not lose the round: keep all
+                # valid candidates, as if the review were disabled.
+                self.logger.log(
+                    "plan_review_error",
+                    level="ERROR",
+                    plan_round=state.plan_rounds,
+                    error_message=str(exc),
+                )
+                reviews = {}
+            rejected = [
+                (index, reviews[index])
+                for index, _ in valid
+                if index in reviews and not reviews[index].valid
+            ]
+            self.logger.log(
+                "plan_review",
+                plan_round=state.plan_rounds,
+                reviewed=len(reviews),
+                rejected=len(rejected),
+                verdicts=[
+                    {
+                        "sample_index": index,
+                        "valid": reviews[index].valid,
+                        "first_invalid_action_index": reviews[index].first_invalid_action_index,
+                        "reason": reviews[index].reason,
+                    }
+                    for index, _ in valid
+                    if index in reviews
+                ],
+            )
+            if rejected:
+                adjusted = []
+                truncated_count = 0
+                for index, candidate in valid:
+                    review = reviews.get(index)
+                    if review is None or review.valid:
+                        adjusted.append((index, candidate))
+                        continue
+                    k = review.first_invalid_action_index
+                    if k is None or k >= len(candidate.actions):
+                        # The review cannot name a breaking action inside the
+                        # plan: keep the candidate as unverified.
+                        adjusted.append((index, candidate))
+                        continue
+                    if k == 0:
+                        continue
+                    # Keep the valid prefix: a reviewed plan that breaks at
+                    # action k still makes progress up to k. The prefix claims
+                    # no completion, so exhaustion re-plans without verify.
+                    adjusted.append(
+                        (
+                            index,
+                            candidate.model_copy(
+                                update={
+                                    "actions": candidate.actions[:k],
+                                    "reaches_goal": False,
+                                }
+                            ),
+                        )
+                    )
+                    truncated_count += 1
+                self.logger.log(
+                    "plan_review_truncated",
+                    plan_round=state.plan_rounds,
+                    truncated=truncated_count,
+                    dropped=len(rejected) - truncated_count,
+                )
+                valid = adjusted
+                fresh = [
+                    (index, candidate)
+                    for index, candidate in valid
+                    if plan_key(candidate) not in state.failed_plan_keys
+                ]
+            if not valid:
+                # Every candidate failed the review: name the breaking actions
+                # so the next round's planner avoids them, then re-plan.
+                details = "; ".join(
+                    f"candidate {index}: first invalid action at index "
+                    f"{review.first_invalid_action_index} ({review.reason})"
+                    for index, review in rejected
+                )
+                state.validation_feedback.append(
+                    f"All candidate plans failed the validity review. {details}"
+                )
+                state.plan_broken = True
+                state.replan_cause = "plan_review_rejected"
+                self.logger.log(
+                    "plan_review_rejected",
+                    level="ERROR",
+                    plan_round=state.plan_rounds,
+                    rejected=len(rejected),
+                )
+                return None
         if not fresh:
             # Every valid candidate failed before in this episode: allow repeats.
             fresh = valid
@@ -301,9 +406,11 @@ class DecisionEngine:
         state.plan_broken = False
         state.replan_cause = None
         state.active_plan_key = plan_key(winner)
+        state.active_plan_reaches_goal = winner.reaches_goal
         self.logger.log(
             "plan_selected",
             plan_round=state.plan_rounds,
+            reaches_goal=winner.reaches_goal,
             actions=[action.model_dump() for action in winner.actions],
         )
         return "planned"
@@ -328,17 +435,34 @@ class DecisionEngine:
         if result is not None and result.status == "ok":
             state.plan_actions = state.plan_actions[1:]
             if not state.plan_actions:
-                self.logger.log("plan_completed", plan_round=state.plan_rounds)
+                if state.active_plan_reaches_goal:
+                    self.logger.log("plan_completed", plan_round=state.plan_rounds)
+                else:
+                    # A horizon-limited plan ran out without claiming
+                    # completion: re-plan immediately, no verification.
+                    state.plan_broken = True
+                    state.replan_cause = "plan_exhausted"
+                    self.logger.log("plan_exhausted", plan_round=state.plan_rounds)
             return
         if state.pending_retry_actions:
             # The plan head waits for its transient-failure retry.
             return
         cause = result.error.type if result is not None and result.error else "unknown"
+        message = result.error.message if result is not None and result.error else "unknown"
         dropped = len(state.plan_actions)
         state.plan_actions = []
         state.plan_broken = True
         state.replan_cause = "action_failure"
         self._mark_plan_failed(state)
+        # Make the failure salient to the next plan round: the failed attempt
+        # is one entry among many in the history, while this feedback states
+        # the cause directly. It uses public observation data only.
+        action = attempt.actions[0]
+        state.validation_feedback.append(
+            f"The planned action {action.name}"
+            f"({json.dumps(action.arguments, sort_keys=True, ensure_ascii=False)}) failed: "
+            f"{message} Plan again from the current state."
+        )
         self.logger.log(
             "plan_abandoned",
             level="ERROR",
@@ -392,6 +516,12 @@ class DecisionEngine:
     def _verification_active(self, state: TaskState) -> bool:
         return (
             state.config.completion_verification and getattr(self.model, "verify", None) is not None
+        )
+
+    def _plan_review_active(self, state: TaskState) -> bool:
+        return (
+            state.config.plan_review_enabled
+            and getattr(self.model, "review_plans", None) is not None
         )
 
     def _stop_guard_active(self, state: TaskState) -> bool:

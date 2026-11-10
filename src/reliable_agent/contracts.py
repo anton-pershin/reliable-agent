@@ -19,6 +19,11 @@ class AgentConfig(ContractModel):
     prompt_version: str = "consistent-planning-v1"
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
+    plan_spares: int = Field(default=1, ge=0, le=10)
+    plan_max_output_tokens: int = Field(default=0, ge=0)
+    plan_horizon: int = Field(default=0, ge=0, le=50)
+    plan_review_enabled: bool = True
+    sample_retries: int = Field(default=1, ge=0, le=5)
     verification_samples: int = Field(default=2, ge=1, le=5)
     max_replans: int = Field(default=12, ge=0, le=20)
     completion_verification: bool = True
@@ -118,7 +123,14 @@ Decision = Annotated[ActionDecision | FinalDecision, Field(discriminator="kind")
 
 
 class PlanCandidate(ContractModel):
-    actions: list[ActionRequest] = Field(min_length=1)
+    actions: list[ActionRequest] = Field(default_factory=list)
+    reaches_goal: bool = True
+
+
+class PlanReview(ContractModel):
+    valid: StrictBool
+    first_invalid_action_index: int | None = None
+    reason: str = ""
 
 
 class VerificationResult(ContractModel):
@@ -161,6 +173,7 @@ class TaskState(ContractModel):
     replan_cause: str | None = None
     reactive_mode: bool = False
     active_plan_key: str | None = None
+    active_plan_reaches_goal: bool = True
     failed_plan_keys: list[str] = Field(default_factory=list)
 
     @property

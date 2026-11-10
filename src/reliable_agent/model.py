@@ -4,11 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from typing import Any, Protocol
 
 from pydantic import TypeAdapter
 from pydantic_ai import Agent, ModelSettings
-from pydantic_ai.exceptions import ModelRequestRejectedError
+from pydantic_ai.exceptions import (
+    ModelConnectionError,
+    ModelHTTPError,
+    ModelQuotaExceededError,
+    ModelRequestRejectedError,
+    RunTimedOut,
+)
 from pydantic_ai.messages import RetryFeedbackPart, RetryPromptPart, ToolReturnPart
 from pydantic_ai.models import Model
 
@@ -17,6 +24,7 @@ from .contracts import (
     Decision,
     ModelMetadata,
     PlanCandidate,
+    PlanReview,
     TaskState,
     VerificationResult,
 )
@@ -46,6 +54,22 @@ in their exact order. For each goal predicate with several arguments, choose the
 whose effects produce exactly that argument order, and check the direction again before
 you return the plan.
 """
+_PLAN_HORIZON_INSTRUCTIONS = """You plan tasks through public observations and tool results.
+Return the next actions that make progress toward the task objective from the current
+public state: at most {horizon} actions, ordered, and fewer when the objective completes
+sooner. Use only the tools described in the task and give every action the arguments its
+schema requires. Before each planned action, check its declared preconditions against the
+state that the earlier planned actions produce. Every action must be valid at the moment
+it runs in the order of the plan. Do not include actions that the objective does not need.
+Set reaches_goal=true only when executing the whole returned plan satisfies the task
+objective; otherwise set reaches_goal=false. If the objective is already satisfied in the
+current state, return an empty action list with reaches_goal=true. Do not declare
+completion inside a plan.
+Predicate argument order matters: a goal predicate holds only with its exact arguments
+in their exact order. For each goal predicate with several arguments, choose the actions
+whose effects produce exactly that argument order, and check the direction again before
+you return the plan.
+"""
 _VERIFY_INSTRUCTIONS = """You verify whether public evidence satisfies the task goal.
 Extract every goal predicate from the task input. For each goal predicate, search the
 latest observation for the exact same text: the same predicate name and the same
@@ -56,9 +80,38 @@ the latest observation. When latest_observation is null, compare the goal with t
 initial state in the task input instead. Set goal_satisfied=true only when
 missing_predicates is empty. Use only public task information and observations.
 """
+_PLAN_REVIEW_INSTRUCTIONS = """You check candidate plans against public task state.
+You receive the task (including the available actions with their descriptions and
+argument schemas), the latest public observation, and one candidate plan: an ordered
+list of actions. When latest_observation is null, start from the initial state in the
+task input. Derive each action's preconditions and effects from its description.
+Simulate the plan step by step from the current state: track the state each action
+produces, and before each action verify its preconditions against that state. Find the
+first action whose preconditions are not satisfied in the state produced by the earlier
+actions. Set valid=true and first_invalid_action_index=null only when every action is
+valid in order. Judge only whether the actions are valid in order, never whether the
+plan is clever or complete. Use only public task information and observations.
+"""
 _DECISION_ADAPTER = TypeAdapter(Decision)
 _PLAN_ADAPTER = TypeAdapter(PlanCandidate)
 _VERIFICATION_ADAPTER = TypeAdapter(VerificationResult)
+_REVIEW_ADAPTER = TypeAdapter(PlanReview)
+
+_TRANSIENT_STATUS_CODES = {408, 409, 425, 429}
+
+
+def _is_transient_model_error(exc: BaseException) -> bool:
+    """Return True for failures that may succeed on an identical fresh request.
+
+    Timeouts, connection errors, rate limits, quota errors, and server errors
+    depend on provider state. Token-limit, schema, and contract failures are
+    deterministic given the request, so retrying them wastes the budget.
+    """
+    if isinstance(exc, (RunTimedOut, ModelConnectionError, ModelQuotaExceededError)):
+        return True
+    if isinstance(exc, ModelHTTPError):
+        return exc.status_code in _TRANSIENT_STATUS_CODES or exc.status_code >= 500
+    return False
 
 
 class DecisionModel(Protocol):
@@ -71,6 +124,14 @@ class DecisionModel(Protocol):
         pass
 
     async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
+        pass
+
+    async def review_plans(
+        self,
+        state: TaskState,
+        candidates: list[tuple[int, PlanCandidate]],
+        remaining_seconds: float,
+    ) -> dict[int, PlanReview]:
         pass
 
 
@@ -101,18 +162,25 @@ class PydanticAIModelClient:
             state,
             remaining_seconds,
             count=self.config.plan_samples,
-            spares=1,
+            spares=self.config.plan_spares,
             purpose="plan",
             output_type=PlanCandidate,
             adapter=_PLAN_ADAPTER,
-            instructions=_PLAN_INSTRUCTIONS,
+            instructions=self._plan_instructions(),
             format_hint="Return PlanCandidate only",
             operation_prefix=f"plan-{state.plan_rounds}",
             seed_offset=0,
         )
         if not candidates:
-            raise ModelRequestError(f"All {self.config.plan_samples + 1} plan samples failed")
+            raise ModelRequestError(
+                f"All {self.config.plan_samples + self.config.plan_spares} plan samples failed"
+            )
         return candidates
+
+    def _plan_instructions(self) -> str:
+        if self.config.plan_horizon > 0:
+            return _PLAN_HORIZON_INSTRUCTIONS.format(horizon=self.config.plan_horizon)
+        return _PLAN_INSTRUCTIONS
 
     async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
         verdicts = await self._race_samples(
@@ -132,6 +200,98 @@ class PydanticAIModelClient:
         if not verdicts:
             raise ModelRequestError("All verification samples failed")
         return verdicts[0][1]
+
+    async def _call_with_transient_retry(
+        self,
+        *,
+        operation_id: str,
+        purpose: str,
+        base_timeout: float,
+        remaining_seconds: float,
+        call: Any,
+    ) -> Any:
+        """Run `call(attempt_timeout)` and retry transient failures with a fresh request.
+
+        The retry uses the same operation identifier and seed (the caller closes
+        over the seed), and every attempt stays inside the round's remaining
+        time, so a retried call can never extend the episode beyond its budget.
+        """
+        max_attempts = 1 + self.config.sample_retries
+        started_at = time.monotonic()
+        for attempt in range(1, max_attempts + 1):
+            attempt_timeout = min(
+                base_timeout,
+                max(0.0, remaining_seconds - (time.monotonic() - started_at)),
+            )
+            if attempt_timeout <= 0:
+                raise ModelRequestError("Sample retry budget exhausted", transient=True)
+            try:
+                return await call(attempt_timeout)
+            except ModelRequestError as exc:
+                if not exc.transient or attempt >= max_attempts:
+                    raise
+                self.logger.log(
+                    "sample_retry",
+                    level="ERROR",
+                    operation_id=operation_id,
+                    purpose=purpose,
+                    attempt=attempt + 1,
+                    error_message=str(exc),
+                )
+        raise AssertionError("unreachable")
+
+    async def review_plans(
+        self,
+        state: TaskState,
+        candidates: list[tuple[int, PlanCandidate]],
+        remaining_seconds: float,
+    ) -> dict[int, PlanReview]:
+        """Review each candidate plan concurrently; skip candidates whose review fails."""
+
+        async def review_one(index: int, candidate: PlanCandidate) -> tuple[int, PlanReview]:
+            seed = derive_sub_seed(self.config.random_seed, 1000 + index)
+            base_timeout = min(
+                self.config.model_timeout_seconds,
+                remaining_seconds,
+                self.config.verification_timeout_seconds,
+            )
+            operation_id = f"plan-{state.plan_rounds}-review-{index + 1}"
+            review = await self._call_with_transient_retry(
+                operation_id=operation_id,
+                purpose="plan_review",
+                base_timeout=base_timeout,
+                remaining_seconds=remaining_seconds,
+                call=lambda attempt_timeout: self._structured(
+                    output_type=PlanReview,
+                    adapter=_REVIEW_ADAPTER,
+                    instructions=_PLAN_REVIEW_INSTRUCTIONS,
+                    purpose="plan_review",
+                    format_hint="Return PlanReview only",
+                    state=state,
+                    remaining_seconds=attempt_timeout,
+                    operation_id=operation_id,
+                    seed=seed,
+                    prompt=self._plan_review_prompt(state, candidate),
+                ),
+            )
+            return index, review
+
+        results = await asyncio.gather(
+            *(review_one(index, candidate) for index, candidate in candidates),
+            return_exceptions=True,
+        )
+        reviews: dict[int, PlanReview] = {}
+        for (index, _), result in zip(candidates, results, strict=False):
+            if isinstance(result, tuple) and isinstance(result[1], PlanReview):
+                reviews[result[0]] = result[1]
+            else:
+                self.logger.log(
+                    "plan_review_error",
+                    level="ERROR",
+                    sample_index=index,
+                    error_message=str(result),
+                )
+        return reviews
 
     async def _race_samples(
         self,
@@ -160,17 +320,24 @@ class PydanticAIModelClient:
             sample_timeout = min(self.config.model_timeout_seconds, remaining_seconds)
             if purpose == "verification":
                 sample_timeout = min(sample_timeout, self.config.verification_timeout_seconds)
-            output = await self._structured(
-                output_type=output_type,
-                adapter=adapter,
-                instructions=instructions,
+            operation_id = f"{operation_prefix}-sample-{index + 1}"
+            output = await self._call_with_transient_retry(
+                operation_id=operation_id,
                 purpose=purpose,
-                format_hint=format_hint,
-                state=state,
-                remaining_seconds=sample_timeout,
-                operation_id=f"{operation_prefix}-sample-{index + 1}",
-                seed=seed,
-                prompt=prompt,
+                base_timeout=sample_timeout,
+                remaining_seconds=remaining_seconds,
+                call=lambda attempt_timeout: self._structured(
+                    output_type=output_type,
+                    adapter=adapter,
+                    instructions=instructions,
+                    purpose=purpose,
+                    format_hint=format_hint,
+                    state=state,
+                    remaining_seconds=attempt_timeout,
+                    operation_id=operation_id,
+                    seed=seed,
+                    prompt=prompt,
+                ),
             )
             return index, output
 
@@ -298,7 +465,10 @@ class PydanticAIModelClient:
             raise
         except Exception as exc:
             self._log_model_error(operation_id, exc)
-            raise ModelRequestError(f"Model request failed: {type(exc).__name__}: {exc}") from exc
+            raise ModelRequestError(
+                f"Model request failed: {type(exc).__name__}: {exc}",
+                transient=_is_transient_model_error(exc),
+            ) from exc
         self._log_repairs(result, operation_id)
         self._log_result(result, operation_id, "tool", purpose)
         return result.output
@@ -349,7 +519,8 @@ class PydanticAIModelClient:
             except Exception as exc:
                 self._log_model_error(operation_id, exc)
                 raise ModelRequestError(
-                    f"Text model request failed: {type(exc).__name__}: {exc}"
+                    f"Text model request failed: {type(exc).__name__}: {exc}",
+                    transient=_is_transient_model_error(exc),
                 ) from exc
             text = result.output
             try:
@@ -418,6 +589,21 @@ class PydanticAIModelClient:
             default=str,
         )
 
+    def _plan_review_prompt(self, state: TaskState, candidate: PlanCandidate) -> str:
+        latest_results = None
+        if state.attempts:
+            latest_results = [result.model_dump() for result in state.attempts[-1].results]
+        return json.dumps(
+            {
+                "task": state.task.model_dump(),
+                "latest_observation": latest_results,
+                "candidate_plan": [action.model_dump() for action in candidate.actions],
+                "format": "Return PlanReview only",
+            },
+            ensure_ascii=False,
+            default=str,
+        )
+
     def _log_result(self, result, operation_id: str, output_mode: str, purpose: str) -> None:
         response = result.response
         reported_model = getattr(response, "model_id", None) or getattr(
@@ -480,13 +666,13 @@ class PydanticAIModelClient:
     def _model_settings(
         self, seed: int | None = None, purpose: str = "decision", **overrides
     ) -> ModelSettings:
-        # Plans produce small outputs: cap their token limit to cut off rambling
-        # generations and keep plan rounds fast. Verification needs headroom:
-        # a truncated verification is worse than a slow one.
-        token_caps = {"plan": 2000}
-        max_tokens = min(
-            self.config.max_output_tokens, token_caps.get(purpose, self.config.max_output_tokens)
-        )
+        # Plan samples may carry their own output-token cap. The default of 0
+        # selects the global limit: a sample cut off at a low cap produces no
+        # output at all, so its latency and tokens are wasted. Reasoning
+        # models need the headroom because they think before they answer.
+        max_tokens = self.config.max_output_tokens
+        if purpose == "plan" and self.config.plan_max_output_tokens:
+            max_tokens = min(max_tokens, self.config.plan_max_output_tokens)
         values = {
             "temperature": self.config.temperature,
             "max_tokens": max_tokens,

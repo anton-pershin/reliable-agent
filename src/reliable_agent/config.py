@@ -24,6 +24,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--planning", dest="planning_enabled", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--plan-samples", type=int)
+    parser.add_argument("--plan-spares", type=int)
+    parser.add_argument("--plan-max-output-tokens", type=int)
+    parser.add_argument("--plan-horizon", type=int)
+    parser.add_argument(
+        "--plan-review", dest="plan_review_enabled", action=argparse.BooleanOptionalAction
+    )
+    parser.add_argument("--sample-retries", type=int)
     parser.add_argument("--verification-samples", type=int)
     parser.add_argument("--max-replans", type=int)
     parser.add_argument(

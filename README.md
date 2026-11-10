@@ -36,7 +36,9 @@ Text responses are validated with the same `Decision` schema as tool responses. 
 
 ## Consistent planning
 
-By default, the agent plans before it acts. It fires several concurrent candidate-plan samples plus one spare, keeps the fastest completions, and selects one plan by a majority vote. The runner executes the selected plan in order. Action failures, plan exhaustion without completion, and rejected or unavailable completion verifications start a new plan round from the current task state, up to the re-planning limit. Plans that already failed in the episode are excluded from later votes while fresh candidates remain. When a plan finishes, concurrent verification samples check the task goal against the latest observation; only a satisfied verdict produces a completion declaration. If planning is unavailable or disabled with `--no-planning`, the engine uses per-step decisions. Plan votes, selected plans, re-planning causes, and verification results are logged with their episode identifiers.
+By default, the agent plans before it acts. It fires several concurrent candidate-plan samples plus configurable spares, keeps the fastest completions, and asks the model to review each candidate's step-by-step validity. Candidates that break at some action are truncated to their valid prefix; the vote selects among the surviving plans and prefixes. The runner executes the selected plan in order. Action failures, plan exhaustion without completion, and rejected or unavailable completion verifications start a new plan round from the current task state, up to the re-planning limit. Plans that already failed in the episode are excluded from later votes while fresh candidates remain. When a plan that claimed completion finishes, concurrent verification samples check the task goal against the latest observation; only a satisfied verdict produces a completion declaration. If planning is unavailable or disabled with `--no-planning`, the engine uses per-step decisions. Plan votes, reviews, truncations, selected plans, re-planning causes, and verification results are logged with their episode identifiers.
+
+With `--plan-horizon N`, the planner returns at most N actions per candidate plus a `reaches_goal` flag instead of one complete plan. A plan exhausted without `reaches_goal` starts a new plan round immediately, without verification. Shorter plans agree with each other more often, which sharpens the majority vote on noisy models.
 
 ## JSON Lines execution
 
@@ -60,7 +62,12 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--max-output-tokens N` | `8000` | Output-token limit |
 | `--prompt-version VERSION` | `consistent-planning-v1` | Prompt version recorded in logs |
 | `--planning / --no-planning` | on | Plan-vote-execute decision flow |
-| `--plan-samples N` | `3` | Candidate plans per vote; one spare sample is fired |
+| `--plan-samples N` | `3` | Candidate plans per vote |
+| `--plan-spares N` | `1` | Extra plan samples per vote; only the fastest completions count |
+| `--plan-max-output-tokens N` | `0` | Per-sample plan output cap; `0` uses the global limit |
+| `--plan-horizon N` | `0` | Maximum actions per candidate plan; `0` requires a complete plan |
+| `--plan-review / --no-plan-review` | on | Validity review of candidate plans with prefix truncation |
+| `--sample-retries N` | `1` | Retries per plan or verification sample after a transient failure |
 | `--verification-samples N` | `2` | Concurrent verification samples; the fastest verdict wins |
 | `--max-replans N` | `12` | Re-planning rounds per episode after the first plan |
 | `--completion-verification / --no-completion-verification` | on | Goal verification before completion declarations |
