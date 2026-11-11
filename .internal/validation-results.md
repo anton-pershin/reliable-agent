@@ -1,4 +1,38 @@
-## Qwen3.5-9B validation results, blocksworld_hard profile
+## Qwen3.5-9B validation results, blocksworld_hard profile, run 2 (spec 04)
+
+### Spec 04: Repeatable planning
+
+**Commit**: `391b9eef0e138e6021d2866222ca3ada69cab87b`
+
+**Run ID**: `20261111T003024-637428Z-79e7142b5f51`
+
+**Validation scope**: `full`
+
+**Validation implementation**: `agent-validation` service at `http://127.0.0.1:8678`, profile `blocksworld_hard` (sha256 `8a26b371d66cd9ef5e731704feed63da71f48cf258db5386d06c5272106af244`)
+
+**Model**: `openai:qwen/qwen3.5-9b`
+
+**Solution overrides**: `--model openai:qwen/qwen3.5-9b --temperature 0.7 --model-timeout 90 --sample-retries 2 --plan-max-output-tokens 3000 --no-plan-review`
+
+**Evidence directory**: `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261111T003024-637428Z-79e7142b5f51/`
+
+**Overall result**: `valid`. All 890 episodes completed in 974 minutes with no infrastructure failures. There were 357 successful episodes and 533 unsuccessful episodes; 532 were flagged as likely incorrect. Per-repeat unperturbed success rates were 0.75, 0.50, 0.20, 0.35, 0.45, 0.80, 0.70, 0.05, 0.15, 0.45.
+
+**Root-cause analysis**: The unperturbed success rate tracks provider latency, not agent behavior. Repeat 1 ran in a fast window (plan-round p50 27s, zero timeouts) and scored 0.75; repeats 6-7 scored 0.80 and 0.70 in a later fast window; repeats 3, 8, and 9 landed in provider slow windows (plan-round p50 60-150s, accumulating timeouts) and scored 0.05-0.20. The ten repeats span ~13 hours of wall-clock, so VM4 measures provider stability across the day. The same effect produced the baseline run's repeats 7-9 dip (0.30-0.35). The spec 04 improvements raised the fast-window ceiling from 0.70 to 0.80 and removed all token-cap sample deaths (662 in the baseline run, 0 here).
+
+| Criterion | Status | Detail |
+|-----------|--------|--------|
+| AC1 | valid | VM1 = 0.44 < 0.95 |
+| AC2 | accepted | VM2 = 1.00, VM3 = 0.998 |
+| AC3 | valid | VM4 = 0.75 > 0.05 (provider latency windows) |
+| AC4 | valid | VM5 concise = 0.055, VM5 formal = 0.06, VM6 = 0.06 (marginally rejected) |
+| AC5 | invalid | fault exposure not observed in every failure episode |
+| AC6 | accepted | VM9 = 34 <= 50 |
+| AC7 | accepted | VM10 = 1.00 |
+
+The complete HTTP response is stored in `.internal/validation-results-blocksworld-hard-full-run2.json`.
+
+## Qwen3.5-9B validation results, blocksworld_hard profile, run 1 (baseline)
 
 ### Spec 03: Consistent planning
 
