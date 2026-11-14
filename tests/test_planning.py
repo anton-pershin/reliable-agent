@@ -430,6 +430,64 @@ async def test_review_disabled_by_config(task, action, final_decision) -> None:
     assert not model.review_calls
 
 
+async def test_goal_review_selects_goal_satisfying_candidate(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(config(), clock=clock)
+    wrong = plan_of(action)  # one action
+    right_plan = plan_of(ActionRequest(name="pick_up", arguments={"block": "a"}))
+    model = ScriptedModel(
+        [final_decision],
+        plans=[[wrong, right_plan, right_plan]],
+        goal_reviews=[
+            {
+                0: VerificationResult(
+                    goal_satisfied=False, missing_predicates=["(on b a)"], reason="misses goal"
+                ),
+                1: VerificationResult(goal_satisfied=True, reason="reaches goal"),
+                2: VerificationResult(goal_satisfied=True, reason="reaches goal"),
+            }
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    # The goal-satisfying candidates win the vote even though they are not the majority
+    # of the raw samples when the wrong plan appears first.
+    assert [batch.actions for batch in executor.batches] == [[right_plan.actions[0]]]
+    review = next(event for event in read_logs(stream) if event["event"] == "goal_review")
+    assert review["checked"] == 3
+    assert review["goal_ok"] == 2
+
+
+async def test_goal_review_keeps_all_when_none_satisfy(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(), clock=clock)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action)],
+        goal_reviews=[
+            {
+                index: VerificationResult(
+                    goal_satisfied=False, missing_predicates=["g"], reason="no"
+                )
+                for index in range(3)
+            }
+        ],
+    )
+    result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.verify_calls) == 1
+
+
+async def test_goal_review_disabled_by_config(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(goal_review_enabled=False), clock=clock)
+    model = ScriptedModel([final_decision], plans=[plan_of(action)])
+    result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
+    assert result.completed is True
+    assert not model.goal_review_calls
+
+
 async def test_review_truncates_plan_at_first_invalid_action(task, action, final_decision) -> None:
     clock = FakeClock()
     event_logger, stream = logger(config(), clock=clock)

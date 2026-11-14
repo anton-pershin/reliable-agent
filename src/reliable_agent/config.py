@@ -30,6 +30,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--plan-review", dest="plan_review_enabled", action=argparse.BooleanOptionalAction
     )
+    parser.add_argument(
+        "--goal-review", dest="goal_review_enabled", action=argparse.BooleanOptionalAction
+    )
     parser.add_argument("--sample-retries", type=int)
     parser.add_argument("--verification-samples", type=int)
     parser.add_argument("--max-replans", type=int)

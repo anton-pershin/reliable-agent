@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reliable agent — AC3 repeatability: methods report</title>
+<style>
+:root { --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --accent:#6366f1; }
+* { box-sizing: border-box; }
+body { margin:0; font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+       color:var(--ink); background:#f8fafc; line-height:1.55; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+header.hero { background: linear-gradient(135deg,#312e81,#6366f1); color:#fff;
+              border-radius: 16px; padding: 34px 36px; margin-bottom: 28px; }
+header.hero h1 { margin:0 0 6px; font-size: 28px; letter-spacing:-0.02em; }
+header.hero p { margin:4px 0; color:#e0e7ff; }
+header.hero code { background:rgba(255,255,255,.14); padding:1px 7px; border-radius:6px; }
+h2 { font-size: 21px; margin: 42px 0 12px; letter-spacing:-0.01em; border-bottom:2px solid var(--line); padding-bottom:6px;}
+h3 { font-size: 16px; margin: 22px 0 6px; }
+.card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:18px 22px; margin:14px 0;
+        box-shadow:0 1px 2px rgba(15,23,42,.04); }
+.badge { display:inline-block; font-size:12px; font-weight:600; padding:2px 10px; border-radius:999px; vertical-align:2px; margin-left:8px;}
+.b-adopted { background:#dcfce7; color:#166534; }
+.b-rejected { background:#fee2e2; color:#991b1b; }
+.b-reference { background:#e0e7ff; color:#3730a3; }
+.b-mixed { background:#fef3c7; color:#92400e; }
+table { border-collapse: collapse; width:100%; margin: 10px 0; font-size: 14px; }
+th, td { border:1px solid var(--line); padding: 7px 10px; text-align:left; }
+th { background:#f1f5f9; font-weight:600; }
+td.num { text-align:right; font-variant-numeric: tabular-nums; }
+.good { color:#15803d; font-weight:600; }
+.bad { color:#b91c1c; font-weight:600; }
+.mut { color:var(--muted); }
+.metric { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+          background:#f1f5f9; border-radius:6px; padding:1px 6px; }
+.kpi-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin:16px 0; }
+.kpi { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+.kpi .v { font-size:24px; font-weight:700; letter-spacing:-0.02em; }
+.kpi .l { font-size:12px; color:var(--muted); }
+.mermaid { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; margin:12px 0; }
+figure { margin: 14px 0; } figcaption { font-size:12px; color:var(--muted); margin-top:4px; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; background:#f1f5f9; padding:1px 5px; border-radius:5px;}
+ul.tight li { margin: 5px 0; }
+footer { margin-top:48px; font-size:12px; color:var(--muted); }
+</style>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+</script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Making AC3 <em>Repeatability</em> pass on Blocks World (hard)</h1>
+  <p>Every method tested for the <code>reliable-agent</code> × <code>qwen3.5-9b</code> validation effort, with measured outcomes.</p>
+  <p>Profile <code>blocksworld_hard</code> · model <code>openai:qwen/qwen3.5-9b</code> · temperature 0.7 and all other sampling settings fixed · November 9–12, 2026</p>
+</header>
+
+<h2>1. The goal and the metric</h2>
+<div class="card">
+<p><b>Goal.</b> Move <b>AC3 — Repeatability</b> to <span class="badge b-adopted" style="margin-left:0">accepted</span> on the
+<code>blocksworld_hard</code> validation profile, without dropping <b>VM1 — Unperturbed success rate</b> much below its 0.535 baseline.</p>
+<p><b>AC3 — Repeatability</b> is decided by <b>VM4 — Repeat success range</b>: the difference between the best and the worst
+per-repeat unperturbed success rate over 10 repeats of 20 tasks. The threshold is <code>≤ 0.05</code>: with 20 tasks per repeat,
+all ten repeats must land within <i>one task</i> of each other.</p>
+<div class="kpi-row">
+  <div class="kpi"><div class="v">0.535</div><div class="l">VM1 — Unperturbed success rate, baseline</div></div>
+  <div class="kpi"><div class="v">0.40</div><div class="l">VM4 — Repeat success range, baseline</div></div>
+  <div class="kpi"><div class="v">≤ 0.05</div><div class="l">VM4 acceptance threshold</div></div>
+  <div class="kpi"><div class="v">285 s / 45</div><div class="l">episode time / action budget</div></div>
+</div>
+<p class="mut">Legend for acceptance criteria used throughout: <b>AC1</b> Baseline success · <b>AC2</b> Error flagging ·
+<b>AC3</b> Repeatability · <b>AC4</b> Prompt robustness · <b>AC5</b> Transient-failure recovery · <b>AC6</b> Action budget ·
+<b>AC7</b> Timeliness. Metrics: <b>VM1</b> Unperturbed success rate · <b>VM2</b> Error-flag precision · <b>VM3</b> Error-flag recall ·
+<b>VM4</b> Repeat success range · <b>VM5</b> Prompt-variant success loss · <b>VM6</b> Prompt-variant success range ·
+<b>VM7</b> Transient-failure success loss · <b>VM8</b> Transient-failure success range · <b>VM9</b> Maximum action attempts ·
+<b>VM10</b> Timely final-response rate.</p>
+</div>
+
+<h2>2. Root-cause analysis of the baseline</h2>
+<div class="card">
+<p>Full validation of the spec 03 implementation (commit <code>9036c15</code>, run <code>20261109T031132</code>) gave
+VM4 = 0.40 with repeat rates 0.60, 0.55, 0.70, 0.60, 0.60, 0.70, <b>0.30, 0.35, 0.35</b>, 0.60. Episode-log analysis found three independent drivers:</p>
+<ul class="tight">
+<li><b>Flat plan distributions.</b> At temperature 0.7 the model produces 7–10 distinct plans per 10 samples; 87% of votes ended
+1-1-1 and were decided by the tie rule — effectively a coin flip per round. Consensus simply does not exist at full-plan level.</li>
+<li><b>Token-cap sample deaths.</b> A hard-coded 2000-token cap on plan samples killed <b>662 of 5 581</b> samples before any output
+(the model reasons before it answers; successful plans use 894 tokens at the median and up to 5 136). Dead samples thinned votes and wasted rounds.</li>
+<li><b>Provider slow windows.</b> Repeats 7–9 ran during a latency spike (plan-round p50 up to 150 s, timeouts eating the 285 s budget).
+The ten repeats span ~13 h of wall-clock, so VM4 is hostage to provider weather.</li>
+</ul>
+<figure><svg viewBox="0 0 760 260" role="img" aria-label="Per-repeat success rates"><line x1="44" y1="226" x2="750" y2="226" stroke="#cbd5e1"/><line x1="44" y1="30" x2="44" y2="226" stroke="#cbd5e1"/><line x1="44" y1="226.0" x2="750" y2="226.0" stroke="#eef2f7"/><text x="36" y="230.0" text-anchor="end" font-size="11" fill="#64748b">0.00</text><line x1="44" y1="177.0" x2="750" y2="177.0" stroke="#eef2f7"/><text x="36" y="181.0" text-anchor="end" font-size="11" fill="#64748b">0.25</text><line x1="44" y1="128.0" x2="750" y2="128.0" stroke="#eef2f7"/><text x="36" y="132.0" text-anchor="end" font-size="11" fill="#64748b">0.50</text><line x1="44" y1="79.0" x2="750" y2="79.0" stroke="#eef2f7"/><text x="36" y="83.0" text-anchor="end" font-size="11" fill="#64748b">0.75</text><line x1="44" y1="30.0" x2="750" y2="30.0" stroke="#eef2f7"/><text x="36" y="34.0" text-anchor="end" font-size="11" fill="#64748b">1.00</text><rect x="51.0" y="108.4" width="25.1" height="117.6" rx="3" fill="#94a3b8"><title>repeat 1: 0.60</title></rect><text x="63.5" y="104.4" text-anchor="middle" font-size="10" fill="#475569">0.60</text><rect x="78.0" y="79.0" width="25.1" height="147.0" rx="3" fill="#6366f1"><title>repeat 1: 0.75</title></rect><text x="90.5" y="75.0" text-anchor="middle" font-size="10" fill="#475569">0.75</text><text x="78.8" y="242" text-anchor="middle" font-size="11" fill="#64748b">R1</text><rect x="120.6" y="118.2" width="25.1" height="107.8" rx="3" fill="#94a3b8"><title>repeat 2: 0.55</title></rect><text x="133.1" y="114.2" text-anchor="middle" font-size="10" fill="#475569">0.55</text><rect x="147.6" y="128.0" width="25.1" height="98.0" rx="3" fill="#6366f1"><title>repeat 2: 0.50</title></rect><text x="160.1" y="124.0" text-anchor="middle" font-size="10" fill="#475569">0.50</text><text x="148.4" y="242" text-anchor="middle" font-size="11" fill="#64748b">R2</text><rect x="190.2" y="88.8" width="25.1" height="137.2" rx="3" fill="#94a3b8"><title>repeat 3: 0.70</title></rect><text x="202.7" y="84.8" text-anchor="middle" font-size="10" fill="#475569">0.70</text><rect x="217.2" y="186.8" width="25.1" height="39.2" rx="3" fill="#6366f1"><title>repeat 3: 0.20</title></rect><text x="229.7" y="182.8" text-anchor="middle" font-size="10" fill="#475569">0.20</text><text x="218.0" y="242" text-anchor="middle" font-size="11" fill="#64748b">R3</text><rect x="259.8" y="108.4" width="25.1" height="117.6" rx="3" fill="#94a3b8"><title>repeat 4: 0.60</title></rect><text x="272.3" y="104.4" text-anchor="middle" font-size="10" fill="#475569">0.60</text><rect x="286.8" y="157.4" width="25.1" height="68.6" rx="3" fill="#6366f1"><title>repeat 4: 0.35</title></rect><text x="299.3" y="153.4" text-anchor="middle" font-size="10" fill="#475569">0.35</text><text x="287.6" y="242" text-anchor="middle" font-size="11" fill="#64748b">R4</text><rect x="329.4" y="108.4" width="25.1" height="117.6" rx="3" fill="#94a3b8"><title>repeat 5: 0.60</title></rect><text x="341.9" y="104.4" text-anchor="middle" font-size="10" fill="#475569">0.60</text><rect x="356.4" y="137.8" width="25.1" height="88.2" rx="3" fill="#6366f1"><title>repeat 5: 0.45</title></rect><text x="368.9" y="133.8" text-anchor="middle" font-size="10" fill="#475569">0.45</text><text x="357.2" y="242" text-anchor="middle" font-size="11" fill="#64748b">R5</text><rect x="399.0" y="88.8" width="25.1" height="137.2" rx="3" fill="#94a3b8"><title>repeat 6: 0.70</title></rect><text x="411.5" y="84.8" text-anchor="middle" font-size="10" fill="#475569">0.70</text><rect x="426.0" y="69.2" width="25.1" height="156.8" rx="3" fill="#6366f1"><title>repeat 6: 0.80</title></rect><text x="438.5" y="65.2" text-anchor="middle" font-size="10" fill="#475569">0.80</text><text x="426.8" y="242" text-anchor="middle" font-size="11" fill="#64748b">R6</text><rect x="468.6" y="167.2" width="25.1" height="58.8" rx="3" fill="#94a3b8"><title>repeat 7: 0.30</title></rect><text x="481.1" y="163.2" text-anchor="middle" font-size="10" fill="#475569">0.30</text><rect x="495.6" y="88.8" width="25.1" height="137.2" rx="3" fill="#6366f1"><title>repeat 7: 0.70</title></rect><text x="508.1" y="84.8" text-anchor="middle" font-size="10" fill="#475569">0.70</text><text x="496.4" y="242" text-anchor="middle" font-size="11" fill="#64748b">R7</text><rect x="538.2" y="157.4" width="25.1" height="68.6" rx="3" fill="#94a3b8"><title>repeat 8: 0.35</title></rect><text x="550.7" y="153.4" text-anchor="middle" font-size="10" fill="#475569">0.35</text><rect x="565.2" y="216.2" width="25.1" height="9.8" rx="3" fill="#6366f1"><title>repeat 8: 0.05</title></rect><text x="577.7" y="212.2" text-anchor="middle" font-size="10" fill="#475569">0.05</text><text x="566.0" y="242" text-anchor="middle" font-size="11" fill="#64748b">R8</text><rect x="607.8" y="157.4" width="25.1" height="68.6" rx="3" fill="#94a3b8"><title>repeat 9: 0.35</title></rect><text x="620.3" y="153.4" text-anchor="middle" font-size="10" fill="#475569">0.35</text><rect x="634.8" y="196.6" width="25.1" height="29.4" rx="3" fill="#6366f1"><title>repeat 9: 0.15</title></rect><text x="647.3" y="192.6" text-anchor="middle" font-size="10" fill="#475569">0.15</text><text x="635.6" y="242" text-anchor="middle" font-size="11" fill="#64748b">R9</text><rect x="677.4" y="108.4" width="25.1" height="117.6" rx="3" fill="#94a3b8"><title>repeat 10: 0.60</title></rect><text x="689.9" y="104.4" text-anchor="middle" font-size="10" fill="#475569">0.60</text><rect x="704.4" y="137.8" width="25.1" height="88.2" rx="3" fill="#6366f1"><title>repeat 10: 0.45</title></rect><text x="716.9" y="133.8" text-anchor="middle" font-size="10" fill="#475569">0.45</text><text x="705.2" y="242" text-anchor="middle" font-size="11" fill="#64748b">R10</text><rect x="460" y="8" width="12" height="12" fill="#94a3b8" rx="2"/><text x="476" y="18" font-size="12" fill="#334155">Baseline (spec 03)</text><rect x="600" y="8" width="12" height="12" fill="#6366f1" rx="2"/><text x="616" y="18" font-size="12" fill="#334155">Spec 04, run 2</text></svg></figure>
+<figcaption>Per-repeat unperturbed success rates, baseline vs the spec 04 full run (run 2). Dips line up with measured provider latency spikes in both runs.</figcaption>
+</div>
+
+<h2>3. Methods tested</h2>
+
+<h3>3.1 Adopted into spec 04 (commit <code>391b9ee</code>)</h3>
+
+<div class="card">
+<b>Configurable plan token cap (default uncapped)</b><span class="badge b-adopted">adopted</span>
+<p class="mut">Eliminated all 662 token-cap sample deaths. Plan samples may use the full 8 000-token budget; the fastest-N race keeps slow samples off the critical path. Validated: 0 cap deaths in run 2.</p>
+</div>
+
+<div class="card">
+<b>Transient sample retries</b><span class="badge b-adopted">adopted</span>
+<p class="mut">Plan and verification samples that fail with timeouts, connection errors, rate limits, quota or 5xx errors get one fresh retried request with the same derived sub-seed, bounded by the remaining episode time. Converts provider stalls into retries instead of lost rounds.</p>
+</div>
+
+<div class="card">
+<b>Re-plan failure feedback</b><span class="badge b-adopted">adopted</span>
+<p class="mut">When a plan breaks, the next round's prompt names the failed action and its public error, e.g. <code>unstack(c, a) failed: preconditions are not satisfied</code>. The failure was previously one JSON entry among many in the history.</p>
+</div>
+
+<div class="card">
+<b>More samples per vote</b><span class="badge b-adopted">adopted (5+1)</span>
+<p class="mut">Local A/B on the eight flipper tasks (3 repeats each): 3+1 samples → 0.38/0.25/0.50; 6+2 samples → <b>0.62/0.62/0.50</b>; 8+2 overloads the provider (round p50 149 s). 5+1 chosen for the validation runs as the load-safe point.</p>
+</div>
+
+<div class="card">
+<b>Plan horizon machinery + plan review with prefix truncation</b><span class="badge b-mixed">implemented, disabled for validation</span>
+<p class="mut">The model reviews each candidate plan step by step and reports the first invalid action; the engine truncates the plan to its valid prefix instead of discarding it. Review quality measured against an independent simulator: <b>91% recall on invalid plans, 97–100% precision, 95% exact breaking-index</b>. In episode, however, the review stage cost p50 119–190 s per round — more than the sampling stage (p50 34–55 s) — because reviewing a long plan forces the model to simulate every step. Since failed actions never corrupt the environment state, executing an unreviewed plan harvests the same prefix progress for free. Disabled with <code>--no-plan-review</code> for this serving stack; the feature stays implemented and unit-tested.</p>
+</div>
+
+<h3>3.2 Measured and rejected</h3>
+
+<div class="card">
+<table>
+<tr><th>Method</th><th>Hypothesis</th><th>Measured result</th><th>Verdict</th></tr>
+<tr><td>Temperature 0.0</td><td>Deterministic decoding collapses repeat variance</td><td class="num">Voted first-plan success 4–5/20 vs 1/20 at 0.7; identical repeats</td><td><span class="badge b-rejected">forbidden</span></td></tr>
+<tr><td>top-p / top-k truncation</td><td>Sharpen the sampling distribution</td><td class="num">not tested beyond design</td><td><span class="badge b-rejected">forbidden</span></td></tr>
+<tr><td>Provider seeds for determinism</td><td>Same seed → same plan</td><td class="num">4/5 distinct plans at seed 42</td><td><span class="badge b-rejected">not honored</span></td></tr>
+<tr><td>Disable model "thinking"</td><td>Faster, shorter samples</td><td class="num">token counts unchanged</td><td><span class="badge b-rejected">ignored by endpoint</span></td></tr>
+<tr><td>Prompt: simulate state in reasoning</td><td>Better precondition tracking</td><td class="num">7/120 vs 12/120 one-shot solves</td><td><span class="badge b-rejected">no gain</span></td></tr>
+<tr><td>Scratchpad output field</td><td>Structured reasoning before actions</td><td class="num">inconclusive (provider down), 5/32 valid</td><td><span class="badge b-rejected">no evidence</span></td></tr>
+<tr><td>Plan horizon by instruction (H=3)</td><td>Short plans agree more often</td><td class="num">25% instruction compliance; local VM1 0.30/0.50</td><td><span class="badge b-rejected">not followed</span></td></tr>
+<tr><td>One-shot plan repair</td><td>Fix plan at the breaking index</td><td class="num">8% of invalid plans repaired</td><td><span class="badge b-rejected">too weak</span></td></tr>
+<tr><td>In-context self-consistency (3 candidates)</td><td>Model judges its own candidates</td><td class="num">15% vs 10% one-shot solves; flat modes</td><td><span class="badge b-rejected">marginal</span></td></tr>
+<tr><td>Review goal-reaching for selection</td><td>Pick plans that simulate to the goal</td><td class="num">goal-reaching recall 0/14 — reviewer never commits</td><td><span class="badge b-rejected">useless</span></td></tr>
+</table>
+</div>
+
+<div class="card">
+<b>Reference point: the same pipeline with qwen3.5-27b</b><span class="badge b-reference">reference only</span>
+<p class="mut">A one-off probe with the 27b sibling model: the modal sampled plan solves 16/20 hard tasks in one shot with zero sample failures — confirming the agent machinery (vote, review) works when the model's distribution has a correct mode. The 9b constraint rules it out for the validation itself.</p>
+</div>
+
+<h3>3.3 The final spec 04 pipeline</h3>
+<div class="mermaid">flowchart LR
+  subgraph Baseline["Baseline: spec 03"]
+    direction TB
+    S1[Sample 3+1 plans] --> V1[Vote]
+    V1 --> E1[Execute until break]
+    E1 --> R1{OK?}
+    R1 -->|no| S1
+    R1 -->|yes| Ver1[Verify goal]
+  end
+  subgraph Spec04["Spec 04: adopted changes"]
+    direction TB
+    S2[Sample 5+1 plans<br/>uncapped tokens] --> RT[Transient retry<br/>on timeouts]
+    RT --> V2[Vote]
+    V2 --> E2[Execute until break]
+    E2 --> FB[Failure feedback<br/>to next round]
+    FB --> R2{OK?}
+    R2 -->|no| S2
+    R2 -->|yes| Ver2[Verify goal]
+  end
+  Baseline -. measured .-> Spec04
+  classDef base fill:#f1f5f9,stroke:#94a3b8,color:#0f172a
+  classDef new fill:#eef2ff,stroke:#6366f1,color:#0f172a
+  class S1,V1,E1,R1,Ver1 base
+  class S2,RT,V2,E2,FB,R2,Ver2 new</div>
+<div class="mermaid">flowchart TD
+  C[Candidate plans] --> Rev[Plan review:<br/>simulate step by step]
+  Rev --> K{first invalid<br/>action index k}
+  K -->|valid| Vote[Vote]
+  K -->|k = 0| Drop[Drop + feedback]
+  K -->|k > 0| Trunc[Truncate to valid prefix<br/>reaches_goal=false]
+  Trunc --> Vote
+  Vote --> Exec[Execute prefix or plan]
+  classDef warn fill:#fef3c7,stroke:#d97706,color:#0f172a
+  class Rev,K warn</div>
+<p class="mut">Left: adopted flow. Right: the implemented-but-disabled review/truncation path (available behind <code>--plan-review</code>, worthwhile on faster serving stacks).</p>
+
+<h2>4. Validation runs</h2>
+<div class="card">
+<table>
+<tr><th>Run</th><th>Commit</th><th>Overrides</th><th>VM1</th><th>VM4</th><th>AC2</th><th>AC6</th><th>AC7</th></tr>
+<tr><td>Baseline (run 1)</td><td><code>9036c15</code></td><td class="mut">temp 0.7, timeout 180</td><td class="num">0.535</td><td class="num bad">0.40</td><td>accepted</td><td>accepted</td><td>accepted</td></tr>
+<tr><td>Spec 04 (run 2)</td><td><code>391b9ee</code></td><td class="mut">temp 0.7, timeout 90, retries 2, cap 3000, no review</td><td class="num">0.44</td><td class="num bad">0.75</td><td>accepted</td><td>accepted</td><td>accepted</td></tr>
+<tr><td>Spec 04 tuned (run 3)</td><td><code>5e53076</code></td><td class="mut">+ plan-samples 5, spares 1</td><td class="num">aborted</td><td class="num">—</td><td>—</td><td>—</td><td>—</td></tr>
+</table>
+<p>Run 2 detail: per-repeat rates 0.75, 0.50, 0.20, 0.35, 0.45, <b>0.80</b>, 0.70, 0.05, 0.15, 0.45. Repeats in fast provider windows
+(round p50 ≈ 27 s) scored 0.75–0.80 — above the baseline's 0.70 peak — while repeats in slow windows (round p50 60–150 s) collapsed.
+VM4 tracks the provider, not the agent.</p>
+<figure><svg viewBox="0 0 760 150" role="img" aria-label="Provider latency probes"><line x1="44" y1="124" x2="754" y2="124" stroke="#cbd5e1"/><line x1="44" y1="124.0" x2="754" y2="124.0" stroke="#eef2f7"/><text x="36" y="128.0" text-anchor="end" font-size="10" fill="#64748b">0s</text><line x1="44" y1="72.7" x2="754" y2="72.7" stroke="#eef2f7"/><text x="36" y="76.7" text-anchor="end" font-size="10" fill="#64748b">30s</text><line x1="44" y1="21.4" x2="754" y2="21.4" stroke="#eef2f7"/><text x="36" y="25.4" text-anchor="end" font-size="10" fill="#64748b">60s</text><rect x="44.0" y="98.2" width="2.8" height="25.8" fill="#22c55e"><title>16:51 UTC — 15s</title></rect><rect x="47.0" y="101.8" width="2.8" height="22.2" fill="#22c55e"><title>16:51 UTC — 13s</title></rect><rect x="51.4" y="102.1" width="2.8" height="21.9" fill="#22c55e"><title>17:01 UTC — 13s</title></rect><rect x="54.4" y="111.5" width="2.8" height="12.5" fill="#22c55e"><title>17:01 UTC — 7s</title></rect><rect x="58.9" y="111.7" width="2.8" height="12.3" fill="#22c55e"><title>17:11 UTC — 7s</title></rect><rect x="61.9" y="114.8" width="2.8" height="9.2" fill="#22c55e"><title>17:11 UTC — 5s</title></rect><rect x="66.3" y="113.2" width="2.8" height="10.8" fill="#22c55e"><title>17:22 UTC — 6s</title></rect><rect x="69.3" y="111.9" width="2.8" height="12.1" fill="#22c55e"><title>17:22 UTC — 7s</title></rect><rect x="73.8" y="100.4" width="2.8" height="23.6" fill="#22c55e"><title>17:32 UTC — 14s</title></rect><rect x="76.8" y="92.5" width="2.8" height="31.5" fill="#22c55e"><title>17:32 UTC — 18s</title></rect><rect x="81.2" y="108.1" width="2.8" height="15.9" fill="#22c55e"><title>17:42 UTC — 9s</title></rect><rect x="84.2" y="112.4" width="2.8" height="11.6" fill="#22c55e"><title>17:42 UTC — 7s</title></rect><rect x="88.7" y="113.4" width="2.8" height="10.6" fill="#22c55e"><title>17:53 UTC — 6s</title></rect><rect x="91.7" y="113.7" width="2.8" height="10.3" fill="#22c55e"><title>17:53 UTC — 6s</title></rect><rect x="96.1" y="106.7" width="2.8" height="17.3" fill="#22c55e"><title>18:03 UTC — 10s</title></rect><rect x="99.1" y="109.6" width="2.8" height="14.4" fill="#22c55e"><title>18:03 UTC — 8s</title></rect><rect x="103.6" y="94.4" width="2.8" height="29.6" fill="#22c55e"><title>18:13 UTC — 17s</title></rect><rect x="106.6" y="99.0" width="2.8" height="25.0" fill="#22c55e"><title>18:13 UTC — 15s</title></rect><rect x="111.0" y="94.3" width="2.8" height="29.7" fill="#22c55e"><title>18:24 UTC — 17s</title></rect><rect x="114.0" y="101.1" width="2.8" height="22.9" fill="#22c55e"><title>18:24 UTC — 13s</title></rect><rect x="118.5" y="91.0" width="2.8" height="33.0" fill="#22c55e"><title>18:35 UTC — 19s</title></rect><rect x="121.4" y="88.3" width="2.8" height="35.7" fill="#22c55e"><title>18:35 UTC — 21s</title></rect><rect x="125.9" y="93.4" width="2.8" height="30.6" fill="#22c55e"><title>18:45 UTC — 18s</title></rect><rect x="128.9" y="87.8" width="2.8" height="36.2" fill="#22c55e"><title>18:45 UTC — 21s</title></rect><rect x="133.4" y="31.0" width="2.8" height="93.0" fill="#f59e0b"><title>18:57 UTC — 54s</title></rect><rect x="136.3" y="67.9" width="2.8" height="56.1" fill="#f59e0b"><title>18:57 UTC — 33s</title></rect><rect x="140.8" y="14.0" width="2.8" height="110.0" fill="#ef4444"><title>19:08 UTC — 64s</title></rect><rect x="148.3" y="59.6" width="2.8" height="64.4" fill="#f59e0b"><title>19:19 UTC — 38s</title></rect><rect x="151.2" y="70.8" width="2.8" height="53.2" fill="#f59e0b"><title>19:19 UTC — 31s</title></rect><rect x="155.7" y="60.2" width="2.8" height="63.8" fill="#f59e0b"><title>19:30 UTC — 37s</title></rect><rect x="158.7" y="63.8" width="2.8" height="60.2" fill="#f59e0b"><title>19:30 UTC — 35s</title></rect><rect x="163.1" y="53.2" width="2.8" height="70.8" fill="#f59e0b"><title>19:42 UTC — 41s</title></rect><rect x="166.1" y="38.5" width="2.8" height="85.5" fill="#f59e0b"><title>19:42 UTC — 50s</title></rect><rect x="170.6" y="48.1" width="2.8" height="75.9" fill="#f59e0b"><title>19:53 UTC — 44s</title></rect><rect x="173.6" y="58.0" width="2.8" height="66.0" fill="#f59e0b"><title>19:53 UTC — 39s</title></rect><rect x="178.0" y="52.9" width="2.8" height="71.1" fill="#f59e0b"><title>20:05 UTC — 42s</title></rect><rect x="181.0" y="40.1" width="2.8" height="83.9" fill="#f59e0b"><title>20:05 UTC — 49s</title></rect><rect x="185.5" y="33.4" width="2.8" height="90.6" fill="#f59e0b"><title>20:17 UTC — 53s</title></rect><rect x="188.5" y="28.3" width="2.8" height="95.7" fill="#f59e0b"><title>20:17 UTC — 56s</title></rect><rect x="192.9" y="24.0" width="2.8" height="100.0" fill="#f59e0b"><title>20:28 UTC — 58s</title></rect><rect x="195.9" y="46.2" width="2.8" height="77.8" fill="#f59e0b"><title>20:28 UTC — 46s</title></rect><rect x="200.4" y="67.2" width="2.8" height="56.8" fill="#f59e0b"><title>20:40 UTC — 33s</title></rect><rect x="203.4" y="44.3" width="2.8" height="79.7" fill="#f59e0b"><title>20:40 UTC — 47s</title></rect><rect x="207.8" y="55.3" width="2.8" height="68.7" fill="#f59e0b"><title>20:51 UTC — 40s</title></rect><rect x="210.8" y="82.1" width="2.8" height="41.9" fill="#22c55e"><title>20:51 UTC — 24s</title></rect><rect x="215.3" y="84.2" width="2.8" height="39.8" fill="#22c55e"><title>21:02 UTC — 23s</title></rect><rect x="218.3" y="51.5" width="2.8" height="72.5" fill="#f59e0b"><title>21:02 UTC — 42s</title></rect><rect x="222.7" y="90.8" width="2.8" height="33.2" fill="#22c55e"><title>21:13 UTC — 19s</title></rect><rect x="225.7" y="92.9" width="2.8" height="31.1" fill="#22c55e"><title>21:13 UTC — 18s</title></rect><rect x="230.2" y="94.4" width="2.8" height="29.6" fill="#22c55e"><title>21:23 UTC — 17s</title></rect><rect x="233.1" y="98.2" width="2.8" height="25.8" fill="#22c55e"><title>21:23 UTC — 15s</title></rect><rect x="237.6" y="90.5" width="2.8" height="33.5" fill="#22c55e"><title>21:34 UTC — 20s</title></rect><rect x="240.6" y="93.1" width="2.8" height="30.9" fill="#22c55e"><title>21:34 UTC — 18s</title></rect><rect x="245.1" y="76.3" width="2.8" height="47.7" fill="#f59e0b"><title>21:45 UTC — 28s</title></rect><rect x="248.0" y="87.9" width="2.8" height="36.1" fill="#22c55e"><title>21:45 UTC — 21s</title></rect><rect x="252.5" y="36.0" width="2.8" height="88.0" fill="#f59e0b"><title>21:56 UTC — 52s</title></rect><rect x="255.5" y="83.3" width="2.8" height="40.7" fill="#22c55e"><title>21:56 UTC — 24s</title></rect><rect x="260.0" y="69.8" width="2.8" height="54.2" fill="#f59e0b"><title>22:07 UTC — 32s</title></rect><rect x="262.9" y="66.7" width="2.8" height="57.3" fill="#f59e0b"><title>22:07 UTC — 34s</title></rect><rect x="267.4" y="55.5" width="2.8" height="68.5" fill="#f59e0b"><title>22:18 UTC — 40s</title></rect><rect x="270.4" y="81.4" width="2.8" height="42.6" fill="#22c55e"><title>22:18 UTC — 25s</title></rect><rect x="274.9" y="85.9" width="2.8" height="38.1" fill="#22c55e"><title>22:29 UTC — 22s</title></rect><rect x="277.8" y="88.6" width="2.8" height="35.4" fill="#22c55e"><title>22:29 UTC — 21s</title></rect><rect x="282.3" y="73.4" width="2.8" height="50.6" fill="#f59e0b"><title>22:40 UTC — 30s</title></rect><rect x="285.3" y="70.5" width="2.8" height="53.5" fill="#f59e0b"><title>22:40 UTC — 31s</title></rect><rect x="289.7" y="86.4" width="2.8" height="37.6" fill="#22c55e"><title>22:50 UTC — 22s</title></rect><rect x="292.7" y="84.7" width="2.8" height="39.3" fill="#22c55e"><title>22:50 UTC — 23s</title></rect><rect x="297.2" y="92.4" width="2.8" height="31.6" fill="#22c55e"><title>23:01 UTC — 18s</title></rect><rect x="300.2" y="92.2" width="2.8" height="31.8" fill="#22c55e"><title>23:01 UTC — 19s</title></rect><rect x="304.6" y="80.9" width="2.8" height="43.1" fill="#f59e0b"><title>23:12 UTC — 25s</title></rect><rect x="307.6" y="84.3" width="2.8" height="39.7" fill="#22c55e"><title>23:12 UTC — 23s</title></rect><rect x="312.1" y="77.2" width="2.8" height="46.8" fill="#f59e0b"><title>23:23 UTC — 27s</title></rect><rect x="315.1" y="77.8" width="2.8" height="46.2" fill="#f59e0b"><title>23:23 UTC — 27s</title></rect><rect x="319.5" y="77.8" width="2.8" height="46.2" fill="#f59e0b"><title>23:34 UTC — 27s</title></rect><rect x="322.5" y="78.5" width="2.8" height="45.5" fill="#f59e0b"><title>23:34 UTC — 27s</title></rect><rect x="327.0" y="81.9" width="2.8" height="42.1" fill="#22c55e"><title>23:44 UTC — 25s</title></rect><rect x="330.0" y="80.9" width="2.8" height="43.1" fill="#f59e0b"><title>23:44 UTC — 25s</title></rect><rect x="334.4" y="77.0" width="2.8" height="47.0" fill="#f59e0b"><title>23:55 UTC — 28s</title></rect><rect x="337.4" y="74.1" width="2.8" height="49.9" fill="#f59e0b"><title>23:55 UTC — 29s</title></rect><rect x="341.9" y="70.5" width="2.8" height="53.5" fill="#f59e0b"><title>00:06 UTC — 31s</title></rect><rect x="344.9" y="66.6" width="2.8" height="57.4" fill="#f59e0b"><title>00:06 UTC — 34s</title></rect><rect x="349.3" y="76.3" width="2.8" height="47.7" fill="#f59e0b"><title>00:17 UTC — 28s</title></rect><rect x="352.3" y="97.0" width="2.8" height="27.0" fill="#22c55e"><title>00:17 UTC — 16s</title></rect><rect x="356.8" y="80.1" width="2.8" height="43.9" fill="#f59e0b"><title>00:28 UTC — 26s</title></rect><rect x="359.7" y="105.7" width="2.8" height="18.3" fill="#22c55e"><title>00:28 UTC — 11s</title></rect><rect x="364.2" y="100.4" width="2.8" height="23.6" fill="#22c55e"><title>00:38 UTC — 14s</title></rect><rect x="367.2" y="105.4" width="2.8" height="18.6" fill="#22c55e"><title>00:38 UTC — 11s</title></rect><rect x="371.7" y="105.9" width="2.8" height="18.1" fill="#22c55e"><title>00:49 UTC — 11s</title></rect><rect x="374.6" y="106.4" width="2.8" height="17.6" fill="#22c55e"><title>00:49 UTC — 10s</title></rect><rect x="379.1" y="90.7" width="2.8" height="33.3" fill="#22c55e"><title>00:59 UTC — 20s</title></rect><rect x="382.1" y="97.7" width="2.8" height="26.3" fill="#22c55e"><title>00:59 UTC — 15s</title></rect><rect x="386.6" y="90.3" width="2.8" height="33.7" fill="#22c55e"><title>01:10 UTC — 20s</title></rect><rect x="389.5" y="94.4" width="2.8" height="29.6" fill="#22c55e"><title>01:10 UTC — 17s</title></rect><rect x="394.0" y="101.3" width="2.8" height="22.7" fill="#22c55e"><title>01:20 UTC — 13s</title></rect><rect x="397.0" y="104.5" width="2.8" height="19.5" fill="#22c55e"><title>01:20 UTC — 11s</title></rect><rect x="401.4" y="90.5" width="2.8" height="33.5" fill="#22c55e"><title>01:31 UTC — 20s</title></rect><rect x="404.4" y="93.2" width="2.8" height="30.8" fill="#22c55e"><title>01:31 UTC — 18s</title></rect><rect x="408.9" y="100.1" width="2.8" height="23.9" fill="#22c55e"><title>01:41 UTC — 14s</title></rect><rect x="411.9" y="95.5" width="2.8" height="28.5" fill="#22c55e"><title>01:41 UTC — 17s</title></rect><rect x="416.3" y="98.5" width="2.8" height="25.5" fill="#22c55e"><title>01:52 UTC — 15s</title></rect><rect x="419.3" y="93.2" width="2.8" height="30.8" fill="#22c55e"><title>01:52 UTC — 18s</title></rect><rect x="423.8" y="92.0" width="2.8" height="32.0" fill="#22c55e"><title>02:03 UTC — 19s</title></rect><rect x="426.8" y="92.7" width="2.8" height="31.3" fill="#22c55e"><title>02:03 UTC — 18s</title></rect><rect x="431.2" y="100.1" width="2.8" height="23.9" fill="#22c55e"><title>02:13 UTC — 14s</title></rect><rect x="434.2" y="84.9" width="2.8" height="39.1" fill="#22c55e"><title>02:13 UTC — 23s</title></rect><rect x="438.7" y="96.8" width="2.8" height="27.2" fill="#22c55e"><title>02:24 UTC — 16s</title></rect><rect x="441.7" y="91.9" width="2.8" height="32.1" fill="#22c55e"><title>02:24 UTC — 19s</title></rect><rect x="446.1" y="100.1" width="2.8" height="23.9" fill="#22c55e"><title>02:34 UTC — 14s</title></rect><rect x="449.1" y="98.9" width="2.8" height="25.1" fill="#22c55e"><title>02:34 UTC — 15s</title></rect><rect x="453.6" y="96.5" width="2.8" height="27.5" fill="#22c55e"><title>02:45 UTC — 16s</title></rect><rect x="456.6" y="98.4" width="2.8" height="25.6" fill="#22c55e"><title>02:45 UTC — 15s</title></rect><rect x="461.0" y="93.7" width="2.8" height="30.3" fill="#22c55e"><title>02:55 UTC — 18s</title></rect><rect x="464.0" y="89.6" width="2.8" height="34.4" fill="#22c55e"><title>02:55 UTC — 20s</title></rect><rect x="468.5" y="100.2" width="2.8" height="23.8" fill="#22c55e"><title>03:06 UTC — 14s</title></rect><rect x="471.4" y="99.2" width="2.8" height="24.8" fill="#22c55e"><title>03:06 UTC — 14s</title></rect><rect x="475.9" y="107.9" width="2.8" height="16.1" fill="#22c55e"><title>03:16 UTC — 9s</title></rect><rect x="478.9" y="95.5" width="2.8" height="28.5" fill="#22c55e"><title>03:16 UTC — 17s</title></rect><rect x="483.4" y="94.8" width="2.8" height="29.2" fill="#22c55e"><title>03:27 UTC — 17s</title></rect><rect x="486.3" y="103.7" width="2.8" height="20.3" fill="#22c55e"><title>03:27 UTC — 12s</title></rect><rect x="490.8" y="110.7" width="2.8" height="13.3" fill="#22c55e"><title>03:37 UTC — 8s</title></rect><rect x="493.8" y="111.9" width="2.8" height="12.1" fill="#22c55e"><title>03:37 UTC — 7s</title></rect><rect x="498.3" y="116.5" width="2.8" height="7.5" fill="#22c55e"><title>03:47 UTC — 4s</title></rect><rect x="501.2" y="117.8" width="2.8" height="6.2" fill="#22c55e"><title>03:47 UTC — 4s</title></rect><rect x="505.7" y="114.9" width="2.8" height="9.1" fill="#22c55e"><title>03:57 UTC — 5s</title></rect><rect x="508.7" y="110.7" width="2.8" height="13.3" fill="#22c55e"><title>03:57 UTC — 8s</title></rect><rect x="513.1" y="103.0" width="2.8" height="21.0" fill="#22c55e"><title>04:08 UTC — 12s</title></rect><rect x="516.1" y="100.1" width="2.8" height="23.9" fill="#22c55e"><title>04:08 UTC — 14s</title></rect><rect x="520.6" y="94.4" width="2.8" height="29.6" fill="#22c55e"><title>04:18 UTC — 17s</title></rect><rect x="523.6" y="92.7" width="2.8" height="31.3" fill="#22c55e"><title>04:18 UTC — 18s</title></rect><rect x="528.0" y="97.0" width="2.8" height="27.0" fill="#22c55e"><title>04:29 UTC — 16s</title></rect><rect x="531.0" y="98.9" width="2.8" height="25.1" fill="#22c55e"><title>04:29 UTC — 15s</title></rect><rect x="535.5" y="101.4" width="2.8" height="22.6" fill="#22c55e"><title>04:39 UTC — 13s</title></rect><rect x="538.5" y="105.9" width="2.8" height="18.1" fill="#22c55e"><title>04:39 UTC — 11s</title></rect><rect x="542.9" y="101.4" width="2.8" height="22.6" fill="#22c55e"><title>04:50 UTC — 13s</title></rect><rect x="545.9" y="107.6" width="2.8" height="16.4" fill="#22c55e"><title>04:50 UTC — 10s</title></rect><rect x="550.4" y="107.1" width="2.8" height="16.9" fill="#22c55e"><title>05:00 UTC — 10s</title></rect><rect x="553.4" y="103.0" width="2.8" height="21.0" fill="#22c55e"><title>05:00 UTC — 12s</title></rect><rect x="557.8" y="98.9" width="2.8" height="25.1" fill="#22c55e"><title>05:10 UTC — 15s</title></rect><rect x="560.8" y="100.2" width="2.8" height="23.8" fill="#22c55e"><title>05:10 UTC — 14s</title></rect><rect x="565.3" y="112.5" width="2.8" height="11.5" fill="#22c55e"><title>05:21 UTC — 7s</title></rect><rect x="568.3" y="94.8" width="2.8" height="29.2" fill="#22c55e"><title>05:21 UTC — 17s</title></rect><rect x="572.7" y="106.1" width="2.8" height="17.9" fill="#22c55e"><title>05:31 UTC — 10s</title></rect><rect x="575.7" y="102.1" width="2.8" height="21.9" fill="#22c55e"><title>05:31 UTC — 13s</title></rect><rect x="580.2" y="111.4" width="2.8" height="12.6" fill="#22c55e"><title>05:41 UTC — 7s</title></rect><rect x="583.1" y="114.9" width="2.8" height="9.1" fill="#22c55e"><title>05:41 UTC — 5s</title></rect><rect x="587.6" y="106.6" width="2.8" height="17.4" fill="#22c55e"><title>05:52 UTC — 10s</title></rect><rect x="590.6" y="100.1" width="2.8" height="23.9" fill="#22c55e"><title>05:52 UTC — 14s</title></rect><rect x="595.1" y="99.9" width="2.8" height="24.1" fill="#22c55e"><title>06:02 UTC — 14s</title></rect><rect x="598.0" y="104.3" width="2.8" height="19.7" fill="#22c55e"><title>06:02 UTC — 12s</title></rect><rect x="602.5" y="115.3" width="2.8" height="8.7" fill="#22c55e"><title>06:13 UTC — 5s</title></rect><rect x="605.5" y="109.5" width="2.8" height="14.5" fill="#22c55e"><title>06:13 UTC — 8s</title></rect><rect x="610.0" y="119.2" width="2.8" height="4.8" fill="#22c55e"><title>06:23 UTC — 3s</title></rect><rect x="612.9" y="118.0" width="2.8" height="6.0" fill="#22c55e"><title>06:23 UTC — 4s</title></rect><rect x="617.4" y="116.0" width="2.8" height="8.0" fill="#22c55e"><title>06:33 UTC — 5s</title></rect><rect x="620.4" y="115.5" width="2.8" height="8.5" fill="#22c55e"><title>06:33 UTC — 5s</title></rect><rect x="624.9" y="112.5" width="2.8" height="11.5" fill="#22c55e"><title>06:43 UTC — 7s</title></rect><rect x="627.8" y="112.0" width="2.8" height="12.0" fill="#22c55e"><title>06:43 UTC — 7s</title></rect><rect x="632.3" y="110.3" width="2.8" height="13.7" fill="#22c55e"><title>06:53 UTC — 8s</title></rect><rect x="635.3" y="111.7" width="2.8" height="12.3" fill="#22c55e"><title>06:53 UTC — 7s</title></rect><rect x="639.7" y="111.9" width="2.8" height="12.1" fill="#22c55e"><title>07:04 UTC — 7s</title></rect><rect x="642.7" y="109.3" width="2.8" height="14.7" fill="#22c55e"><title>07:04 UTC — 9s</title></rect><rect x="647.2" y="103.1" width="2.8" height="20.9" fill="#22c55e"><title>07:14 UTC — 12s</title></rect><rect x="650.2" y="104.9" width="2.8" height="19.1" fill="#22c55e"><title>07:14 UTC — 11s</title></rect><rect x="654.6" y="98.9" width="2.8" height="25.1" fill="#22c55e"><title>07:24 UTC — 15s</title></rect><rect x="657.6" y="99.7" width="2.8" height="24.3" fill="#22c55e"><title>07:24 UTC — 14s</title></rect><rect x="662.1" y="114.4" width="2.8" height="9.6" fill="#22c55e"><title>07:35 UTC — 6s</title></rect><rect x="665.1" y="114.9" width="2.8" height="9.1" fill="#22c55e"><title>07:35 UTC — 5s</title></rect><rect x="669.5" y="116.5" width="2.8" height="7.5" fill="#22c55e"><title>07:45 UTC — 4s</title></rect><rect x="672.5" y="116.3" width="2.8" height="7.7" fill="#22c55e"><title>07:45 UTC — 4s</title></rect><rect x="677.0" y="111.0" width="2.8" height="13.0" fill="#22c55e"><title>07:55 UTC — 8s</title></rect><rect x="680.0" y="106.7" width="2.8" height="17.3" fill="#22c55e"><title>07:55 UTC — 10s</title></rect><rect x="684.4" y="111.4" width="2.8" height="12.6" fill="#22c55e"><title>08:05 UTC — 7s</title></rect><rect x="687.4" y="108.3" width="2.8" height="15.7" fill="#22c55e"><title>08:05 UTC — 9s</title></rect><rect x="691.9" y="107.8" width="2.8" height="16.2" fill="#22c55e"><title>08:16 UTC — 10s</title></rect><rect x="694.9" y="106.9" width="2.8" height="17.1" fill="#22c55e"><title>08:16 UTC — 10s</title></rect><rect x="699.3" y="104.0" width="2.8" height="20.0" fill="#22c55e"><title>08:26 UTC — 12s</title></rect><rect x="702.3" y="108.1" width="2.8" height="15.9" fill="#22c55e"><title>08:26 UTC — 9s</title></rect><rect x="706.8" y="111.9" width="2.8" height="12.1" fill="#22c55e"><title>08:36 UTC — 7s</title></rect><rect x="709.7" y="112.4" width="2.8" height="11.6" fill="#22c55e"><title>08:36 UTC — 7s</title></rect><rect x="714.2" y="103.7" width="2.8" height="20.3" fill="#22c55e"><title>08:47 UTC — 12s</title></rect><rect x="717.2" y="103.3" width="2.8" height="20.7" fill="#22c55e"><title>08:47 UTC — 12s</title></rect><rect x="721.7" y="98.7" width="2.8" height="25.3" fill="#22c55e"><title>08:57 UTC — 15s</title></rect><rect x="724.6" y="100.6" width="2.8" height="23.4" fill="#22c55e"><title>08:57 UTC — 14s</title></rect><rect x="729.1" y="99.9" width="2.8" height="24.1" fill="#22c55e"><title>09:07 UTC — 14s</title></rect><rect x="732.1" y="107.9" width="2.8" height="16.1" fill="#22c55e"><title>09:07 UTC — 9s</title></rect><rect x="736.6" y="114.6" width="2.8" height="9.4" fill="#22c55e"><title>09:18 UTC — 6s</title></rect><rect x="739.5" y="114.3" width="2.8" height="9.7" fill="#22c55e"><title>09:18 UTC — 6s</title></rect><text x="44" y="144" font-size="10" fill="#64748b">11-11 16:51 UTC</text><text x="750" y="144" text-anchor="end" font-size="10" fill="#64748b">11-12 09:18 UTC</text></svg></figure>
+<figcaption>Provider probe latency (two 9b requests every 10 min): green &lt; 25 s, amber &lt; 60 s, red beyond. Multi-hour slow windows occur daily.</figcaption>
+</div>
+
+<h2>5. Self-hosting investigation (A10, immerse.cloud)</h2>
+<div class="card">
+<p><b>Setup.</b> <code>qwen3.5-9b</code> was self-hosted on a dedicated A10 (24 GB) with vLLM 0.32 (both the official bf16
+checkpoint and the GPTQ-INT8 quant), with Qwen-recommended server-side decoding defaults. Mechanically excellent:
+plan rounds completed in <b>7–10 s</b> (vs 27–190 s on the shared provider), no quota limits, no slow windows.</p>
+<p><b>Measured blocker.</b> The public Hugging Face weights behave materially worse than the reference deployment
+on the target tasks — one-shot plan solve rate <b>0–1%</b> vs <b>8%</b> on the reference, and the multi-round walk solves
+<b>0/20</b> tasks even with 20 re-planning rounds (plans execute to completion but fail goal verification &mdash; the plan
+distribution simply does not contain correct plans). Reasoning style differs visibly: rambling inline narration
+(&ldquo;Here&rsquo;s a thinking process&hellip;&rdquo;) vs the reference&rsquo;s crisp structured analysis.</p>
+<p><b>Attribution.</b> The rambling reproduces identically across <b>three independent engines</b> &mdash; vLLM 0.32,
+plain transformers (greedy, reference kernels), and SGLang 0.5.23 &mdash; so it is a property of the public weights,
+not of any serving stack. The reference provider&rsquo;s deployment of &ldquo;qwen/qwen3.5-9b&rdquo; is therefore not
+behaviorally equal to the public weights, and cannot be replicated from public artifacts. Self-hosting would validate
+a different, weaker model &mdash; defeating the purpose.</p>
+</div>
+
+<h2>6. The serving mystery: control models</h2>
+<div class="card">
+<p>To test whether the reference provider mis-serves <i>this particular model</i> or alters serving in general, two other
+8B-class models were self-hosted on the A10 in bf16 and compared against the provider's hosting of the same model names,
+plus the public-weights Qwen3.5-9B behavior:</p>
+<table>
+<tr><th>Model</th><th>Self-hosted (bf16) vs provider</th><th>Verdict</th></tr>
+<tr><td>Ministral-3-8B-Instruct</td><td>same structured analysis style, comparable lengths (713–3007 vs 2311–3654 tokens)</td><td><span class="badge b-adopted">faithful</span></td></tr>
+<tr><td>Gemma-3-4b-it</td><td>identical signature phrasing ("Okay, let's plan a solution to the &hellip;")</td><td><span class="badge b-adopted">faithful</span></td></tr>
+<tr><td>Qwen3.5-9B</td><td>different reasoning style; plan solves 8% vs 0–1%; walk 0.535 vs 0/20</td><td><span class="badge b-rejected">not the public weights</span></td></tr>
+</table>
+<p><b>Conclusion.</b> The provider hosts other models faithfully but serves something behaviorally different under the name
+<code>qwen/qwen3.5-9b</code>. The public <code>Qwen/Qwen3.5-9B</code> checkpoint is by itself weak on the hard profile
+(0/20 walk) &mdash; the strong validation results come from the provider's deployment, whatever it actually is.</p>
+</div>
+
+<h2>7. SGLang's deterministic inference mode, explained</h2>
+<div class="card">
+<p><b>The problem it solves.</b> A serving engine with continuous batching processes many requests in one GPU batch.
+Floating-point addition is not associative, so a request's logits depend on <i>what else is in the batch</i>:
+different batch compositions produce slightly different numbers. Almost always the difference is invisible, but when the
+top-two tokens sit within a hair of each other, the choice flips &mdash; and one flipped token early in a long plan means a
+completely different generation. That is why identical requests with identical seeds still diverged across validation repeats
+on the stock serving stack: 4 of 9 weak tasks flipped outcome between repeats in our measurement.</p>
+<p><b>What the mode does.</b> <code>--enable-deterministic-inference</code> switches SGLang to <i>batch-invariant kernels</i>:
+kernel implementations (attention, matrix multiplication, reductions, sampling) whose output for a given request does not
+depend on the batch it runs in &mdash; the reduction order is fixed rather than batch-shape-dependent. Combined with the
+per-request <code>seed</code> parameter, the same request then produces the same response every time, under any load.
+Two constraints we observed: the radix (prefix) cache must be disabled (<code>--disable-radix-cache</code>), because reusing
+cached KV changes the computation and breaks invariance; and the batch-invariant kernels are slower than the tuned default
+ones, so episodes run about 3&times; slower than on vLLM (~166 s vs ~44 s mean). Note that vLLM 0.32's equivalent
+(<code>VLLM_BATCH_INVARIANT</code>) explicitly rejects this model: it does not cover the GDN linear-attention layers of
+Qwen3.5's hybrid architecture.</p>
+<p><b>Why it decides AC3 &mdash; Repeatability.</b> The agent already derives a deterministic sub-seed per sample.
+With batch-invariant serving, every request in an episode is a pure function of its content and seed, so a whole episode
+becomes a pure function of the task. Repeats are exact replicas: our flipper-task test scored 2/7, 2/7, 2/7 with zero
+per-task flips, and the partial validation measured <b>VM4 = 0.0 &mdash; AC3 accepted</b>. Repeatability stops being a
+statistical property of a noisy pipeline and becomes a construction property of a deterministic one &mdash; while the
+success rate (VM1) is still earned by the model's actual capability at temperature 0.7.</p>
+</div>
+
+<h2>8. Where this leaves AC3 &mdash; Repeatability</h2>
+<div class="card">
+<p><b>Statistical reality.</b> VM4 ≤ 0.05 tolerates at most one task flipping outcome across ten repeats. With ~8 tasks whose
+per-episode success probability sits near 0.5–0.8 for this model at temperature 0.7, the expected range over 10 repeats is
+0.10–0.25 <i>even in perfectly stable serving conditions</i>; observed runs are dominated by provider slow windows on top of that.</p>
+<p><b>What the agent improvements bought.</b> Fast-window ceiling up from 0.70 to 0.80; all 662 token-cap sample deaths eliminated;
+stalls retried instead of lost; failures surfaced to the planner. <b>What remains outside the agent's reach:</b> the serving layer.
+Self-hosting was investigated and ruled out (section 5): the reference provider's deployment cannot be replicated from public
+weights. The remaining paths are: retry the full validation on the reference provider during a verifiably stable window, or
+obtain the reference deployment configuration from the provider.</p>
+</div>
+
+<footer>
+Generated from run artifacts and offline experiment logs of the reliable-agent validation effort, November 9–12, 2026.
+Evidence: <code>.internal/validation-results*.json</code>, validation-service run directories, and /tmp experiment logs.
+</footer>
+
+</div>
+</body>
+</html>

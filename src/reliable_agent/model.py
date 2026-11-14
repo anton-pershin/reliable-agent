@@ -77,7 +77,10 @@ arguments in the same order. A goal predicate (pred x y) matches only a state li
 the same name and the same arguments in the same order; (pred y x) is a different
 predicate. List in missing_predicates every goal predicate that has no exact match in
 the latest observation. When latest_observation is null, compare the goal with the
-initial state in the task input instead. Set goal_satisfied=true only when
+initial state in the task input instead. For each missing goal predicate, also search
+the latest observation for lines with the same predicate name but different arguments
+and list them in conflicting_predicates: these are the wrong variants currently true
+that the next plan must undo or avoid. Set goal_satisfied=true only when
 missing_predicates is empty. Use only public task information and observations.
 """
 _PLAN_REVIEW_INSTRUCTIONS = """You check candidate plans against public task state.
@@ -91,6 +94,19 @@ first action whose preconditions are not satisfied in the state produced by the 
 actions. Set valid=true and first_invalid_action_index=null only when every action is
 valid in order. Judge only whether the actions are valid in order, never whether the
 plan is clever or complete. Use only public task information and observations.
+"""
+_GOAL_REVIEW_INSTRUCTIONS = """You check whether a candidate plan satisfies the task goal.
+You receive the task (including the available actions with their descriptions and
+argument schemas), the latest public observation, and one candidate plan: an ordered
+list of actions. When latest_observation is null, start from the initial state in the
+task input. The plan is already known to be executable: every action's preconditions
+hold in order. Derive each action's effects from its description and compute the state
+step by step. Then extract every goal predicate from the task input and check that the
+final state contains each one with the same arguments in the same order. Set
+goal_satisfied=true only when every goal predicate holds in the final state, and list
+any missing or different predicates in missing_predicates. Judge only goal satisfaction,
+never whether the plan is clever or short. Use only public task information and
+observations.
 """
 _DECISION_ADAPTER = TypeAdapter(Decision)
 _PLAN_ADAPTER = TypeAdapter(PlanCandidate)
@@ -589,7 +605,78 @@ class PydanticAIModelClient:
             default=str,
         )
 
+    async def goal_reviews(
+        self,
+        state: TaskState,
+        candidates: list[tuple[int, PlanCandidate]],
+        remaining_seconds: float,
+    ) -> dict[int, VerificationResult]:
+        """Check goal satisfaction for each candidate concurrently; skip failures."""
+
+        async def review_one(
+            index: int, candidate: PlanCandidate
+        ) -> tuple[int, VerificationResult]:
+            seed = derive_sub_seed(self.config.random_seed, 2000 + index)
+            base_timeout = min(
+                self.config.model_timeout_seconds,
+                remaining_seconds,
+                self.config.verification_timeout_seconds,
+            )
+            operation_id = f"plan-{state.plan_rounds}-goal-{index + 1}"
+            verdict = await self._call_with_transient_retry(
+                operation_id=operation_id,
+                purpose="goal_review",
+                base_timeout=base_timeout,
+                remaining_seconds=remaining_seconds,
+                call=lambda attempt_timeout: self._structured(
+                    output_type=VerificationResult,
+                    adapter=_VERIFICATION_ADAPTER,
+                    instructions=_GOAL_REVIEW_INSTRUCTIONS,
+                    purpose="goal_review",
+                    format_hint="Return VerificationResult only",
+                    state=state,
+                    remaining_seconds=attempt_timeout,
+                    operation_id=operation_id,
+                    seed=seed,
+                    prompt=self._goal_review_prompt(state, candidate),
+                ),
+            )
+            return index, verdict
+
+        results = await asyncio.gather(
+            *(review_one(index, candidate) for index, candidate in candidates),
+            return_exceptions=True,
+        )
+        verdicts: dict[int, VerificationResult] = {}
+        for (index, _), result in zip(candidates, results, strict=False):
+            if isinstance(result, tuple) and isinstance(result[1], VerificationResult):
+                verdicts[result[0]] = result[1]
+            else:
+                self.logger.log(
+                    "goal_review_error",
+                    level="ERROR",
+                    sample_index=index,
+                    error_message=str(result),
+                )
+        return verdicts
+
     def _plan_review_prompt(self, state: TaskState, candidate: PlanCandidate) -> str:
+        latest_results = None
+        if state.attempts:
+            latest_results = [result.model_dump() for result in state.attempts[-1].results]
+        return json.dumps(
+            {
+                "task": state.task.model_dump(),
+                "latest_observation": latest_results,
+                "candidate_plan": [action.model_dump() for action in candidate.actions],
+                "format": "Return PlanReview only",
+            },
+            ensure_ascii=False,
+            default=str,
+        )
+
+    def _goal_review_prompt(self, state: TaskState, candidate: PlanCandidate) -> str:
+        return self._plan_review_prompt(state, candidate)
         latest_results = None
         if state.attempts:
             latest_results = [result.model_dump() for result in state.attempts[-1].results]

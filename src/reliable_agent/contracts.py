@@ -23,6 +23,7 @@ class AgentConfig(ContractModel):
     plan_max_output_tokens: int = Field(default=0, ge=0)
     plan_horizon: int = Field(default=0, ge=0, le=50)
     plan_review_enabled: bool = True
+    goal_review_enabled: bool = True
     sample_retries: int = Field(default=1, ge=0, le=5)
     verification_samples: int = Field(default=2, ge=1, le=5)
     max_replans: int = Field(default=12, ge=0, le=20)
@@ -136,6 +137,7 @@ class PlanReview(ContractModel):
 class VerificationResult(ContractModel):
     goal_satisfied: StrictBool
     missing_predicates: list[str] = Field(default_factory=list)
+    conflicting_predicates: list[str] = Field(default_factory=list)
     reason: str
 
 

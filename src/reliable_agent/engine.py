@@ -224,6 +224,12 @@ class DecisionEngine:
         feedback = (
             f"Completion verification failed. Missing goal predicates: {missing}. {verdict.reason}"
         )
+        if verdict.conflicting_predicates:
+            conflicting = ", ".join(verdict.conflicting_predicates)
+            feedback += (
+                f" Conflicting predicates currently true instead: {conflicting}."
+                " Undo or avoid them in the next plan."
+            )
         state.replan_cause = "verification_failed"
         self.logger.log("completion_rejected", level="ERROR", feedback=feedback)
         state.validation_feedback.append(feedback)
@@ -395,6 +401,44 @@ class DecisionEngine:
         if not fresh:
             # Every valid candidate failed before in this episode: allow repeats.
             fresh = valid
+        if self._goal_review_active(state):
+            # Candidates that still claim completion are eligible for the goal
+            # check. Truncated prefixes make progress by construction instead.
+            checkable = [
+                (index, candidate)
+                for index, candidate in fresh
+                if candidate.actions and candidate.reaches_goal
+            ]
+            if checkable:
+                remaining = self._remaining(state) - self._reserve(state)
+                review_method = getattr(self.model, "goal_reviews", None)
+                try:
+                    verdicts = await review_method(state, checkable, remaining)
+                except ModelRequestError as exc:
+                    self.logger.log(
+                        "goal_review_error",
+                        level="ERROR",
+                        plan_round=state.plan_rounds,
+                        error_message=str(exc),
+                    )
+                    verdicts = {}
+                goal_ok = [
+                    index
+                    for index, _ in checkable
+                    if verdicts.get(index) and verdicts[index].goal_satisfied
+                ]
+                self.logger.log(
+                    "goal_review",
+                    plan_round=state.plan_rounds,
+                    checked=len(verdicts),
+                    goal_ok=len(goal_ok),
+                )
+                if goal_ok:
+                    # The goal check separates plans that look complete from
+                    # plans that actually complete: vote among the verified few.
+                    fresh = [
+                        (index, candidate) for index, candidate in fresh if index in goal_ok
+                    ]
         winner_index, winner, counts = vote_plans(fresh)
         self.logger.log(
             "plan_vote",
@@ -522,6 +566,12 @@ class DecisionEngine:
         return (
             state.config.plan_review_enabled
             and getattr(self.model, "review_plans", None) is not None
+        )
+
+    def _goal_review_active(self, state: TaskState) -> bool:
+        return (
+            state.config.goal_review_enabled
+            and getattr(self.model, "goal_reviews", None) is not None
         )
 
     def _stop_guard_active(self, state: TaskState) -> bool:

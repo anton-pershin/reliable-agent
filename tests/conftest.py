@@ -34,15 +34,19 @@ class FakeClock:
 
 
 class ScriptedModel:
-    def __init__(self, decisions, plans=None, verifications=None, reviews=None) -> None:
+    def __init__(
+        self, decisions, plans=None, verifications=None, reviews=None, goal_reviews=None
+    ) -> None:
         self.decisions = list(decisions)
         self.plans = list(plans or [])
         self.verifications = list(verifications or [])
         self.reviews = list(reviews or [])
+        self.goal_review_results = list(goal_reviews or [])
         self.calls = []
         self.plan_calls = []
         self.verify_calls = []
         self.review_calls = []
+        self.goal_review_calls = []
 
     async def decide(self, state, remaining_seconds):
         self.calls.append(
@@ -85,6 +89,18 @@ class ScriptedModel:
                 raise scripted
             return scripted
         return {index: PlanReview(valid=True) for index, _ in candidates}
+
+    async def goal_reviews(self, state, candidates, remaining_seconds):
+        self.goal_review_calls.append([index for index, _ in candidates])
+        if self.goal_review_results:
+            scripted = self.goal_review_results.pop(0)
+            if isinstance(scripted, Exception):
+                raise scripted
+            return scripted
+        return {
+            index: VerificationResult(goal_satisfied=True, reason="scripted default")
+            for index, _ in candidates
+        }
 
     async def verify(self, state, remaining_seconds):
         self.verify_calls.append({"attempts": len(state.attempts)})
