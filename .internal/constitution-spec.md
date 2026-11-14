@@ -57,6 +57,7 @@ Manual.
   - Retries, recovery steps, cancellations, timeouts, output parsing or schema failures, repairs, budget use, and termination reasons. Preserve failed and interrupted attempts, not only successful ones.
   - Completion declarations, final answers, confidence, likely incorrect flags, and their reasons. Distinguish the agent's completion claim from any externally established task outcome.
   - Links to retained artifacts and explicit indications of unavailable, omitted, truncated, redacted, or lost log data.
+- **P11. Default sampling settings.** Use default sampling for LLMs as defined by the serving engine, provider or the model creator recommendation. If not found, use temperature 0.7, top_p 0.95, top_k 20. Do not restrict sampling in any other way. More specifically, do not fix the seed.
 
   Logging detail, destinations, and retention should be configurable. Redact credentials and protect sensitive task content before persistence or export. Logs are diagnostic evidence supplied by the solution, not independently verified validation metrics; they should not require a model gateway or changes to the validation boundary.
 
