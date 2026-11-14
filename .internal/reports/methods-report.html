@@ -268,6 +268,34 @@ weights. The remaining paths are: retry the full validation on the reference pro
 obtain the reference deployment configuration from the provider.</p>
 </div>
 
+<h2>8. The deterministic-serving finding (rejected)</h2>
+<div class="card">
+<p>SGLang's deterministic inference mode makes episodes exact replicas across repeats
+(measured VM4 = 0.0 on the partial validation; see section 7). <b>Rejected</b>: fixing the seed is an artificial
+sampling restriction (constitution preference P11 forbids it), and the batch-invariant kernels cost ~3&times; episode
+time. The finding stays in this report because it isolates the variance mechanism perfectly: with engine nondeterminism
+removed, all remaining repeat variance is genuine sampling noise.</p>
+</div>
+
+<h2>9. Free-sampling repeatability attempts (post-P11)</h2>
+<div class="card">
+<p>With P11 in force (default sampling, no fixed seeds), per-task outcomes are stochastic, so AC3 needs per-task
+success probabilities saturated near 0 or 1 for ~19 of 20 tasks. Measured attempts on the self-hosted model,
+default profile's nine weak tasks (3 repeats each):</p>
+<table>
+<tr><th>Variant</th><th>Repeat scores</th><th>Note</th></tr>
+<tr><td>5+1 samples, no review (reference)</td><td class="num">0.56 / 0.33 / 0.33</td><td>best</td></tr>
+<tr><td>8+2 samples</td><td class="num">0.44 / 0.33 / 0.22</td><td>more samples don't help</td></tr>
+<tr><td>Validity review + truncation</td><td class="num">0.11 / 0.11 / 0.33</td><td>rejects plans the walk would partially execute</td></tr>
+<tr><td>Horizon 2 + review</td><td class="num">0.00 / 0.00 / 0.11</td><td>empty-plan abuse + verifier false positive (bug found and fixed)</td></tr>
+<tr><td>Goal review for vote selection</td><td class="num">0.44 / 0.22 / 0.11</td><td>reviewer: 92% recall / 75% precision on valid plans; still not selective enough</td></tr>
+<tr><td>Conflicting-predicate verification feedback</td><td class="num">0.22 / 0.33 / 0.33</td><td>recovery rate unchanged</td></tr>
+</table>
+<p><b>Conclusion.</b> The weak-task failures are model capability at temperature 0.7, not agent structure: the model flips
+argument order on 2-action tasks (builds <code>(on a b)</code> when the goal is <code>(on b a)</code>) and cannot recover a
+wrongly built tower. The failure modes were confirmed at the episode-trace level. Under free sampling this caps
+VM1 &asymp; 0.63&ndash;0.65 and keeps VM4 in the 0.1&ndash;0.3 range on this model and profile.</p>
+</div>
 <footer>
 Generated from run artifacts and offline experiment logs of the reliable-agent validation effort, November 9–12, 2026.
 Evidence: <code>.internal/validation-results*.json</code>, validation-service run directories, and /tmp experiment logs.

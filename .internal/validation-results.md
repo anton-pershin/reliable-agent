@@ -1,3 +1,37 @@
+## Self-hosted Qwen3.5-9B validation results, default profile (spec 04 final)
+
+### Spec 04: Repeatable planning
+
+**Commit**: `c3e5a94bdca69dfd08561ba6392d0d71b302cd01`
+
+**Run ID**: `20261114T053703-525279Z-b864ae241134`
+
+**Validation scope**: `full`
+
+**Validation implementation**: `agent-validation` service, profile `default` (sha256 `d3663236add9...`)
+
+**Model**: `openai:qwen/qwen3.5-9b` served self-hosted on a dedicated A10 (vLLM 0.32, bf16, public HF checkpoint `Qwen/Qwen3.5-9B`), free sampling per P11 (temperature 0.7, no seed fixing)
+
+**Solution overrides**: `--model openai:qwen/qwen3.5-9b --temperature 0.7 --model-timeout 90 --sample-retries 2 --plan-max-output-tokens 3000 --plan-samples 5 --plan-spares 1 --no-plan-review --no-goal-review`
+
+**Evidence directory**: `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
+
+**Overall result**: `valid`. All 890 episodes completed in 490 minutes with no infrastructure failures. 607 successful episodes. Per-repeat unperturbed success rates: 0.65, 0.70, 0.70, 0.60, 0.75, 0.75, 0.60, 0.70, 0.60, 0.65.
+
+| Criterion | Status | Detail |
+|-----------|--------|--------|
+| AC1 | valid | VM1 = 0.67 < 0.95 |
+| AC2 | accepted | VM2 = 1.00, VM3 = 0.876 |
+| AC3 | valid | VM4 = 0.15 > 0.05 |
+| AC4 | accepted | VM5 concise = -0.015, VM5 formal = -0.04, VM6 = 0.04 |
+| AC5 | invalid | fault exposure not observed in every failure episode |
+| AC6 | accepted | VM9 = 45 <= 50 |
+| AC7 | accepted | VM10 = 0.999 |
+
+**Analysis**: With stable self-hosted serving, the repeat range tightened from 0.30 to 0.15 and VM1 rose from 0.63 to 0.67 relative to the first self-hosted run. The remaining VM4 gap is per-task sampling noise at temperature 0.7 on the weak tasks (wrong argument-order plans on 2-action tasks, no recovery after wrongly built towers), measured to be model capability, not agent structure: every agent-side mechanism evaluated (vote size, validity review, goal review, horizon, feedback enrichment) failed to saturate the coin-flip tasks. AC3 acceptance under P11 requires per-task saturation that this checkpoint does not support.
+
+The complete HTTP response is stored in `.internal/validation-results-a10-default-full.json`.
+
 ## Qwen3.5-9B validation results, blocksworld_hard profile, run 2 (spec 04)
 
 ### Spec 04: Repeatable planning
