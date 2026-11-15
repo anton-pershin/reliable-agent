@@ -431,6 +431,52 @@ argument order on 2-action tasks (builds <code>(on a b)</code> when the goal is 
 wrongly built tower. The failure modes were confirmed at the episode-trace level. Under free sampling this caps
 VM1 &asymp; 0.63&ndash;0.65 and keeps VM4 in the 0.1&ndash;0.3 range on this model and profile.</p>
 </div>
+<h2>10. Metric architecture: why AC4 passes while AC3 does not</h2>
+<div class="card">
+<p>Terms per the project terminology: a <i>task success rate</i> is per task and condition over that task's planned
+repeated episodes; an <i>overall success rate</i> is the mean of task success rates over the task set; an
+<i>evaluation run</i> is one execution of the episode set. AC3 (Consistency, VM4) takes the range of overall success
+rates across repeated evaluation runs: each run contributes exactly one episode per task, so per-task coin flips are
+fully exposed. AC4 (Prompt robustness, VM5/VM6) first pools each task's ten repeated episodes into a task success rate
+and only then compares prompt conditions &mdash; per-task noise is reduced by a factor of ten before the comparison, so
+only the systematic phrasing effect remains (and there is none: variant losses came out slightly negative).
+The validation spec (section 2.2) documents this as the intent: consistency is measured <i>per repeat</i>, while
+prompt robustness <i>pools</i> repeats within each condition. AC4 certifies insensitivity to phrasing; AC3 certifies
+determinism across identical runs &mdash; a strictly stronger property under a noisy model.</p>
+</div>
+
+<h2>11. Discussed and rejected: re-sample flagged trajectories until unflagged</h2>
+<div class="card">
+<p>The proposal: since <b>VM2 &mdash; Error-flag precision</b> is 1.00 (a flagged episode is always genuinely
+unsuccessful), re-run a task's trajectory until one attempt is unflagged, and declare consistently-flagged tasks unsolved.
+Three obstacles make it unusable here: (1) the interaction protocol gives one episode per task with fixed budgets, so
+re-sampling from inside the solution is just re-planning &mdash; and re-planning is not a fresh draw, because a wrongly
+built configuration persists in the task state; (2) <b>VM3 &mdash; Error-flag recall</b> is 0.88, so re-sampling would
+preferentially harvest the 12% of failures that falsely claim success; (3) even with a perfect flag, re-sampling raises
+the mean (VM1) but not the repeat-to-repeat spread (VM4) unless every coin-flip task saturates, which the non-independent
+attempts cannot deliver.</p>
+</div>
+
+<h2>12. Failure-mode taxonomy of the self-hosted model</h2>
+<div class="card">
+<p>200 sampled candidate plans over the 20 default-profile tasks, classified by an independent simulator:</p>
+<table>
+<tr><th>Failure mode</th><th>Share</th><th>Detail</th></tr>
+<tr><td>Precondition violation mid-plan</td><td class="num">79 (40%)</td><td>two systematic rule confusions dominate:
+picking up a stacked block (42 cases: not on table / not clear &mdash; an unstack must come first) and hand bookkeeping
+(24 cases: stack or put_down without holding)</td></tr>
+<tr><td>Valid plan, wrong goal outcome</td><td class="num">36 (18%)</td><td>only 5 are true argument-order flips;
+the rest wander or stop early</td></tr>
+<tr><td>Empty plan (punt)</td><td class="num">34 (17%)</td><td>the model gives up instead of planning</td></tr>
+<tr><td>Solves</td><td class="num">51 (26%)</td><td>&mdash;</td></tr>
+</table>
+<p><b>The asymmetry that matters.</b> The same model applies these rules reliably when <i>verifying</i> a plan
+(91% recall on invalid plans, 97&ndash;100% precision) but not when <i>generating</i> one. The failure modes are
+consistent and systematic, so a failure-mode-targeted planning instruction (generic state-tracking guidance, no
+domain-specific content) is a well-motivated, untested lever: it asks the model to apply at generation time the rules
+it demonstrably knows. Note the correct plan still has to exist in the sample distribution for any selection mechanism
+to find it &mdash; for restack_* and tower_four it appears in 0 of 10 samples today.</p>
+</div>
 <footer>
 Generated from run artifacts and offline experiment logs of the reliable-agent validation effort, November 9–12, 2026.
 Evidence: <code>.internal/validation-results*.json</code>, validation-service run directories, and /tmp experiment logs.
