@@ -65,12 +65,15 @@ Manual.
 
 An external validation service evaluates each implementation against FR1–FR2 and NFR1–NFR5. The implementation is accepted only when all these requirements are satisfied. Preferences in Section 2.3 are not acceptance criteria.
 
-Use an already running HTTP validation service at a supplied base URL. Send a POST request with `Content-Type: application/json` to:
+Use an already running HTTP validation service at a supplied base URL. The `default` registered profile is authoritative for project-level acceptance; `blocksworld_hard` provides supplementary evidence and cannot substitute for `default`.
 
-- `/validate` for full validation against the complete evaluation configuration.
-- `/validate_partial` for partial validation against a reduced evaluation configuration. Use partial validation for faster feedback during debugging and tuning, before running full validation. Partial results are diagnostic only and cannot certify acceptance.
+#### Configuration discovery
 
-Both endpoints accept the same JSON payload:
+Send `GET /profiles/{profile}/configuration` to retrieve the registered `profile`, its complete normalized `configuration`, and the corresponding machine-readable JSON `schema`. The returned configuration can be edited and resubmitted without exposing credentials.
+
+#### Full validation
+
+Send `POST /validate` with `Content-Type: application/json` and this payload:
 
 ```json
 {
@@ -80,12 +83,27 @@ Both endpoints accept the same JSON payload:
 }
 ```
 
-`repo` and `commit` identify the implementation to validate. `solution_overrides` supplies execution configuration overrides; it is optional and defaults to an empty string. The service uses its configured validation profile, which defines the acceptance criteria in scope and the full and partial evaluation configurations.
+`repo` and `commit` identify the exact implementation. `solution_overrides` supplies execution configuration overrides; it is optional and defaults to an empty string. Full validation uses the active registered profile unchanged and rejects inline configuration.
 
-Expect a JSON response with `profile`, `validation_scope` (`full` or `partial`), and one entry for each acceptance criterion in scope. The following example shows one criterion and one metric; other criteria and metrics use the same structure:
+#### Partial validation
+
+For diagnostic feedback, fetch a registered configuration, edit the complete copy, and send `POST /validate_partial` with `Content-Type: application/json`. Its payload contains the same `repo`, `commit`, and optional `solution_overrides` fields as full validation, plus:
+
+- `configuration`: required complete modified configuration object returned by discovery.
+- `profile`: optional registered base-profile name, defaulting to the service's active profile.
+
+The `configuration` object must contain every field from the discovered configuration, not only the fields being changed. Missing or unknown fields, invalid values, and invalid references are rejected rather than silently filled from defaults. The README provides an executable discovery-and-submission example without reproducing the registered configuration.
+
+A partial configuration may modify any setting and need not be smaller or faster than full validation. Every result produced this way has `validation_scope="partial"` and is diagnostic only. It cannot certify acceptance, even when its population equals the full population or every reported criterion is accepted.
+
+#### Results and run evidence
+
+Successful full and partial responses contain `run_id`, `artifacts_location`, the registered base `profile`, `validation_scope`, and one entry for each acceptance criterion in scope. Errors raised after run creation also contain `run_id` and `artifacts_location`. The following example shows one criterion and one metric; other criteria and metrics use the same structure:
 
 ```json
 {
+  "run_id": "20261117T000000-000000Z-example",
+  "artifacts_location": "/path/to/validation/run",
   "profile": "default",
   "validation_scope": "full",
   "AC1": {
@@ -103,6 +121,8 @@ Expect a JSON response with `profile`, `validation_scope` (`full` or `partial`),
 }
 ```
 
+For every completed run, the same complete result is available at `<artifacts_location>/result.json`. The run manifest at `<artifacts_location>/run.json` records terminal run status as `completed`, `failed`, or `aborted`; this lifecycle status is distinct from the implementation outcome.
+
 Each criterion has one of three statuses:
 
 - `accepted`: all its metrics were computed and satisfy their acceptance conditions.
@@ -111,7 +131,9 @@ Each criterion has one of three statuses:
 
 A metric that could not be computed has `computation_status` set to `failed_to_compute`, `computed_value` set to `null`, and an explanation in `error_message`. A computed metric has `acceptance_status` set to `accepted` or `rejected` and includes the applicable threshold or expected value.
 
-Only a full-validation response with every criterion in scope accepted certifies acceptance.
+Only a completed full-validation response from the unchanged authoritative `default` profile with every criterion in scope accepted certifies an accepted implementation. The project is complete only after that accepted implementation is integrated into the solution's main branch.
+
+Append every completed, failed, or aborted full-validation run to `.internal/validation-results.md`, recording its run ID, related spec when applicable, solution commit, run status, and the returned `artifacts_location`. Never replace an earlier run entry. Partial runs do not belong in this history. Historical results produced before the run-aware contract remain in `.internal/validation-results-old.md`.
 
 ### 4. Insight
 
