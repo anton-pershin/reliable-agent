@@ -6,3 +6,4 @@ Runs performed under earlier validation contracts are preserved unchanged in [va
 
 | Run ID | Spec | Solution commit | Run status | Run directory |
 |--------|------|-----------------|------------|---------------|
+| 20261117T055953-096107Z-35ebc2cac9b0 | [05](specs/05-sdd-validation-contract-migration-kiss-spec.md) | b490da19b8a919b9c8867c1b54efdf87fc5af958 | aborted | /home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261117T055953-096107Z-35ebc2cac9b0 |
