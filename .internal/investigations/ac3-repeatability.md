@@ -9,6 +9,7 @@ Make project acceptance criterion AC3 (`VM4 <= 0.05`) accepted on the authoritat
 ### Current constraints
 
 - Use `openai:qwen/qwen3.5-9b` for all validation experiments, as directed by the user on 2026-11-18. Alternative model sizes are out of scope.
+- Use only the self-hosted A10 deployment. The user subsequently decided that provider-hosted results are misleading and must be ignored; Caila runs are retained only as excluded experiment history, never as candidate evidence.
 - Use general-purpose model reasoning over public tasks, observations, action descriptions, and results; no benchmark-specific solver or private evaluator data.
 - Use default model sampling as required by constitution preference P11; do not make episodes exact replicas through fixed-seed or deterministic-serving restrictions.
 - Keep every episode within 50 action attempts and 300 seconds.
@@ -23,7 +24,7 @@ The best experimental implementation is revision `e0847c3`: ordinary complete-pl
 
 H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time from 50 to 40 minutes, but its three-repeat VM4 was 0.15. Adding goal regression at H=2 kept VM1 at 0.6333 and increased VM4 to 0.20.
 
-The strongest candidate is provider-hosted H=2 forward planning on `fdbf61a`: partial run `20261118T063143-186783Z-b40fb861ef4d` solved all 60 episodes, producing VM1 = 1.0 and VM4 = 0.0 with AC6/AC7 accepted. Its identical 10-repeat extension is running as `20261118T065636-288449Z-73607ebca0ce`. A10 H=1 goal regression continues as an independent fallback.
+Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. The current admissible experiment is self-hosted A10 H=1 goal regression (`20261118T063042-081495Z-0a70e44a788c`). All subsequent diagnostics and final validation will use only the self-hosted A10 deployment.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -40,8 +41,8 @@ Evidence:
 | C4 | `fdbf61a`, H=2 forward planning with review fixes | Partial `default`: all 20 tasks, 3 unperturbed repeats | Same self-hosted 9B runtime | VM1 = 0.6333; VM4 = 0.15 |
 | C5 | `fdbf61a`, H=2 with goal-regression instructions | Same partial configuration as C4 | Same self-hosted 9B runtime | VM1 = 0.6333; VM4 = 0.20 |
 | C6 | `fdbf61a`, H=1 with goal-regression instructions | Same partial configuration as C4 | Same self-hosted 9B runtime | Running |
-| C7 | `fdbf61a`, H=2 forward planning | All 20 tasks, 3 unperturbed repeats | Provider-hosted `qwen/qwen3.5-9b`, temperature 0.7, independent validator on port 8681 | VM1 = 1.0; VM4 = 0.0; diagnostic AC1/AC3/AC6/AC7 accepted |
-| C8 | `fdbf61a`, identical provider H=2 candidate | All 20 tasks, 10 unperturbed repeats, no other conditions | Same provider runtime as C7 | Running |
+| C7 | Excluded provider-hosted experiment | Excluded by user; not admissible evidence | Caila deployment | Ignored as misleading |
+| C8 | Excluded provider-hosted extension | Aborted after user decision | Caila deployment | Ignored as misleading |
 
 ### Current understanding
 
@@ -54,8 +55,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- H=1 goal regression may trade throughput for stronger consensus, but its result is unresolved.
-- The provider-hosted 9B deployment may retain its historical near-saturated success under the new mechanism; current provider latency and repeatability are unresolved.
+- H=1 goal regression may trade throughput for stronger consensus, but its self-hosted result is unresolved.
 
 ### Experiments and decisions
 
@@ -79,16 +79,17 @@ Evidence:
 | E16 | Screen H=2 forward prefix consensus | C4 | Run `20261118T050959-170962Z-7a0d67ea74e6`: VM1 = 0.6333, VM4 = 0.15; repeat rates 0.65, 0.70, 0.55; AC6/AC7 accepted. The 60 episodes completed in 40 minutes with maximum 18 actions. H=2 stabilized `stack_ba` and `stack_ca_on_b`, but all `restack_*` and `tower_four` episodes still failed | Keep H=2 for its higher VM1 and throughput. Do not launch its 10-repeat extension. Start H=2 goal regression (`20261118T055002-998672Z-b6c977f7f68c`) to target the remaining plan-distribution failures. |
 | E17 | Add goal regression to H=2 | C5 | Run `20261118T055002-998672Z-b6c977f7f68c`: repeat rates 0.70, 0.70, 0.50; VM1 = 0.6333 and VM4 = 0.20, with AC6/AC7 accepted | The first two repeats were identical but the third collapse rejects the candidate. Do not extend H=2 goal regression. Test H=1 goal regression on the A10 (`20261118T063042-081495Z-0a70e44a788c`). |
 | E18 | Test the new mechanism on the historically stronger deployment of the required model | C7 | Historical full run `20261107T003923-202490Z-81f70aae68a3` using provider-hosted `qwen/qwen3.5-9b` reached VM1 = 0.99 and a true 0.05 repeat range, rejected only by floating-point subtraction. New H=2 partial run `20261118T063143-186783Z-b40fb861ef4d` is independent of the A10 workload | Run in parallel to distinguish agent mechanisms from model deployment quality without violating the 9B constraint. Extend only if the three-repeat result is accepted. |
-| E19 | Screen H=2 on the provider-hosted 9B deployment | C7 | Run `20261118T063143-186783Z-b40fb861ef4d` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T063143-186783Z-b40fb861ef4d/`: all 60 episodes succeeded; VM1 = 1.0, VM4 = 0.0, maximum actions = 15, timely response rate = 1.0. Diagnostic AC1, AC3, AC6, and AC7 are all accepted | Immediately extend the identical revision and settings to 10 repeats (`20261118T065636-288449Z-73607ebca0ce`). Keep the A10 fallback running independently. |
+| E19 | Screen H=2 on the provider-hosted 9B deployment | C7 | Run `20261118T063143-186783Z-b40fb861ef4d` returned VM1 = 1.0 and VM4 = 0.0, but the user subsequently ruled this deployment misleading and inadmissible | Excluded entirely by E20. Do not cite as candidate evidence. |
+| E20 | Restrict validation to the self-hosted deployment | C6 | User decision on 2026-11-18: provider-hosted results are misleading and must be ignored; use only self-hosted results. Provider extension `20261118T065636-288449Z-73607ebca0ce` was aborted and its validator stopped | Exclude C7/C8 and all provider metrics from current understanding, spec evidence, candidate selection, and final acceptance. Continue only with the A10 H=1 goal-regression run and subsequent self-hosted experiments. |
 
 ### Next candidates
 
 - [x] Screen engine-enforced prefix voting/execution on the required 9B model with 3 unperturbed repeats.
 - [x] Early-stop the H=1 10-repeat diagnostic once its range was definitively rejected.
 - [x] Screen H=2 forward prefix consensus and H=2 goal regression.
-- [x] Screen provider-hosted H=2: diagnostic AC1/AC3/AC6/AC7 all accepted.
-- [ ] Complete the provider H=2 10-repeat diagnostic and the independent A10 fallback.
-- [ ] Confirm the selected revision with full `default` validation if time allows; do not use partial acceptance as certification.
+- [ ] Complete the self-hosted A10 H=1 goal-regression screen.
+- [ ] Select and run a 10-repeat diagnostic using only admissible self-hosted results.
+- [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
 
 ### Linked specs
 
