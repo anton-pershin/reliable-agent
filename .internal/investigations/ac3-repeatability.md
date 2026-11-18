@@ -26,7 +26,7 @@ H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time f
 
 Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
 
-The targeted optimized/budget H=1 goal-regression run scored repeat rates 0.50, 0.75, 1.00 on the four tasks, producing VM4 = 0.50 despite VM1 = 0.75. It did not justify an optimized full extension. The final original-candidate 10-repeat attempt was early-stopped after repeats of 0.65, 0.65, and 0.60. The validator's computed range was `0.050000000000000044`, strictly above 0.05 despite the true mathematical difference being 0.05, so acceptance was already impossible. No self-hosted 10-repeat diagnostic achieved AC3 acceptance, and full validation was not run.
+The targeted optimized/budget H=1 goal-regression run scored repeat rates 0.50, 0.75, 1.00 on the four tasks, producing VM4 = 0.50 despite VM1 = 0.75. It did not justify an optimized full extension. The final original-candidate 10-repeat attempt was early-stopped after repeats of 0.65, 0.65, and 0.60 because its computed range was strictly rejected. A subsequent request explicitly required a complete 10-repeat test of the best candidate. Run `20261118T151459-848922Z-5228d0ade946` therefore used the same H=1 goal-regression configuration and original self-hosted runtime without early stopping. All 200 episodes completed in approximately 2 h 28 min: repeat rates were 0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55; VM1 = 0.56 and VM4 = 0.20. AC6 and AC7 were accepted.
 
 The implementation still provides useful measured improvements: diagnostic three-repeat AC3 acceptance in two configurations, best self-hosted VM1 = 0.7167, race-independent prefix voting, independent vote/execution horizons, empty-plan control, and 114 passing tests. Spec 06's AC6 and AC8 remain unmet; the branch is not represented as an accepted or integration-ready project implementation.
 
@@ -57,6 +57,7 @@ Evidence:
 | C15 | `4080915`, split horizons with 4+1 samples and original budgets | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.80 and 0.55; rejected |
 | C16 | `c32b812`, H=1 goal regression on four previously flipping tasks | Four tasks x 3 unperturbed repeats, AC1/AC3/AC6/AC7 | Optimized self-hosted runtime, 50/298 budgets, error-only logs | VM1 = 0.75; VM4 = 0.50; rejected |
 | C17 | `fdbf61a`, exact original H=1 goal-regression candidate | 10-repeat run early-stopped after three complete repeats | Original self-hosted runtime: no prefix cache, eager execution | Repeats 0.65, 0.65, 0.60; computed VM4 = 0.050000000000000044, rejected |
+| C18 | `fdbf61a`, same best candidate without early stopping | Completed all 20 tasks x 10 unperturbed repeats (200 episodes) | Same original self-hosted runtime as C17 | VM1 = 0.56; VM4 = 0.20; AC6/AC7 accepted |
 
 ### Current understanding
 
@@ -112,6 +113,7 @@ Evidence:
 | E35 | Screen optimized/budget H=1 goal regression on the four flips | C16 | Run `20261118T105058-832007Z-cb4caab98b44`: repeat rates 0.50, 0.75, 1.00; VM1 = 0.75, VM4 = 0.50, maximum actions = 21, AC7 = 1.0. Failures were long recovery trajectories; most successes were direct two-action plans | Reject the optimized/budget variant for extension. Make one final 10-repeat attempt with the exact original lowest-variance runtime/settings rather than inferring stability from a changed configuration. |
 | E36 | Final 10-repeat attempt for the original lowest-variance candidate | C17 | Run `20261118T110200-342470Z-dad0e927d25a` uses the exact C6 agent settings and original no-cache/eager runtime over all 200 unperturbed episodes | Monitor completed-repeat rates with the exact floating-point comparison and stop early if VM4 > 0.05 becomes unavoidable. Extend to full validation only if diagnostic AC3 is accepted. |
 | E37 | Evaluate the final original-candidate extension | C17 | Run `20261118T110200-342470Z-dad0e927d25a` was early-stopped at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T110200-342470Z-dad0e927d25a/`. Complete repeats scored 13/20, 13/20, and 12/20; `0.65 - 0.60` evaluated to 0.050000000000000044 and is strictly rejected | Stop the remaining 138 episodes because acceptance cannot recover. Do not run full validation or claim AC3 acceptance. Retain spec 06 AC6/AC8 as unmet and the investigation as active project memory. |
+| E38 | Complete a 10-repeat test of the best candidate without early stopping | C18 | Run `20261118T151459-848922Z-5228d0ade946` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T151459-848922Z-5228d0ade946/`: all 200 episodes completed. Rates: 0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55. VM1 = 0.5599999999999999; VM4 = 0.20; maximum actions = 18; timely final rate = 0.995 | The best candidate remains rejected on AC3 by 0.15 above the threshold. Record the completed result in the investigation and HTML report; do not infer acceptance from earlier screens. |
 
 ### Next candidates
 
@@ -128,6 +130,7 @@ Evidence:
 - [x] Screen and reject split horizons with 4+1 plan samples.
 - [x] Complete and reject the targeted optimized/budget four-task diagnostic.
 - [x] Run the final full-population 10-repeat attempt with the exact original lowest-variance candidate; early-stop after definitive rejection.
+- [x] Complete a separate 200-episode, no-early-stopping test of the best candidate and record VM4 = 0.20.
 - [ ] Future work: find a general-purpose mechanism that saturates the remaining simple stacking flips sufficiently for 10 repeats, rather than repeating the rejected configurations.
 - [ ] Full `default` validation remains blocked on an accepted self-hosted 10-repeat diagnostic.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
