@@ -24,7 +24,9 @@ The best experimental implementation is revision `e0847c3`: ordinary complete-pl
 
 H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time from 50 to 40 minutes, but its three-repeat VM4 was 0.15. Adding goal regression at H=2 kept VM1 at 0.6333 and increased VM4 to 0.20.
 
-Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. The current admissible experiment is self-hosted A10 H=1 goal regression (`20261118T063042-081495Z-0a70e44a788c`). All subsequent diagnostics and final validation will use only the self-hosted A10 deployment.
+Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
+
+The current admissible experiment repeats H=2 forward planning after enabling vLLM's default prefix caching and CUDA graphs on the A10. Model identity, sampling settings, agent revision, and validation population remain unchanged; the purpose is to reduce rounds that were still sampling when the 285-second budget expired.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -40,9 +42,10 @@ Evidence:
 | C3 | Alternative-model exploration, stopped before validation | No validation episodes | Dense 27B GPTQ-Int4 failed to fit; 35B-A3B download was removed | Out of scope: the user requires `qwen/qwen3.5-9b` |
 | C4 | `fdbf61a`, H=2 forward planning with review fixes | Partial `default`: all 20 tasks, 3 unperturbed repeats | Same self-hosted 9B runtime | VM1 = 0.6333; VM4 = 0.15 |
 | C5 | `fdbf61a`, H=2 with goal-regression instructions | Same partial configuration as C4 | Same self-hosted 9B runtime | VM1 = 0.6333; VM4 = 0.20 |
-| C6 | `fdbf61a`, H=1 with goal-regression instructions | Same partial configuration as C4 | Same self-hosted 9B runtime | Running |
+| C6 | `fdbf61a`, H=1 with goal-regression instructions | Same partial configuration as C4 | Same self-hosted 9B runtime | VM1 = 0.6333; VM4 = 0.10 |
 | C7 | Excluded provider-hosted experiment | Excluded by user; not admissible evidence | Caila deployment | Ignored as misleading |
 | C8 | Excluded provider-hosted extension | Aborted after user decision | Caila deployment | Ignored as misleading |
+| C9 | `2e8ec84`, H=2 forward planning | Same partial configuration as C4 | Self-hosted 9B with prefix caching and CUDA graphs enabled | Server starting |
 
 ### Current understanding
 
@@ -55,7 +58,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- H=1 goal regression may trade throughput for stronger consensus, but its self-hosted result is unresolved.
+- Default prefix caching and CUDA graphs may reduce incomplete rounds and timeout-driven variance; their effect on H=2 is unresolved.
 
 ### Experiments and decisions
 
@@ -81,13 +84,16 @@ Evidence:
 | E18 | Test the new mechanism on the historically stronger deployment of the required model | C7 | Historical full run `20261107T003923-202490Z-81f70aae68a3` using provider-hosted `qwen/qwen3.5-9b` reached VM1 = 0.99 and a true 0.05 repeat range, rejected only by floating-point subtraction. New H=2 partial run `20261118T063143-186783Z-b40fb861ef4d` is independent of the A10 workload | Run in parallel to distinguish agent mechanisms from model deployment quality without violating the 9B constraint. Extend only if the three-repeat result is accepted. |
 | E19 | Screen H=2 on the provider-hosted 9B deployment | C7 | Run `20261118T063143-186783Z-b40fb861ef4d` returned VM1 = 1.0 and VM4 = 0.0, but the user subsequently ruled this deployment misleading and inadmissible | Excluded entirely by E20. Do not cite as candidate evidence. |
 | E20 | Restrict validation to the self-hosted deployment | C6 | User decision on 2026-11-18: provider-hosted results are misleading and must be ignored; use only self-hosted results. Provider extension `20261118T065636-288449Z-73607ebca0ce` was aborted and its validator stopped | Exclude C7/C8 and all provider metrics from current understanding, spec evidence, candidate selection, and final acceptance. Continue only with the A10 H=1 goal-regression run and subsequent self-hosted experiments. |
+| E21 | Screen self-hosted H=1 goal regression | C6 | Run `20261118T063042-081495Z-0a70e44a788c`: repeat rates 0.60, 0.60, 0.70; VM1 = 0.6333, VM4 = 0.09999999999999998, maximum actions = 18, timely response rate = 1.0 | Reject and do not extend. Goal regression improved VM1 relative to the first H=1 screen but did not stabilize the range. |
+| E22 | Remove self-imposed serving-performance limits without changing sampling | C4/C9 | H=2 forward traces had 149 plan-round starts but only 111 completed candidate votes, leaving 38 rounds in progress at termination. The A10 was serving with prefix caching disabled and eager execution forced | Restart with default prefix caching and CUDA graphs, then repeat the H=2 forward screen on `2e8ec84`. This changes performance, not model identity, sampling parameters, or agent logic. |
 
 ### Next candidates
 
 - [x] Screen engine-enforced prefix voting/execution on the required 9B model with 3 unperturbed repeats.
 - [x] Early-stop the H=1 10-repeat diagnostic once its range was definitively rejected.
 - [x] Screen H=2 forward prefix consensus and H=2 goal regression.
-- [ ] Complete the self-hosted A10 H=1 goal-regression screen.
+- [x] Complete the self-hosted A10 H=1 goal-regression screen.
+- [ ] Screen H=2 with default prefix caching and CUDA graphs on the self-hosted A10.
 - [ ] Select and run a 10-repeat diagnostic using only admissible self-hosted results.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
 
