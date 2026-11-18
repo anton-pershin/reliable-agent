@@ -19,7 +19,9 @@ Make project acceptance criterion AC3 (`VM4 <= 0.05`) accepted on the authoritat
 
 The current `main` implementation (`1bd6081`) has the spec 04 planning mechanisms. Full `default` run `20261114T053703-525279Z-b864ae241134` used solution commit `c3e5a94` and produced VM1 = 0.67 and VM4 = 0.15. The newer full run `20261117T150114-324103Z-9acb73d41f31` used commit `b490da1` with the same agent settings and produced VM1 = 0.665 and VM4 = 0.25. AC3 therefore remains valid rather than accepted, with substantial run-to-run variation even on the dedicated runtime.
 
-The best experimental implementation is revision `e0847c3`: ordinary complete-plan prompts, one-action voting/execution prefixes, and initial empty-plan suppression. Partial run `20261118T034306-781510Z-53b3a0db4c66` produced the first free-sampling diagnostic AC3 acceptance on the complete 20-task set (three repeats; VM4 = 0.04999999999999993). VM1 was 0.5667. Its 10-repeat extension was early-stopped after 41 episodes because repeat 1 had 9 successes and repeat 2 reached 11, making VM4 >= 0.10 unavoidable. The current H=2 diagnostic (`20261118T050959-170962Z-7a0d67ea74e6`) uses revision `fdbf61a` with race-independent completion verdicts and the review fixes.
+The best experimental implementation is revision `e0847c3`: ordinary complete-plan prompts, one-action voting/execution prefixes, and initial empty-plan suppression. Partial run `20261118T034306-781510Z-53b3a0db4c66` produced the first free-sampling diagnostic AC3 acceptance on the complete 20-task set (three repeats; VM4 = 0.04999999999999993). VM1 was 0.5667. Its 10-repeat extension was early-stopped after 41 episodes because repeat 1 had 9 successes and repeat 2 reached 11, making VM4 >= 0.10 unavoidable.
+
+H=2 on `fdbf61a` improved VM1 to 0.6333 and reduced screening time from 50 to 40 minutes, but its three-repeat VM4 was 0.15. The current diagnostic (`20261118T055002-998672Z-b6c977f7f68c`) combines H=2 with goal-regression instructions to test whether a better plan distribution improves both success and repeatability.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -33,6 +35,8 @@ Evidence:
 | C1 | `c3e5a94`, complete-plan voting, 5 plan samples + 1 spare | Full `default`, 20 tasks x 10 unperturbed repeats plus other conditions | Self-hosted `Qwen/Qwen3.5-9B`, A10, vLLM, temperature 0.7 | VM1 = 0.67; VM4 = 0.15 |
 | C2 | `e0847c3`, full-plan prompts with one-action prefix voting/execution and initial empty-plan suppression | Partial `default`: unperturbed only; 3 repeats screened, 10-repeat extension early-stopped | Same self-hosted 9B runtime as C1 | 3-repeat VM1 = 0.5667; VM4 = 0.04999999999999993; 10-repeat extension guaranteed VM4 >= 0.10 |
 | C3 | Alternative-model exploration, stopped before validation | No validation episodes | Dense 27B GPTQ-Int4 failed to fit; 35B-A3B download was removed | Out of scope: the user requires `qwen/qwen3.5-9b` |
+| C4 | `fdbf61a`, H=2 forward planning with review fixes | Partial `default`: all 20 tasks, 3 unperturbed repeats | Same self-hosted 9B runtime | VM1 = 0.6333; VM4 = 0.15 |
+| C5 | `fdbf61a`, H=2 with goal-regression instructions | Same partial configuration as C4 | Same self-hosted 9B runtime | Running |
 
 ### Current understanding
 
@@ -45,8 +49,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- H=2 may retain enough prefix consensus while completing more actions per model round and reducing timeouts; its tradeoff is unmeasured.
-- Goal-regression prompting is implemented but unmeasured under the required self-hosted 9B runtime.
+- Goal-regression prompting is implemented and currently running under the required self-hosted 9B runtime; whether it changes the weak-task plan distribution is unresolved.
 
 ### Experiments and decisions
 
@@ -67,12 +70,14 @@ Evidence:
 | E13 | Remove completion-flag dependence on sample race order | C2 | `vote_plans` previously overwrote the representative for a normalized plan on every completion, so mixed `reaches_goal` flags were decided by the last completed sample. Commit `6b25bcf` selects the lowest-sample representative and requires unanimous completion within the normalized vote group; 105 tests pass | Include in the next experimental revision. The active 10-repeat run remains on `e0847c3` for controlled evidence. The synthetic delayed-write regression deadline was widened from 10 ms to 50 ms because the old test was load-sensitive; its assertion is unchanged. |
 | E14 | Resolve independent implementation-review findings | C2 | Review found that goal-review filtering could discard a mixed group's non-reaching member before voting, and that precedence, invalid-horizon, and truncated-prefix retry coverage was incomplete. It also identified the implicit H=1 round ceiling. Commit `1bf2734` preserves group verdicts through goal filtering, adds the missing tests, and raises the active-horizon round ceiling to at least the action budget plus the initial round; 108 tests pass | Include in the next H=2/goal-regression diagnostic. The active H=1 10-repeat evidence remains tied to its earlier revision. |
 | E15 | Extend the H=1 candidate to 10 repeats with early stopping | C2 | Run `20261118T043358-257621Z-989a7cf101d0` was aborted at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T043358-257621Z-989a7cf101d0/`. After 41 records, repeat 1 had 9 successes and repeat 2 had reached 11 of 19 completed, guaranteeing VM4 >= 0.10 | Stop immediately rather than spend another 159 episodes on a rejected range. Switch to H=2 on `fdbf61a`; run `20261118T050959-170962Z-7a0d67ea74e6` is now measuring whether fewer rounds improve the VM1/VM4/time tradeoff. |
+| E16 | Screen H=2 forward prefix consensus | C4 | Run `20261118T050959-170962Z-7a0d67ea74e6`: VM1 = 0.6333, VM4 = 0.15; repeat rates 0.65, 0.70, 0.55; AC6/AC7 accepted. The 60 episodes completed in 40 minutes with maximum 18 actions. H=2 stabilized `stack_ba` and `stack_ca_on_b`, but all `restack_*` and `tower_four` episodes still failed | Keep H=2 for its higher VM1 and throughput. Do not launch its 10-repeat extension. Start H=2 goal regression (`20261118T055002-998672Z-b6c977f7f68c`) to target the remaining plan-distribution failures. |
 
 ### Next candidates
 
 - [x] Screen engine-enforced prefix voting/execution on the required 9B model with 3 unperturbed repeats.
 - [x] Early-stop the H=1 10-repeat diagnostic once its range was definitively rejected.
-- [ ] Screen H=2 and, if needed, goal-regression variants for a better VM1/VM4/time tradeoff.
+- [x] Screen H=2 forward prefix consensus.
+- [ ] Complete the running H=2 goal-regression screen.
 - [ ] Run a 10-repeat diagnostic for the strongest revised candidate.
 - [ ] Confirm the selected revision with full `default` validation if time allows; do not use partial acceptance as certification.
 
