@@ -158,6 +158,14 @@ class DecisionModel(Protocol):
     ) -> dict[int, PlanReview]:
         pass
 
+    async def review_selected_plan(
+        self,
+        state: TaskState,
+        candidate: PlanCandidate,
+        remaining_seconds: float,
+    ) -> PlanReview:
+        pass
+
 
 class PydanticAIModelClient:
     def __init__(self, logger: EventLogger, model: Model | str | None = None) -> None:
@@ -318,6 +326,39 @@ class PydanticAIModelClient:
                     error_message=str(result),
                 )
         return reviews
+
+    async def review_selected_plan(
+        self,
+        state: TaskState,
+        candidate: PlanCandidate,
+        remaining_seconds: float,
+    ) -> PlanReview:
+        """Review one voted short prefix instead of every full candidate plan."""
+        seed = derive_sub_seed(self.config.random_seed, 3000)
+        base_timeout = min(
+            self.config.model_timeout_seconds,
+            remaining_seconds,
+            self.config.verification_timeout_seconds,
+        )
+        operation_id = f"plan-{state.plan_rounds}-selected-review"
+        return await self._call_with_transient_retry(
+            operation_id=operation_id,
+            purpose="selected_plan_review",
+            base_timeout=base_timeout,
+            remaining_seconds=remaining_seconds,
+            call=lambda attempt_timeout: self._structured(
+                output_type=PlanReview,
+                adapter=_REVIEW_ADAPTER,
+                instructions=_PLAN_REVIEW_INSTRUCTIONS,
+                purpose="selected_plan_review",
+                format_hint="Return PlanReview only",
+                state=state,
+                remaining_seconds=attempt_timeout,
+                operation_id=operation_id,
+                seed=seed,
+                prompt=self._plan_review_prompt(state, candidate),
+            ),
+        )
 
     async def _race_samples(
         self,

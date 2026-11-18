@@ -263,6 +263,32 @@ async def test_review_plans_returns_verdicts(task) -> None:
     assert reviews[0].first_invalid_action_index == 1
 
 
+async def test_selected_plan_review_returns_verdict(task) -> None:
+    def respond(messages, info):
+        tool = info.output_tools[0]
+        return ModelResponse(
+            parts=[
+                ToolCallPart(
+                    tool_name=tool.name,
+                    args={"valid": False, "first_invalid_action_index": 1, "reason": "bad"},
+                )
+            ],
+            model_name="test",
+        )
+
+    event_logger, stream = logger(config())
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    candidate = PlanCandidate(
+        actions=[{"name": "pick_up", "arguments": {"block": "a"}}]
+    )
+    review = await client.review_selected_plan(state, candidate, 60)
+    assert review.valid is False
+    assert review.first_invalid_action_index == 1
+    requests = [event for event in read_logs(stream) if event["event"] == "model_request"]
+    assert requests[0]["purpose"] == "selected_plan_review"
+
+
 async def test_sample_retries_transient_failure_with_same_seed(task) -> None:
     calls = []
 

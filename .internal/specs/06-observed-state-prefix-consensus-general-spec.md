@@ -27,6 +27,7 @@ https://github.com/anton-pershin/reliable-agent — management and implementatio
 - **FR7. General-purpose boundaries.** The mechanism must operate only on public action requests and observations. It must not parse benchmark identities, inspect private goals or results, add a benchmark-specific solver, or move benchmark integration into the decision engine.
 - **FR8. Configuration compatibility.** Defaults must preserve the previous complete-plan voting and execution behavior apart from the explicit empty-claim rule. Existing overrides and public protocol shapes must continue to work.
 - **FR9. Optional goal-regression instructions.** `AgentConfig.planning_strategy` and `--planning-strategy` must support `forward` (default) and `goal_regression`. The latter asks for backward derivation from goal predicates and conflicts before forward plan validation. This general-purpose instruction variant must be explicit and recorded in effective configuration; it must not change the default distribution used by the prefix candidate or apply implicitly to prompt-controlled horizons.
+- **FR10. Selected-prefix validity review.** `AgentConfig.selected_plan_review_enabled` and `--selected-plan-review` (default off) must enable one model-based validity review of only the voted prefix before execution. If the first invalid action is at index 0, the engine must reject the prefix, add public feedback, and re-plan without an environment action. At index k > 0, it must retain the valid k-action prefix with `reaches_goal=false`. Missing or failed reviews must leave the voted prefix unchanged. This is distinct from the existing concurrent review of every full candidate and must use public task information only.
 
 #### 2.2 Non-functional requirements
 
@@ -44,7 +45,8 @@ https://github.com/anton-pershin/reliable-agent — management and implementatio
 - **AC4. Empty claims.** Tests must show that actionable candidates suppress empty completion claims before the first observation, an empty-only initial round still verifies, and an empty claim after an observation retains its prior behavior. Covers FR5.
 - **AC5. Regression and isolation.** The provider-independent test suite must pass, including concurrent episode isolation and action/time budget tests. Changed files must pass Ruff and the diff must contain no validation-service dependency or benchmark-specific decision logic. Covers FR1, FR7, NFR3, and NFR4.
 - **AC6. Ten-repeat partial validation.** On the self-hosted A10 deployment, submit a complete modified `default` configuration containing all 20 tasks, 10 unperturbed repeats, no prompt variants or failure scenarios, and only project AC1/AC3/AC6/AC7. The result must have every requested metric computed, project AC3 accepted, VM1 >= 0.50, and AC6/AC7 accepted. Retain the run ID and directory in the investigation; do not add it to full-validation history.
-- **AC7. Full validation.** Run unchanged authoritative `default` validation against the self-hosted A10 deployment on the final pushed revision and append its terminal record to `.internal/validation-results.md`. Project AC3 must be accepted, the latest full result must be at least valid, and all criterion outcomes must be reported. Covers NFR1, NFR2, NFR3, and NFR5.
+- **AC7. Selected-prefix review.** Tests must show that the override parses and defaults off, an index-0 rejection starts a new round without executing an action, an index-k rejection executes only the valid k-action prefix and re-plans without premature verification, and an unavailable review preserves the selected plan. A model-client test must exercise the dedicated short-prefix request and verdict schema. Covers FR10 and NFR4.
+- **AC8. Full validation.** Run unchanged authoritative `default` validation against the self-hosted A10 deployment on the final pushed revision and append its terminal record to `.internal/validation-results.md`. Project AC3 must be accepted, the latest full result must be at least valid, and all criterion outcomes must be reported. Covers NFR1, NFR2, NFR3, and NFR5.
 
 ### 4. High-level solution design
 
@@ -76,12 +78,16 @@ flowchart TD
   Horizon -->|H > 0| Truncate[Keep first H actions<br/>set reaches_goal=false when truncated]
   Horizon -->|0| Vote
   Truncate --> Vote[Vote on normalized candidates or prefixes]
-  Vote --> Execute[Execute selected actions one at a time]
+  Vote --> Selected{Review selected short prefix?}
+  Selected -->|disabled, valid, or unavailable| Execute[Execute selected actions one at a time]
+  Selected -->|invalid at k > 0| Trim[Retain valid k-action prefix<br/>set reaches_goal=false]
+  Trim --> Execute
+  Selected -->|invalid at index 0| State
   Execute -->|prefix exhausted| State
   Execute -->|reaching plan exhausted| Verify[Existing completion verification]
   Execute -->|failure| State
   classDef modified fill:#fff2cc,stroke:#d6b656,color:#000000
-  class Suppress,Truncate,Vote modified
+  class Suppress,Truncate,Vote,Selected,Trim modified
 ```
 
 **Why prompt and execution horizons are separate.** The aborted prompt-controlled H=1 run `20261118T033123-886755Z-6e1f0c6f57aa` produced all-empty votes on initial easy tasks and did not exercise prefix execution. Ordinary complete-plan prompts preserve actionable candidate diversity; the engine, rather than model instruction compliance, enforces the common prefix.
@@ -89,3 +95,5 @@ flowchart TD
 **Why empty claims need special handling before evidence.** Empty claims normalize to one identical vote key and can outvote diverse actionable plans without supplying environment evidence. Suppression applies only when valid action candidates exist and no observation has occurred, so empty-only initially satisfied tasks and post-observation completion checks still work.
 
 **Why H is configurable.** H=1 produced the first diagnostic AC3 acceptance but increased planning-round latency. H=2 or another value may offer a better consensus/time tradeoff. Keeping H outside the prompt allows this tradeoff to be measured without confounding it with a changed generation distribution.
+
+**Why review only the selected prefix.** Earlier concurrent reviews of every long candidate dominated round latency and rejected prefixes the environment could harvest. A single post-vote review sees at most H actions, targets the action sequence that would actually affect the environment, and preserves execution when review is unavailable.

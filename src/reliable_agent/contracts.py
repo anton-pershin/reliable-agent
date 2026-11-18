@@ -25,6 +25,7 @@ class AgentConfig(ContractModel):
     plan_horizon: int = Field(default=0, ge=0, le=50)
     plan_execution_horizon: int = Field(default=0, ge=0, le=50)
     plan_review_enabled: bool = True
+    selected_plan_review_enabled: bool = False
     goal_review_enabled: bool = True
     sample_retries: int = Field(default=1, ge=0, le=5)
     verification_samples: int = Field(default=2, ge=1, le=5)

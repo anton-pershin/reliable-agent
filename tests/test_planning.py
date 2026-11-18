@@ -520,6 +520,96 @@ def test_full_plan_instructions_use_goal_regression(task) -> None:
 # AC7 (spec 04): plan review
 
 
+async def test_selected_prefix_invalid_at_zero_replans_without_action(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            plan_execution_horizon=2,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+            selected_plan_review_enabled=True,
+        ),
+        clock=clock,
+    )
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action, second), plan_of(second)],
+        selected_reviews=[
+            PlanReview(valid=False, first_invalid_action_index=0, reason="bad first action"),
+            PlanReview(valid=True),
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[second]]
+    assert len(model.plan_calls) == 2
+    assert len(model.verify_calls) == 1
+    assert "bad first action" in model.plan_calls[1]["feedback"][-1]
+    events = read_logs(stream)
+    rejected = next(
+        event for event in events if event["event"] == "selected_plan_review_rejected"
+    )
+    assert rejected["first_invalid_action_index"] == 0
+
+
+async def test_selected_prefix_review_truncates_before_execution(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            plan_execution_horizon=2,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+            selected_plan_review_enabled=True,
+        ),
+        clock=clock,
+    )
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    third = ActionRequest(name="pick_up", arguments={"block": "b"})
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action, second), plan_of(third)],
+        selected_reviews=[
+            PlanReview(valid=False, first_invalid_action_index=1, reason="bad second action"),
+            PlanReview(valid=True),
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action], [third]]
+    assert len(model.verify_calls) == 1
+    events = read_logs(stream)
+    selected = next(event for event in events if event["event"] == "plan_selected")
+    assert selected["reaches_goal"] is False
+    assert len(selected["actions"]) == 1
+    assert any(event["event"] == "plan_exhausted" for event in events)
+
+
+async def test_selected_prefix_review_failure_keeps_plan(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(selected_plan_review_enabled=True), clock=clock
+    )
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action)],
+        selected_reviews=[ModelRequestError("review unavailable")],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action]]
+    assert any(
+        event["event"] == "selected_plan_review_error" for event in read_logs(stream)
+    )
+
+
 async def test_review_rejects_candidate_from_vote(task, action, final_decision) -> None:
     clock = FakeClock()
     event_logger, stream = logger(config(), clock=clock)
@@ -932,6 +1022,7 @@ def test_planning_overrides_parse() -> None:
             "goal_regression",
             "--plan-execution-horizon",
             "1",
+            "--selected-plan-review",
             "--max-replans",
             "2",
             "--no-completion-verification",
@@ -941,6 +1032,7 @@ def test_planning_overrides_parse() -> None:
     assert parsed.plan_samples == 5
     assert parsed.planning_strategy == "goal_regression"
     assert parsed.plan_execution_horizon == 1
+    assert parsed.selected_plan_review_enabled is True
     assert parsed.max_replans == 2
     assert parsed.completion_verification is False
 
@@ -951,6 +1043,7 @@ def test_planning_defaults() -> None:
     assert parsed.plan_samples == 3
     assert parsed.planning_strategy == "forward"
     assert parsed.plan_execution_horizon == 0
+    assert parsed.selected_plan_review_enabled is False
     assert parsed.max_replans == 12
     assert parsed.completion_verification is True
 

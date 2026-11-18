@@ -42,6 +42,8 @@ With `--plan-horizon N`, the planner returns at most N actions per candidate plu
 
 `--plan-execution-horizon N` enforces a prefix without changing those plan instructions. The engine can therefore sample ordinary complete plans, truncate every candidate to its first N actions before voting, execute only the winning prefix, and plan again from the resulting observation. This avoids relying on the model to comply with a short-plan prompt. Before the first observation, valid actionable candidates suppress empty completion claims; an empty-only round can still verify an initially satisfied objective. Candidates with the same normalized prefix must unanimously claim completion before the selected prefix can enter completion verification. The default execution horizon is 0, which preserves complete-plan execution.
 
+`--selected-plan-review` adds one validity review after the vote and before execution. Unlike `--plan-review`, which reviews every full candidate concurrently, this reviews only the selected short prefix. An invalid first action causes re-planning without environment execution; an invalid later action truncates the prefix to its valid part. Review failures leave the selected prefix unchanged. The default is off.
+
 `--planning-strategy goal_regression` optionally asks the planner to derive required actions backward from goal predicates and conflicts before checking the forward plan. The default `forward` strategy keeps the established complete-plan instructions.
 
 ## JSON Lines execution
@@ -73,6 +75,7 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--plan-horizon N` | `0` | Maximum actions requested per candidate; `0` requires a complete plan |
 | `--plan-execution-horizon N` | `0` | Prefix length enforced before voting/execution, independent of plan instructions |
 | `--plan-review / --no-plan-review` | on | Validity review of candidate plans with prefix truncation |
+| `--selected-plan-review / --no-selected-plan-review` | off | One post-vote validity review of the selected short prefix |
 | `--sample-retries N` | `1` | Retries per plan or verification sample after a transient failure |
 | `--verification-samples N` | `2` | Concurrent verification samples; the fastest verdict wins |
 | `--max-replans N` | `12` | Re-planning rounds per episode after the first plan |

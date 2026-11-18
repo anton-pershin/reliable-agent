@@ -33,6 +33,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--plan-review", dest="plan_review_enabled", action=argparse.BooleanOptionalAction
     )
     parser.add_argument(
+        "--selected-plan-review",
+        dest="selected_plan_review_enabled",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
         "--goal-review", dest="goal_review_enabled", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--sample-retries", type=int)

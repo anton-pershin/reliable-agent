@@ -13,6 +13,7 @@ from .contracts import (
     Decision,
     FinalDecision,
     PendingRetry,
+    PlanCandidate,
     Task,
     TaskState,
 )
@@ -513,6 +514,9 @@ class DecisionEngine:
             vote_counts=counts,
             horizon=state.config.plan_execution_horizon or state.config.plan_horizon,
         )
+        winner = await self._review_selected_prefix(state, winner_index, winner)
+        if winner is None:
+            return None
         state.plan_actions = list(winner.actions)
         state.plan_broken = False
         state.replan_cause = None
@@ -525,6 +529,67 @@ class DecisionEngine:
             actions=[action.model_dump() for action in winner.actions],
         )
         return "planned"
+
+    async def _review_selected_prefix(
+        self, state: TaskState, winner_index: int, winner: PlanCandidate
+    ) -> PlanCandidate | None:
+        """Apply one short-prefix validity review after the vote."""
+        if not self._selected_plan_review_active(state) or not winner.actions:
+            return winner
+        remaining = self._remaining(state) - self._reserve(state)
+        try:
+            review = await self.model.review_selected_plan(state, winner, remaining)
+        except ModelRequestError as exc:
+            self.logger.log(
+                "selected_plan_review_error",
+                level="ERROR",
+                plan_round=state.plan_rounds,
+                winner_sample=winner_index,
+                error_message=str(exc),
+            )
+            return winner
+        self.logger.log(
+            "selected_plan_review",
+            plan_round=state.plan_rounds,
+            winner_sample=winner_index,
+            valid=review.valid,
+            first_invalid_action_index=review.first_invalid_action_index,
+            reason=review.reason,
+        )
+        k = review.first_invalid_action_index
+        if review.valid or k is None or k >= len(winner.actions):
+            return winner
+        if k == 0:
+            key = plan_key(winner)
+            if key not in state.failed_plan_keys:
+                state.failed_plan_keys.append(key)
+            feedback = (
+                "The selected plan prefix failed validity review at action 0: "
+                f"{review.reason} Plan again from the current state."
+            )
+            state.validation_feedback.append(feedback)
+            state.plan_broken = True
+            state.replan_cause = "selected_plan_review_rejected"
+            self.logger.log(
+                "selected_plan_review_rejected",
+                level="ERROR",
+                plan_round=state.plan_rounds,
+                winner_sample=winner_index,
+                first_invalid_action_index=0,
+                reason=review.reason,
+            )
+            return None
+        winner = winner.model_copy(
+            update={"actions": winner.actions[:k], "reaches_goal": False}
+        )
+        self.logger.log(
+            "selected_plan_review_truncated",
+            plan_round=state.plan_rounds,
+            winner_sample=winner_index,
+            first_invalid_action_index=k,
+            retained_actions=k,
+        )
+        return winner
 
     def _emit_plan_action(self, state: TaskState) -> Decision:
         action = state.plan_actions[0]
@@ -633,6 +698,12 @@ class DecisionEngine:
         return (
             state.config.plan_review_enabled
             and getattr(self.model, "review_plans", None) is not None
+        )
+
+    def _selected_plan_review_active(self, state: TaskState) -> bool:
+        return (
+            state.config.selected_plan_review_enabled
+            and getattr(self.model, "review_selected_plan", None) is not None
         )
 
     def _goal_review_active(self, state: TaskState) -> bool:
