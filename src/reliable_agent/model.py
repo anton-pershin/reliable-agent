@@ -53,6 +53,13 @@ Predicate argument order matters: a goal predicate holds only with its exact arg
 in their exact order. For each goal predicate with several arguments, choose the actions
 whose effects produce exactly that argument order, and check the direction again before
 you return the plan.
+Work backward from each goal predicate before choosing the first action. Identify an
+available action whose effect can establish that predicate, then determine which earlier
+actions are needed to satisfy its preconditions without undoing another goal predicate.
+If the current state contains a conflicting predicate, include the actions needed to
+remove it before establishing the goal. Convert this reasoning into a forward-ordered
+plan and check every action from the current state in that order. Do not stop at a
+partial or unrelated state.
 """
 _PLAN_HORIZON_INSTRUCTIONS = """You plan tasks through public observations and tool results.
 Return the next actions that make progress toward the task objective from the current
