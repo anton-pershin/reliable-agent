@@ -26,7 +26,7 @@ H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time f
 
 Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
 
-The optimized H=2 extension was early-stopped after repeats of 0.60 and 0.75 made VM4 >= 0.15 unavoidable. The current admissible experiment is `20261118T074118-881019Z-e53b8726a5b3`: H=2 forward planning with three plan samples plus one spare instead of five plus one. It retains prefix caching and CUDA graphs and tests whether lower request concurrency improves completed rounds and repeatability.
+The optimized H=2 3+1 candidate achieved diagnostic AC3 acceptance with VM1 = 0.6667 and VM4 = 0.04999999999999993, but 13 episodes were terminated for exceeding the 64 KiB solution-stderr limit, reducing AC7 to 0.7833. The current run `20261118T080721-081442Z-c647297f198b` repeats that candidate with `--log-level ERROR`; this targets log overflow and early termination without changing planning, model, sampling, or task population.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -46,7 +46,8 @@ Evidence:
 | C7 | Excluded provider-hosted experiment | Excluded by user; not admissible evidence | Caila deployment | Ignored as misleading |
 | C8 | Excluded provider-hosted extension | Aborted after user decision | Caila deployment | Ignored as misleading |
 | C9 | `2e8ec84`, H=2 forward planning | Optimized runtime, 3-repeat screen early-stopped after 2 repeats | Self-hosted 9B with prefix caching and CUDA graphs enabled | Repeats 0.60 and 0.75; VM4 >= 0.15 |
-| C10 | `2e8ec84`, H=2 forward planning, 3 plan samples + 1 spare | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
+| C10 | `2e8ec84`, H=2 forward planning, 3 plan samples + 1 spare | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | VM1 = 0.6667; VM4 = 0.04999999999999993; AC7 = 0.7833 due to stderr overflow |
+| C11 | `2e8ec84`, identical H=2 3+1 candidate with error-only logs | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
 
 ### Current understanding
 
@@ -59,7 +60,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- Reducing per-episode plan requests from 5+1 to 3+1 may improve latency enough to offset the smaller vote; its effect on the optimized H=2 candidate is unresolved.
+- Error-only logging should eliminate stderr-driven termination and may let previously killed episodes finish; its effect on VM1, VM4, and AC7 is unresolved.
 
 ### Experiments and decisions
 
@@ -88,6 +89,7 @@ Evidence:
 | E21 | Screen self-hosted H=1 goal regression | C6 | Run `20261118T063042-081495Z-0a70e44a788c`: repeat rates 0.60, 0.60, 0.70; VM1 = 0.6333, VM4 = 0.09999999999999998, maximum actions = 18, timely response rate = 1.0 | Reject and do not extend. Goal regression improved VM1 relative to the first H=1 screen but did not stabilize the range. |
 | E22 | Remove self-imposed serving-performance limits without changing sampling | C4/C9 | H=2 forward traces had 149 plan-round starts but only 111 completed candidate votes, leaving 38 rounds in progress at termination. The A10 was serving with prefix caching disabled and eager execution forced | Restart with default prefix caching and CUDA graphs, then repeat the H=2 forward screen on `2e8ec84`. This changes performance, not model identity, sampling parameters, or agent logic. |
 | E23 | Screen optimized-runtime H=2 with 5+1 samples | C9 | Run `20261118T072146-798205Z-4b9a2fde7647` was early-stopped at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T072146-798205Z-4b9a2fde7647/`: repeats 1 and 2 scored 12/20 and 15/20, guaranteeing VM4 >= 0.15 | Do not spend the third repeat. Retain the optimized server but reduce per-episode request load to 3+1 samples in run `20261118T074118-881019Z-e53b8726a5b3`. |
+| E24 | Screen optimized-runtime H=2 with 3+1 samples | C10 | Run `20261118T074118-881019Z-e53b8726a5b3`: VM1 = 0.6667, VM4 = 0.04999999999999993 (diagnostic AC3 accepted), maximum actions = 30. AC7 was only 0.7833 because 13 episodes ended `output_limit_exceeded` after exceeding the 64 KiB stderr limit; no episode exceeded 300 seconds | Do not extend with an AC7 regression. Repeat identically with `--log-level ERROR` in run `20261118T080721-081442Z-c647297f198b` to prevent log-driven termination under the unchanged full-profile retention limit. |
 
 ### Next candidates
 
@@ -96,7 +98,8 @@ Evidence:
 - [x] Screen H=2 forward prefix consensus and H=2 goal regression.
 - [x] Complete the self-hosted A10 H=1 goal-regression screen.
 - [x] Screen H=2 with default prefix caching and CUDA graphs on the self-hosted A10; early-stop after definitive rejection.
-- [ ] Screen optimized-runtime H=2 with 3+1 plan samples.
+- [x] Screen optimized-runtime H=2 with 3+1 plan samples; identify and diagnose the AC7 regression.
+- [ ] Repeat the diagnostic AC3 candidate with error-only logs to prevent stderr overflow.
 - [ ] Select and run a 10-repeat diagnostic using only admissible self-hosted results.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
 
