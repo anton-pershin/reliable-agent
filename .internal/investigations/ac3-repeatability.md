@@ -26,7 +26,7 @@ H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time f
 
 Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
 
-The targeted optimized/budget H=1 goal-regression run scored repeat rates 0.50, 0.75, 1.00 on the four tasks, producing VM4 = 0.50 despite VM1 = 0.75. It did not justify an optimized full extension. The final extension attempt restores the exact original lowest-variance H=1 goal-regression runtime and settings for a full 20-task, 10-repeat diagnostic with early stopping.
+The targeted optimized/budget H=1 goal-regression run scored repeat rates 0.50, 0.75, 1.00 on the four tasks, producing VM4 = 0.50 despite VM1 = 0.75. It did not justify an optimized full extension. The final extension attempt is running as `20261118T110200-342470Z-dad0e927d25a`: the exact original lowest-variance H=1 goal-regression runtime and settings over all 20 tasks and 10 repeats, with early stopping if the floating-point-aware range becomes unrecoverable.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -53,7 +53,7 @@ Evidence:
 | C14 | `9f81d9b`, split horizons with 50 actions and 298 seconds | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.70 and 0.60; rejected |
 | C15 | `4080915`, split horizons with 4+1 samples and original budgets | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.80 and 0.55; rejected |
 | C16 | `c32b812`, H=1 goal regression on four previously flipping tasks | Four tasks x 3 unperturbed repeats, AC1/AC3/AC6/AC7 | Optimized self-hosted runtime, 50/298 budgets, error-only logs | VM1 = 0.75; VM4 = 0.50; rejected |
-| C17 | `fdbf61a`, exact original H=1 goal-regression candidate | All 20 tasks x 10 unperturbed repeats | Original self-hosted runtime: no prefix cache, eager execution | Starting |
+| C17 | `fdbf61a`, exact original H=1 goal-regression candidate | All 20 tasks x 10 unperturbed repeats | Original self-hosted runtime: no prefix cache, eager execution | Running as `20261118T110200-342470Z-dad0e927d25a` |
 
 ### Current understanding
 
@@ -107,6 +107,7 @@ Evidence:
 | E33 | Screen split horizons with 4+1 samples | C15 | Run `20261118T102537-604510Z-deb44c446f85` was early-stopped after repeats of 16/20 and 11/20, guaranteeing VM4 >= 0.25 | Reject immediately. Stop full-population tuning and test the four specific tasks that remained unstable in the lowest-variance candidate. |
 | E34 | Target the four H=1 goal-regression flips | C16 | Per-task analysis found 16/20 saturated tasks in run `20261118T063042-081495Z-0a70e44a788c`; only `stack_ac`, `stack_ba`, `stack_bc`, and `stack_ca` flipped | Run `20261118T105058-832007Z-cb4caab98b44` with 12 targeted episodes. Use the result to decide whether a full 10-repeat extension has evidence behind it. |
 | E35 | Screen optimized/budget H=1 goal regression on the four flips | C16 | Run `20261118T105058-832007Z-cb4caab98b44`: repeat rates 0.50, 0.75, 1.00; VM1 = 0.75, VM4 = 0.50, maximum actions = 21, AC7 = 1.0. Failures were long recovery trajectories; most successes were direct two-action plans | Reject the optimized/budget variant for extension. Make one final 10-repeat attempt with the exact original lowest-variance runtime/settings rather than inferring stability from a changed configuration. |
+| E36 | Final 10-repeat attempt for the original lowest-variance candidate | C17 | Run `20261118T110200-342470Z-dad0e927d25a` uses the exact C6 agent settings and original no-cache/eager runtime over all 200 unperturbed episodes | Monitor completed-repeat rates with the exact floating-point comparison and stop early if VM4 > 0.05 becomes unavoidable. Extend to full validation only if diagnostic AC3 is accepted. |
 
 ### Next candidates
 
