@@ -17,7 +17,9 @@ Make project acceptance criterion AC3 (`VM4 <= 0.05`) accepted on the authoritat
 
 ### Current state
 
-The current `main` implementation (`1bd6081`) has the spec 04 planning mechanisms. Full `default` run `20261114T053703-525279Z-b864ae241134` used solution commit `c3e5a94` and produced VM1 = 0.67 and VM4 = 0.15. The newer full run `20261117T150114-324103Z-9acb73d41f31` used commit `b490da1` with the same agent settings and produced VM1 = 0.665 and VM4 = 0.25. AC3 therefore remains valid rather than accepted, with substantial run-to-run variation even on the dedicated runtime. Earlier full default evidence on a different model reached VM1 = 0.99 and a nominal 0.05 repeat range, showing that near-saturated per-task success can stabilize AC3.
+The current `main` implementation (`1bd6081`) has the spec 04 planning mechanisms. Full `default` run `20261114T053703-525279Z-b864ae241134` used solution commit `c3e5a94` and produced VM1 = 0.67 and VM4 = 0.15. The newer full run `20261117T150114-324103Z-9acb73d41f31` used commit `b490da1` with the same agent settings and produced VM1 = 0.665 and VM4 = 0.25. AC3 therefore remains valid rather than accepted, with substantial run-to-run variation even on the dedicated runtime.
+
+The best experimental implementation is revision `e0847c3`: ordinary complete-plan prompts, one-action voting/execution prefixes, and initial empty-plan suppression. Partial run `20261118T034306-781510Z-53b3a0db4c66` produced the first free-sampling diagnostic AC3 acceptance on the complete 20-task set (three repeats; VM4 = 0.04999999999999993). VM1 was 0.5667, so durability and task-success/time tradeoffs remain open. A 10-repeat diagnostic of the same revision is running.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -29,7 +31,7 @@ Evidence:
 | ID | Solution implementation | Validation setup | Runtime and environment | Baseline |
 |----|-------------------------|------------------|-------------------------|----------|
 | C1 | `c3e5a94`, complete-plan voting, 5 plan samples + 1 spare | Full `default`, 20 tasks x 10 unperturbed repeats plus other conditions | Self-hosted `Qwen/Qwen3.5-9B`, A10, vLLM, temperature 0.7 | VM1 = 0.67; VM4 = 0.15 |
-| C2 | Experimental engine-enforced prefix consensus | Partial `default`: unperturbed only; initially 3 repeats for screening, then 10 repeats for promising candidates | Same self-hosted 9B runtime as C1 | To be measured |
+| C2 | `e0847c3`, full-plan prompts with one-action prefix voting/execution and initial empty-plan suppression | Partial `default`: unperturbed only; 3 repeats screened, 10 repeats running | Same self-hosted 9B runtime as C1 | 3-repeat VM1 = 0.5667; VM4 = 0.04999999999999993 (diagnostic AC3 accepted) |
 | C3 | Alternative-model exploration, stopped before validation | No validation episodes | Dense 27B GPTQ-Int4 failed to fit; 35B-A3B download was removed | Out of scope: the user requires `qwen/qwen3.5-9b` |
 
 ### Current understanding
@@ -39,12 +41,13 @@ Evidence:
 - Whole-plan votes often collapse to lowest-sample-index tie breaking because long sampled plans rarely agree, while first actions have a much stronger mode (spec 04 and methods report).
 - Prompt-only short horizons were not followed reliably; plan and goal reviews did not saturate weak-task success.
 - Provider-latency instability inflates VM4. The current dedicated self-hosted runtime removes that confounder, leaving per-task model sampling noise.
-- Exact per-task success probabilities near 0 or 1 reduce repeat-range variance; a materially stronger model is therefore a legitimate general-purpose candidate.
+- Engine-enforced one-action prefixes with full-plan prompts reduced the three-repeat range to 0.05 and suppressed 68 empty candidates, but lowered VM1 to 0.5667 and increased timeout pressure.
 
 #### Tentative or unresolved
 
-- Engine-enforced voting and execution over short plan prefixes may realize the first-action consensus that prompt-only horizons failed to capture, but its success and time cost are unmeasured.
-- A quantized 27B model may fit the A10 and improve both success and repeatability; throughput and actual validation performance are unmeasured.
+- The three-repeat AC3 result may not survive 10 repeats: several non-`restack_*` tasks still flip outcomes, and the observed H=1 repeat range has no margin for another differing task.
+- H=2 may retain enough prefix consensus while completing more actions per model round and reducing timeouts; its tradeoff is unmeasured.
+- Goal-regression prompting is implemented but unmeasured under the required self-hosted 9B runtime.
 
 ### Experiments and decisions
 
@@ -61,11 +64,13 @@ Evidence:
 | E9 | Replay old first-round candidates against the independent public Blocks World simulator | C1/C2 | Across 200 initial unperturbed rounds and 764 nonempty candidates, 82.1% of first actions were valid versus 50.1% fully valid plans. The modal first action was valid in 84.5% of rounds and had at least one sampled solving continuation in 46.0%; any candidate solved in 55.5%. Modal starts on `restack_abc` and `restack_bac` had no solving continuation in all 10 rounds | H=1 can reduce mid-plan precondition failures but can also select a systematically wrong mode. Evaluate actual per-task recovery and success; do not infer AC3 improvement from prefix validity alone. |
 | E10 | Prepare a planning strategy not covered by the earlier generic state-simulation prompt | C2 | Commit `405d9a3` adds goal-regression guidance to complete-plan generation: derive actions backward from goal predicates and conflicts, then check the forward-ordered plan. 103 tests pass | Test with horizon 0 after the H=1 and empty-plan A/B results. This is a distinct reasoning strategy, not a repeat of the failed generic request to simulate state. |
 | E11 | Screen prompt-controlled H=1 with enforced voting | C2 | Partial run `20261118T033123-886755Z-6e1f0c6f57aa` was aborted at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T033123-886755Z-6e1f0c6f57aa/`. On initial `stack_ab` and `unstack_ab`, all five candidates were empty and `truncated=0`; the former took 154.1 s to succeed and the latter stopped unsuccessfully after 152.1 s. This did not measure VM4 | Stop the invalid screen instead of spending 60 episodes on empty-plan behavior. Commit `3d215c7` decouples `--plan-execution-horizon` from the prompt horizon and makes goal regression opt-in via `--planning-strategy`; 104 tests pass. Run full-prompt prefix execution next. |
+| E12 | Validate full-prompt H=1 prefix execution plus initial empty-plan suppression | C2 | Run `20261118T034306-781510Z-53b3a0db4c66` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T034306-781510Z-53b3a0db4c66/`: diagnostic AC3 accepted with VM4 = 0.04999999999999993; repeat rates 0.55, 0.60, 0.55; VM1 = 0.5667; AC6 and AC7 accepted. The 60 episodes took 50 minutes. All four `restack_*` tasks failed in every repeat, and many difficult episodes exhausted 285 s after about six successful plan rounds | Extend the exact candidate to 10 unperturbed repeats immediately. Preserve it as the first diagnostic AC3 success, but seek an H=2 or prompt improvement that reduces timeouts and raises VM1 if the 10-repeat range remains too large. |
 
 ### Next candidates
 
-- [ ] Screen engine-enforced prefix voting/execution on the required 9B model with 3 unperturbed repeats.
-- [ ] Run 10-repeat unperturbed-only AC1/AC3 validation for the strongest screening candidate.
+- [x] Screen engine-enforced prefix voting/execution on the required 9B model with 3 unperturbed repeats.
+- [ ] Complete the running 10-repeat unperturbed-only AC1/AC3 validation of the H=1 candidate.
+- [ ] If needed, screen H=2 and goal-regression variants for a better VM1/VM4/time tradeoff.
 - [ ] Confirm the selected revision with full `default` validation if time allows; do not use partial acceptance as certification.
 
 ### Linked specs
