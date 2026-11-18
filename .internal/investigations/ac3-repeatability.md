@@ -31,6 +31,7 @@ The targeted optimized/budget H=1 goal-regression run scored repeat rates 0.50, 
 The implementation still provides useful measured improvements: diagnostic three-repeat AC3 acceptance in two configurations, best self-hosted VM1 = 0.7167, race-independent prefix voting, independent vote/execution horizons, empty-plan control, and 114 passing tests. Spec 06's AC6 and AC8 remain unmet; the branch is not represented as an accepted or integration-ready project implementation.
 
 Evidence:
+- [HTML methods and results report](../../reports/ac3-repeatability-report.html)
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
 - [Historical validation results](../validation-results-old.md)
 - [Methods report](../reports/methods-report.html)
