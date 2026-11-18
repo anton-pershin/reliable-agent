@@ -362,6 +362,55 @@ async def test_empty_completion_claim_triggers_verification(task, final_decision
     assert not executor.batches  # no action ever ran
 
 
+async def test_empty_claim_cannot_outvote_actions_before_observation(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(plan_review_enabled=False, goal_review_enabled=False), clock=clock
+    )
+    empty = PlanCandidate(actions=[], reaches_goal=True)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[[empty, empty, plan_of(action)]],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action]]
+    assert len(model.verify_calls) == 1
+    events = read_logs(stream)
+    suppressed = next(
+        event for event in events if event["event"] == "empty_completion_suppressed"
+    )
+    assert suppressed["suppressed"] == 2
+    assert suppressed["actionable"] == 1
+
+
+async def test_empty_claim_remains_valid_after_an_observation(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(
+        config(
+            plan_horizon=1,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+        ),
+        clock=clock,
+    )
+    empty = PlanCandidate(actions=[], reaches_goal=True)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[partial_plan_of(action), [empty, empty, plan_of(action)]],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action]]
+    assert len(model.verify_calls) == 1
+
+
 async def test_empty_non_reaching_candidate_is_excluded(task, action, final_decision) -> None:
     clock = FakeClock()
     event_logger, stream = logger(config(plan_horizon=2), clock=clock)
