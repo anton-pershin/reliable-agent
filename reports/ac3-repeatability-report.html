@@ -246,7 +246,7 @@
       <div class="grid-3">
         <div class="card"><span class="badge good">What worked</span><h3 style="margin-top:12px">Consensus before commitment</h3><p class="small muted">The engine samples complete plans, compares short action prefixes, and executes only the winning prefix. It then plans again from the resulting public observation.</p></div>
         <div class="card"><span class="badge good">What worked</span><h3 style="margin-top:12px">Separate prompt, vote, and execution lengths</h3><p class="small muted">Independent horizons avoid the all-empty plans produced by prompt-only H=1 and allow one-action consensus with two-action execution.</p></div>
-        <div class="card"><span class="badge warn">Boundary condition</span><h3 style="margin-top:12px">Three repeats are not ten</h3><p class="small muted">Two screens reached VM4 ≈ 0.05. Every longer attempt became definitively rejected and was stopped early to preserve server time.</p></div>
+        <div class="card"><span class="badge warn">Boundary condition</span><h3 style="margin-top:12px">Three repeats are not ten</h3><p class="small muted">Two screens reached VM4 ≈ 0.05. Early extensions were stopped at definitive rejection; a final best-candidate run then completed all 200 episodes and returned VM4 = 0.20.</p></div>
       </div>
       <div class="callout info"><strong>Sampling remained intact.</strong> All admissible results use the self-hosted A10 deployment, temperature 0.7, established serving defaults, and the required Qwen 9B model. Deterministic serving, fixed-repeat seed tactics, alternative models, and provider-hosted evidence were excluded.</div>
     </section>
@@ -400,15 +400,30 @@
           <div style="text-align:center;padding:16px;border-radius:12px;background:#fff7ed"><div class="muted small">Repeat 3</div><div style="font-size:28px;font-weight:850">12 / 20</div><div class="warn mono">0.60</div></div>
         </div>
         <h3 style="margin-top:24px">Status of the 10-repeat attempts</h3>
-        <p class="small muted">Neither extension completed all 10 repeats because completed-repeat ranges can only grow. Both were stopped as soon as acceptance became impossible.</p>
+        <p class="small muted">The first two extensions were stopped as soon as acceptance became impossible. The final best-candidate run was allowed to complete all 200 episodes.</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Run</th><th>Complete repeat rates</th><th>Computed VM4</th><th>Distance above 0.05</th></tr></thead>
           <tbody>
             <tr><td><span class="run-id">20261118T043358-257621Z-989a7cf101d0</span><br>H=1 forward</td><td>0.45, 0.55</td><td class="mono">0.10000000000000003</td><td class="bad mono">+0.05000000000000003</td></tr>
-            <tr><td><span class="run-id">20261118T110200-342470Z-dad0e927d25a</span><br>H=1 goal regression</td><td>0.65, 0.65, 0.60</td><td class="mono">0.050000000000000044</td><td class="warn mono">+4.16×10⁻¹⁷</td></tr>
+            <tr><td><span class="run-id">20261118T110200-342470Z-dad0e927d25a</span><br>H=1 goal regression · early stop</td><td>0.65, 0.65, 0.60</td><td class="mono">0.050000000000000044</td><td class="warn mono">+4.16×10⁻¹⁷</td></tr>
+            <tr><td><span class="run-id">20261118T151459-848922Z-5228d0ade946</span><br>H=1 goal regression · <strong>completed</strong></td><td>0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55</td><td class="mono">0.20</td><td class="bad mono">+0.15</td></tr>
           </tbody>
         </table></div>
         <div class="callout danger"><strong>Early-stopped after the third repeat.</strong> The closest run retained 63 records. Its mathematical range was exactly 0.05, but the computed floating-point range was <code>0.050000000000000044 &gt; 0.05</code>. Because completed-repeat rates only extend the range, the remaining planned episodes could not restore acceptance.</div>
+        <h3 style="margin-top:26px">Completed best-candidate 10-repeat trajectory</h3>
+        <p class="small muted">Run <code>20261118T151459-848922Z-5228d0ade946</code> · 200 episodes · no early stopping · approximately 2 h 28 min.</p>
+        <svg viewBox="0 0 770 230" width="100%" style="min-width:650px; height:auto" role="img" aria-label="Completed ten-repeat success trajectory from 0.45 to 0.65">
+          <g stroke="#e2e8f0"><line x1="55" y1="180" x2="720" y2="180"/><line x1="55" y1="142.5" x2="720" y2="142.5"/><line x1="55" y1="105" x2="720" y2="105"/><line x1="55" y1="67.5" x2="720" y2="67.5"/><line x1="55" y1="30" x2="720" y2="30"/></g>
+          <g fill="#64748b" font-size="11" text-anchor="end"><text x="45" y="184">0.00</text><text x="45" y="146.5">0.25</text><text x="45" y="109">0.50</text><text x="45" y="71.5">0.75</text><text x="45" y="34">1.00</text></g>
+          <polyline points="70,112.5 140,105 210,112.5 280,82.5 350,82.5 420,82.5 490,90 560,97.5 630,97.5 700,97.5" fill="none" stroke="#7c3aed" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <g fill="#7c3aed" stroke="white" stroke-width="2"><circle cx="70" cy="112.5" r="5"/><circle cx="140" cy="105" r="5"/><circle cx="210" cy="112.5" r="5"/><circle cx="280" cy="82.5" r="5"/><circle cx="350" cy="82.5" r="5"/><circle cx="420" cy="82.5" r="5"/><circle cx="490" cy="90" r="5"/><circle cx="560" cy="97.5" r="5"/><circle cx="630" cy="97.5" r="5"/><circle cx="700" cy="97.5" r="5"/></g>
+          <g fill="#64748b" font-size="10" text-anchor="middle"><text x="70" y="208">R1</text><text x="140" y="208">R2</text><text x="210" y="208">R3</text><text x="280" y="208">R4</text><text x="350" y="208">R5</text><text x="420" y="208">R6</text><text x="490" y="208">R7</text><text x="560" y="208">R8</text><text x="630" y="208">R9</text><text x="700" y="208">R10</text></g>
+        </svg>
+        <div class="grid-3" style="margin-top:10px">
+          <div class="step"><b>VM4 = 0.20</b><span>0.15 above the acceptance threshold.</span></div>
+          <div class="step"><b>VM1 = 0.56</b><span>112 successful episodes out of 200.</span></div>
+          <div class="step"><b>AC6 / AC7 accepted</b><span>Maximum 18 actions; 99.5% timely final responses.</span></div>
+        </div>
       </div>
     </section>
 
@@ -492,7 +507,7 @@ configuration["acceptance_criteria"] = [
       <div class="final-banner">
         <span class="badge warn">Remaining gap</span>
         <h2 style="margin-top:14px">Repeatability improved. Acceptance did not.</h2>
-        <p>The investigation produced two three-repeat diagnostic AC3 passes and raised the best self-hosted VM1 to 0.7167. However, no tested self-hosted configuration sustained VM4 ≤ 0.05 over 10 repeats.</p>
+        <p>The investigation produced two three-repeat diagnostic AC3 passes and raised the best self-hosted VM1 to 0.7167. However, no tested self-hosted configuration sustained VM4 ≤ 0.05 over 10 repeats; the completed 200-episode best-candidate run returned VM4 = 0.20.</p>
         <div class="grid-3" style="margin-top:20px">
           <div><strong style="font-size:20px">1. Saturate the simple flips</strong><p class="small">Future work must make the four stacking outcomes reliably successful or reliably recoverable without benchmark-specific logic.</p></div>
           <div><strong style="font-size:20px">2. Keep ten-repeat evidence central</strong><p class="small">A three-repeat pass is useful screening evidence only. Extensions must use exact floating-point comparison and early-stop bounds.</p></div>
