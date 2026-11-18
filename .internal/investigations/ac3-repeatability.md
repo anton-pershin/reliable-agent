@@ -75,4 +75,5 @@ Evidence:
 
 ### Linked specs
 
-- [Spec 04: Repeatable planning](../specs/04-repeatable-planning-general-spec.md) — existing baseline and prior negative results; a follow-up implementation spec will be linked after candidate selection.
+- [Spec 04: Repeatable planning](../specs/04-repeatable-planning-general-spec.md) — existing baseline and prior negative results.
+- [Spec 06: Observed-state prefix consensus](../specs/06-observed-state-prefix-consensus-general-spec.md) — candidate implementation contract created after the three-repeat diagnostic AC3 acceptance; its 10-repeat and full-validation checks remain open.
