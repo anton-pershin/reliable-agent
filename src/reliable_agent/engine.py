@@ -243,7 +243,14 @@ class DecisionEngine:
             state.failed_plan_keys.append(state.active_plan_key)
 
     async def _plan_round(self, state: TaskState) -> str | FinalDecision | None:
-        if state.plan_rounds >= 1 + state.config.max_replans:
+        round_limit = 1 + state.config.max_replans
+        if state.config.plan_execution_horizon or state.config.plan_horizon:
+            # Ordinary prefix progress must not hit the recovery-oriented
+            # re-planning limit before the action budget. Each prefix emits at
+            # least one action, so an action-budget-sized ceiling is sufficient
+            # even when failure rounds and transient retries consume attempts.
+            round_limit = max(round_limit, 1 + state.config.max_action_attempts)
+        if state.plan_rounds >= round_limit:
             return self.stop(
                 state,
                 "replanning_limit_reached",
@@ -445,6 +452,13 @@ class DecisionEngine:
             # Every valid candidate failed before in this episode: allow repeats.
             fresh = valid
         if self._goal_review_active(state):
+            # Preserve completion verdicts for the whole normalized vote group.
+            # Goal review checks only reaching candidates; dropping a
+            # non-reaching member must not make the survivors look unanimous.
+            group_reaching: dict[str, bool] = {}
+            for _, candidate in fresh:
+                key = plan_key(candidate)
+                group_reaching[key] = group_reaching.get(key, True) and candidate.reaches_goal
             # Candidates that still claim completion are eligible for the goal
             # check. Truncated prefixes make progress by construction instead.
             checkable = [
@@ -479,8 +493,17 @@ class DecisionEngine:
                 if goal_ok:
                     # The goal check separates plans that look complete from
                     # plans that actually complete: vote among the verified few.
-                    fresh = [
+                    filtered = [
                         (index, candidate) for index, candidate in fresh if index in goal_ok
+                    ]
+                    fresh = [
+                        (
+                            index,
+                            candidate
+                            if group_reaching[plan_key(candidate)]
+                            else candidate.model_copy(update={"reaches_goal": False}),
+                        )
+                        for index, candidate in filtered
                     ]
         winner_index, winner, counts = vote_plans(fresh)
         self.logger.log(
