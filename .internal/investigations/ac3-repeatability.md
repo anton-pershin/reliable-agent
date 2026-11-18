@@ -26,7 +26,7 @@ H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time f
 
 Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
 
-The current admissible experiment repeats H=2 forward planning after enabling vLLM's default prefix caching and CUDA graphs on the A10. Model identity, sampling settings, agent revision, and validation population remain unchanged; the purpose is to reduce rounds that were still sampling when the 285-second budget expired.
+The optimized H=2 extension was early-stopped after repeats of 0.60 and 0.75 made VM4 >= 0.15 unavoidable. The current admissible experiment is `20261118T074118-881019Z-e53b8726a5b3`: H=2 forward planning with three plan samples plus one spare instead of five plus one. It retains prefix caching and CUDA graphs and tests whether lower request concurrency improves completed rounds and repeatability.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -45,7 +45,8 @@ Evidence:
 | C6 | `fdbf61a`, H=1 with goal-regression instructions | Same partial configuration as C4 | Same self-hosted 9B runtime | VM1 = 0.6333; VM4 = 0.10 |
 | C7 | Excluded provider-hosted experiment | Excluded by user; not admissible evidence | Caila deployment | Ignored as misleading |
 | C8 | Excluded provider-hosted extension | Aborted after user decision | Caila deployment | Ignored as misleading |
-| C9 | `2e8ec84`, H=2 forward planning | Same partial configuration as C4 | Self-hosted 9B with prefix caching and CUDA graphs enabled | Server starting |
+| C9 | `2e8ec84`, H=2 forward planning | Optimized runtime, 3-repeat screen early-stopped after 2 repeats | Self-hosted 9B with prefix caching and CUDA graphs enabled | Repeats 0.60 and 0.75; VM4 >= 0.15 |
+| C10 | `2e8ec84`, H=2 forward planning, 3 plan samples + 1 spare | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
 
 ### Current understanding
 
@@ -58,7 +59,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- Default prefix caching and CUDA graphs may reduce incomplete rounds and timeout-driven variance; their effect on H=2 is unresolved.
+- Reducing per-episode plan requests from 5+1 to 3+1 may improve latency enough to offset the smaller vote; its effect on the optimized H=2 candidate is unresolved.
 
 ### Experiments and decisions
 
@@ -86,6 +87,7 @@ Evidence:
 | E20 | Restrict validation to the self-hosted deployment | C6 | User decision on 2026-11-18: provider-hosted results are misleading and must be ignored; use only self-hosted results. Provider extension `20261118T065636-288449Z-73607ebca0ce` was aborted and its validator stopped | Exclude C7/C8 and all provider metrics from current understanding, spec evidence, candidate selection, and final acceptance. Continue only with the A10 H=1 goal-regression run and subsequent self-hosted experiments. |
 | E21 | Screen self-hosted H=1 goal regression | C6 | Run `20261118T063042-081495Z-0a70e44a788c`: repeat rates 0.60, 0.60, 0.70; VM1 = 0.6333, VM4 = 0.09999999999999998, maximum actions = 18, timely response rate = 1.0 | Reject and do not extend. Goal regression improved VM1 relative to the first H=1 screen but did not stabilize the range. |
 | E22 | Remove self-imposed serving-performance limits without changing sampling | C4/C9 | H=2 forward traces had 149 plan-round starts but only 111 completed candidate votes, leaving 38 rounds in progress at termination. The A10 was serving with prefix caching disabled and eager execution forced | Restart with default prefix caching and CUDA graphs, then repeat the H=2 forward screen on `2e8ec84`. This changes performance, not model identity, sampling parameters, or agent logic. |
+| E23 | Screen optimized-runtime H=2 with 5+1 samples | C9 | Run `20261118T072146-798205Z-4b9a2fde7647` was early-stopped at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T072146-798205Z-4b9a2fde7647/`: repeats 1 and 2 scored 12/20 and 15/20, guaranteeing VM4 >= 0.15 | Do not spend the third repeat. Retain the optimized server but reduce per-episode request load to 3+1 samples in run `20261118T074118-881019Z-e53b8726a5b3`. |
 
 ### Next candidates
 
@@ -93,7 +95,8 @@ Evidence:
 - [x] Early-stop the H=1 10-repeat diagnostic once its range was definitively rejected.
 - [x] Screen H=2 forward prefix consensus and H=2 goal regression.
 - [x] Complete the self-hosted A10 H=1 goal-regression screen.
-- [ ] Screen H=2 with default prefix caching and CUDA graphs on the self-hosted A10.
+- [x] Screen H=2 with default prefix caching and CUDA graphs on the self-hosted A10; early-stop after definitive rejection.
+- [ ] Screen optimized-runtime H=2 with 3+1 plan samples.
 - [ ] Select and run a 10-repeat diagnostic using only admissible self-hosted results.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
 
