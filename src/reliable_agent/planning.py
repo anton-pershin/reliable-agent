@@ -15,18 +15,25 @@ def normalize_plan(candidate: PlanCandidate) -> tuple[tuple[str, str], ...]:
     )
 
 
-def plan_key(candidate: PlanCandidate) -> str:
-    """Return the normalized plan as one stable string."""
-    return format_plan(normalize_plan(candidate))
+def plan_key(candidate: PlanCandidate, horizon: int = 0) -> str:
+    """Return the normalized plan or its prefix as one stable string."""
+    normalized = normalize_plan(candidate)
+    if horizon > 0:
+        normalized = normalized[:horizon]
+    return format_plan(normalized)
 
 
 def vote_plans(
     candidates: list[tuple[int, PlanCandidate]],
+    *,
+    horizon: int = 0,
 ) -> tuple[int, PlanCandidate, dict[str, int]]:
     """Select one candidate plan by a majority vote.
 
     `candidates` pairs each plan with the index of the sample that produced it.
-    The winner is the most frequent normalized plan. Ties select the candidate
+    When `horizon` is positive, votes compare only that many leading actions
+    while the returned winner retains its full candidate actions. The winner
+    is the most frequent normalized plan or prefix. Ties select the candidate
     with the lowest sample index. Candidates sharing that plan must unanimously
     claim completion; otherwise the winner is non-reaching. Returns the winning
     sample index, the winning plan, and the vote count for each normalized plan.
@@ -37,6 +44,8 @@ def vote_plans(
     reaching: dict[tuple[tuple[str, str], ...], bool] = {}
     for sample_index, candidate in candidates:
         key = normalize_plan(candidate)
+        if horizon > 0:
+            key = key[:horizon]
         counts[key] = counts.get(key, 0) + 1
         reaching[key] = reaching.get(key, True) and candidate.reaches_goal
         if key not in first_index or sample_index < first_index[key]:
