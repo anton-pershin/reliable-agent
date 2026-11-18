@@ -87,6 +87,18 @@ def test_vote_tie_selects_lowest_sample_index(action) -> None:
     assert winner == second
 
 
+def test_vote_requires_unanimous_completion_for_same_prefix(action) -> None:
+    reaching = plan_of(action)
+    continuing = PlanCandidate(actions=[action], reaches_goal=False)
+    index, winner, counts = vote_plans([(0, reaching), (1, continuing), (2, reaching)])
+    assert index == 0
+    assert list(counts.values()) == [3]
+    # The lowest-index representative claims completion, but another candidate
+    # with the same normalized prefix does not. Race completion order must not
+    # turn that disagreement into a premature verification.
+    assert winner.reaches_goal is False
+
+
 def test_vote_ignores_argument_order_in_json(action) -> None:
     one = PlanCandidate(
         actions=[ActionRequest(name="pick_up", arguments={"a": 1, "b": 2})],
