@@ -8,6 +8,7 @@ Make project acceptance criterion AC3 (`VM4 <= 0.05`) accepted on the authoritat
 
 ### Current constraints
 
+- Use `openai:qwen/qwen3.5-9b` for all validation experiments, as directed by the user on 2026-11-18. Alternative model sizes are out of scope.
 - Use general-purpose model reasoning over public tasks, observations, action descriptions, and results; no benchmark-specific solver or private evaluator data.
 - Use default model sampling as required by constitution preference P11; do not make episodes exact replicas through fixed-seed or deterministic-serving restrictions.
 - Keep every episode within 50 action attempts and 300 seconds.
@@ -16,7 +17,7 @@ Make project acceptance criterion AC3 (`VM4 <= 0.05`) accepted on the authoritat
 
 ### Current state
 
-The current `main` implementation (`1bd6081`) has the spec 04 planning mechanisms. The latest self-hosted full `default` run, `20261114T053703-525279Z-b864ae241134`, used solution commit `c3e5a94` and produced VM1 = 0.67 and VM4 = 0.15; AC3 remains valid rather than accepted. Per-repeat unperturbed success rates ranged from 0.60 to 0.75. Earlier full default evidence on a different model reached VM1 = 0.99 and a nominal 0.05 repeat range, showing that near-saturated per-task success can stabilize AC3.
+The current `main` implementation (`1bd6081`) has the spec 04 planning mechanisms. Full `default` run `20261114T053703-525279Z-b864ae241134` used solution commit `c3e5a94` and produced VM1 = 0.67 and VM4 = 0.15. The newer full run `20261117T150114-324103Z-9acb73d41f31` used commit `b490da1` with the same agent settings and produced VM1 = 0.665 and VM4 = 0.25. AC3 therefore remains valid rather than accepted, with substantial run-to-run variation even on the dedicated runtime. Earlier full default evidence on a different model reached VM1 = 0.99 and a nominal 0.05 repeat range, showing that near-saturated per-task success can stabilize AC3.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -29,7 +30,7 @@ Evidence:
 |----|-------------------------|------------------|-------------------------|----------|
 | C1 | `c3e5a94`, complete-plan voting, 5 plan samples + 1 spare | Full `default`, 20 tasks x 10 unperturbed repeats plus other conditions | Self-hosted `Qwen/Qwen3.5-9B`, A10, vLLM, temperature 0.7 | VM1 = 0.67; VM4 = 0.15 |
 | C2 | Experimental engine-enforced prefix consensus | Partial `default`: unperturbed only; initially 3 repeats for screening, then 10 repeats for promising candidates | Same self-hosted 9B runtime as C1 | To be measured |
-| C3 | Best available agent implementation | Same diagnostic validation setup as C2 | Self-hosted `Qwen/Qwen3.5-27B-GPTQ-Int4`, A10, default sampling | To be measured |
+| C3 | Alternative-model exploration, stopped before validation | No validation episodes | Dense 27B GPTQ-Int4 failed to fit; 35B-A3B download was removed | Out of scope: the user requires `qwen/qwen3.5-9b` |
 
 ### Current understanding
 
@@ -52,11 +53,13 @@ Evidence:
 | E1 | Analyze the latest self-hosted baseline and earlier mechanism results | C1 | VM4 = 0.15 and VM1 = 0.67 in run `20261114T053703-525279Z-b864ae241134`; methods report records weak whole-plan agreement and unsuccessful horizon/review variants | Do not repeat prompt-only horizons or costly review-only variants. Test engine-enforced prefix consensus and a stronger model. |
 | E2 | Make the existing planning horizon enforce consensus even when the model returns a longer plan | C2 | Commit `26c32e6` truncates candidates before voting, marks truncated plans as non-reaching, logs enforcement, and passes 100 provider-independent tests | Keep as an experimental fallback. First isolate the stronger-model effect with horizon 0 because extra rounds may hurt difficult tasks. |
 | E3 | Obtain a stronger general-purpose model within the A10 memory budget | C3 | Official `Qwen/Qwen3.5-27B-GPTQ-Int4` downloaded successfully to the A10 HF cache at revision `8f0c09f227ae570e79617c6d9172b59df9c16081` | Serve the 27B model with default sampling and run a 3-repeat unperturbed-only screen. |
+| E4 | Check whether the November 14 result was a stable 9B baseline | C1 | Run `20261117T150114-324103Z-9acb73d41f31` produced VM1 = 0.665 and VM4 = 0.25 at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261117T150114-324103Z-9acb73d41f31/` | Do not treat the earlier VM4 = 0.15 as a reliable ceiling. Prioritize a materially stronger model over another marginal 9B vote-size change. |
+| E5 | Load the dense 27B GPTQ-Int4 model directly on the A10 | C3 | vLLM 0.32 exhausted all 22.06 GiB while constructing decoder layers on 2026-11-18 at 06:17 UTC; no API server or validation episodes started | Alternative-model work stopped when the user required `qwen/qwen3.5-9b`; the 35B-A3B partial download was removed and the 9B runtime restored. |
+| E6 | Clarify the allowed model for this investigation | C2 | User direction on 2026-11-18: use `qwen/qwen3.5-9b` | Restrict every subsequent experiment and final validation to the required 9B model. Focus on agent-side decision and recovery changes. |
 
 ### Next candidates
 
-- [ ] Implement and test configurable prefix voting/execution, then run a 3-repeat unperturbed-only partial screen on the 9B model.
-- [ ] Download and serve the official 27B GPTQ-Int4 checkpoint; measure latency and run the same diagnostic screen.
+- [ ] Screen engine-enforced prefix voting/execution on the required 9B model with 3 unperturbed repeats.
 - [ ] Run 10-repeat unperturbed-only AC1/AC3 validation for the strongest screening candidate.
 - [ ] Confirm the selected revision with full `default` validation if time allows; do not use partial acceptance as certification.
 
