@@ -17,11 +17,13 @@ class AgentConfig(ContractModel):
     temperature: float = Field(default=0.0, ge=0, le=2)
     max_output_tokens: int = Field(default=8000, ge=1)
     prompt_version: str = "consistent-planning-v1"
+    planning_strategy: Literal["forward", "goal_regression"] = "forward"
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
     plan_spares: int = Field(default=1, ge=0, le=10)
     plan_max_output_tokens: int = Field(default=0, ge=0)
     plan_horizon: int = Field(default=0, ge=0, le=50)
+    plan_execution_horizon: int = Field(default=0, ge=0, le=50)
     plan_review_enabled: bool = True
     goal_review_enabled: bool = True
     sample_retries: int = Field(default=1, ge=0, le=5)

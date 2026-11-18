@@ -53,7 +53,8 @@ Predicate argument order matters: a goal predicate holds only with its exact arg
 in their exact order. For each goal predicate with several arguments, choose the actions
 whose effects produce exactly that argument order, and check the direction again before
 you return the plan.
-Work backward from each goal predicate before choosing the first action. Identify an
+"""
+_PLAN_GOAL_REGRESSION_INSTRUCTIONS = _PLAN_INSTRUCTIONS + """Work backward from each goal predicate before choosing the first action. Identify an
 available action whose effect can establish that predicate, then determine which earlier
 actions are needed to satisfy its preconditions without undoing another goal predicate.
 If the current state contains a conflicting predicate, include the actions needed to
@@ -203,6 +204,8 @@ class PydanticAIModelClient:
     def _plan_instructions(self) -> str:
         if self.config.plan_horizon > 0:
             return _PLAN_HORIZON_INSTRUCTIONS.format(horizon=self.config.plan_horizon)
+        if self.config.planning_strategy == "goal_regression":
+            return _PLAN_GOAL_REGRESSION_INSTRUCTIONS
         return _PLAN_INSTRUCTIONS
 
     async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:

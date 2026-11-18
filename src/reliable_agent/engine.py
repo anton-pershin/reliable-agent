@@ -296,13 +296,12 @@ class DecisionEngine:
                         actionable=len(actionable),
                     )
                 valid = actionable
-        if state.config.plan_horizon > 0:
-            # The prompt asks for a short plan, but the engine must not rely on
-            # instruction compliance for either consensus or budget behavior.
-            # Truncating before the vote groups candidates by their agreed
-            # prefix; executing only that prefix then obtains a fresh decision
-            # from the observed state instead of committing to a sampled tail.
-            horizon = state.config.plan_horizon
+        if state.config.plan_execution_horizon > 0 or state.config.plan_horizon > 0:
+            # An execution horizon is independent of the prompt horizon: full
+            # plan samples can therefore retain their action diversity while
+            # the engine votes on and executes only an agreed prefix. A prompt
+            # horizon remains a fallback for backward compatibility.
+            horizon = state.config.plan_execution_horizon or state.config.plan_horizon
             truncated = 0
             adjusted = []
             for index, candidate in valid:
@@ -489,7 +488,7 @@ class DecisionEngine:
             plan_round=state.plan_rounds,
             winner_sample=winner_index,
             vote_counts=counts,
-            horizon=state.config.plan_horizon,
+            horizon=state.config.plan_execution_horizon or state.config.plan_horizon,
         )
         state.plan_actions = list(winner.actions)
         state.plan_broken = False

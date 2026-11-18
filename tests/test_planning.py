@@ -314,7 +314,7 @@ async def test_partial_plan_exhaustion_skips_verification(task, action, final_de
 async def test_horizon_is_enforced_before_voting(task, action, final_decision) -> None:
     clock = FakeClock()
     event_logger, stream = logger(
-        config(plan_horizon=1, plan_review_enabled=False, goal_review_enabled=False),
+        config(plan_execution_horizon=1, plan_review_enabled=False, goal_review_enabled=False),
         clock=clock,
     )
     agreed = ActionRequest(name="pick_up", arguments={"block": "a"})
@@ -437,13 +437,24 @@ async def test_horizon_instructions_mention_horizon_and_flag(task) -> None:
     assert "one complete plan" in default_client._plan_instructions()
 
 
+def test_execution_horizon_keeps_complete_plan_instructions(task) -> None:
+    event_logger, _ = logger(config(plan_execution_horizon=1))
+    client = PydanticAIModelClient(event_logger, model=TestModel())
+    instructions = client._plan_instructions()
+    assert "one complete plan" in instructions
+    assert "at most 1 actions" not in instructions
+
+
 def test_full_plan_instructions_use_goal_regression(task) -> None:
-    event_logger, _ = logger(config())
+    event_logger, _ = logger(config(planning_strategy="goal_regression"))
     client = PydanticAIModelClient(event_logger, model=TestModel())
     instructions = client._plan_instructions()
     assert "Work backward from each goal predicate" in instructions
     assert "forward-ordered" in instructions
     assert "conflicting predicate" in instructions
+    default_logger, _ = logger(config())
+    default_client = PydanticAIModelClient(default_logger, model=TestModel())
+    assert "Work backward" not in default_client._plan_instructions()
 
 
 # AC7 (spec 04): plan review
@@ -832,6 +843,10 @@ def test_planning_overrides_parse() -> None:
             "--no-planning",
             "--plan-samples",
             "5",
+            "--planning-strategy",
+            "goal_regression",
+            "--plan-execution-horizon",
+            "1",
             "--max-replans",
             "2",
             "--no-completion-verification",
@@ -839,6 +854,8 @@ def test_planning_overrides_parse() -> None:
     )
     assert parsed.planning_enabled is False
     assert parsed.plan_samples == 5
+    assert parsed.planning_strategy == "goal_regression"
+    assert parsed.plan_execution_horizon == 1
     assert parsed.max_replans == 2
     assert parsed.completion_verification is False
 
@@ -847,6 +864,8 @@ def test_planning_defaults() -> None:
     parsed = config_from_overrides(["--model", "test"])
     assert parsed.planning_enabled is True
     assert parsed.plan_samples == 3
+    assert parsed.planning_strategy == "forward"
+    assert parsed.plan_execution_horizon == 0
     assert parsed.max_replans == 12
     assert parsed.completion_verification is True
 

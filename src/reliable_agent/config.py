@@ -20,6 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--temperature", type=float)
     parser.add_argument("--max-output-tokens", type=int)
     parser.add_argument("--prompt-version")
+    parser.add_argument("--planning-strategy", choices=["forward", "goal_regression"])
     parser.add_argument(
         "--planning", dest="planning_enabled", action=argparse.BooleanOptionalAction
     )
@@ -27,6 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--plan-spares", type=int)
     parser.add_argument("--plan-max-output-tokens", type=int)
     parser.add_argument("--plan-horizon", type=int)
+    parser.add_argument("--plan-execution-horizon", type=int)
     parser.add_argument(
         "--plan-review", dest="plan_review_enabled", action=argparse.BooleanOptionalAction
     )
