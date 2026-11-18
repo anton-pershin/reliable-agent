@@ -26,7 +26,7 @@ H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time f
 
 Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
 
-The split vote H=1/execution H=2 candidate achieved the best self-hosted VM1 so far, 0.7167, with AC7 = 1.0, but repeat rates 0.65, 0.70, 0.80 produced VM4 = 0.15. The current run `20261118T100210-286586Z-a2deadafa740` keeps that mechanism and raises the compliant budgets from 45 to 50 action attempts and from 285 to 298 internal seconds.
+The expanded-budget split candidate was early-stopped after repeats of 0.70 and 0.60 made VM4 >= 0.10 unavoidable. The current self-hosted run is `20261118T102537-604510Z-deb44c446f85`: vote H=1/execution H=2 with four plan samples plus one spare, the original 45/285 budgets, optimized serving, and error-only logs.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -50,7 +50,8 @@ Evidence:
 | C11 | `2e8ec84`, identical H=2 3+1 candidate with error-only logs | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | VM1 = 0.70; VM4 = 0.15; AC7 = 1.0 |
 | C12 | `f4a621d`, H=2 3+1 with selected-prefix review and error-only logs | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.40 and 0.30; rejected |
 | C13 | `23679bb`, vote H=1 / execution H=2, 3+1, error-only logs | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | VM1 = 0.7167; VM4 = 0.15; AC7 = 1.0 |
-| C14 | `9f81d9b`, split horizons with 50 actions and 298 seconds | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
+| C14 | `9f81d9b`, split horizons with 50 actions and 298 seconds | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.70 and 0.60; rejected |
+| C15 | `4080915`, split horizons with 4+1 samples and original budgets | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
 
 ### Current understanding
 
@@ -63,7 +64,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- Five additional action attempts and thirteen additional seconds may recover near-budget failures; their effect on the split candidate is unresolved.
+- Four plan samples plus one spare may balance vote quality and request latency; its effect on split-horizon repeatability is unresolved.
 
 ### Experiments and decisions
 
@@ -99,6 +100,8 @@ Evidence:
 | E28 | Separate vote and execution prefix lengths | C13 | Commit `23679bb` adds `plan_vote_horizon`; votes can compare one action while returning and executing a two-action representative, with completion grouping and goal review using the same vote prefix. 114 tests pass. Run `20261118T093122-831421Z-69677a620fe7` uses V=1/H=2 | Test whether first-action consensus and two-action throughput can be combined without the H=1 timeout cost. |
 | E29 | Screen vote H=1 / execution H=2 | C13 | Run `20261118T093122-831421Z-69677a620fe7`: repeat rates 0.65, 0.70, 0.80; VM1 = 0.7167 (best admissible self-hosted result), VM4 = 0.15, maximum actions = 43, AC7 = 1.0 | Do not extend the rejected range. Preserve the mechanism and test the unused compliant action/time budget in run `20261118T100210-286586Z-a2deadafa740`. |
 | E30 | Use the remaining compliant episode budget | C14 | The split candidate reached 43 actions against the constitution limit of 50 and used an internal 285-second cap despite the 300-second validation limit | Screen 50 actions and 298 seconds with all other settings unchanged. Error-only logs remain enabled to protect timely final responses. |
+| E31 | Screen split horizons with expanded budget | C14 | Run `20261118T100210-286586Z-a2deadafa740` was early-stopped after repeats of 14/20 and 12/20, guaranteeing VM4 >= 0.10 | Extra budget did not justify more episodes. Restore 45/285 and test 4+1 samples in run `20261118T102537-604510Z-deb44c446f85`. |
+| E32 | Test the middle request-load point | C15 | The 3+1 and 5+1 configurations both had unstable screens, although 3+1 produced one diagnostic AC3 acceptance before logging correction | Screen 4+1 with vote H=1/execution H=2 and error-only logs, leaving all other settings unchanged. |
 
 ### Next candidates
 
@@ -111,7 +114,8 @@ Evidence:
 - [x] Repeat the H=2 3+1 candidate with error-only logs and verify AC7 recovery.
 - [x] Screen and reject selected-prefix review after definitive early evidence.
 - [x] Screen vote H=1 with execution H=2 and record its VM1/VM4 tradeoff.
-- [ ] Screen the split candidate with 50 actions and 298 internal seconds.
+- [x] Screen and reject the split candidate with 50 actions and 298 internal seconds.
+- [ ] Screen split horizons with 4+1 plan samples.
 - [ ] Select and run a 10-repeat diagnostic using only admissible self-hosted results.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
 
