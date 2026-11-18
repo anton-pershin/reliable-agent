@@ -278,6 +278,24 @@ class DecisionEngine:
                 continue
             if not self._validation_errors(state, ActionDecision(actions=candidate.actions)):
                 valid.append((index, candidate))
+        if not state.attempts:
+            # Before any environment action has supplied evidence, an empty
+            # completion claim is only a model assertion. Identical empty
+            # claims otherwise form an artificial majority over diverse action
+            # plans, causing verification/replanning loops without progress.
+            # Keep them when they are the only valid candidates: an initially
+            # satisfied objective can still be verified immediately.
+            actionable = [(index, candidate) for index, candidate in valid if candidate.actions]
+            if actionable:
+                suppressed = len(valid) - len(actionable)
+                if suppressed:
+                    self.logger.log(
+                        "empty_completion_suppressed",
+                        plan_round=state.plan_rounds,
+                        suppressed=suppressed,
+                        actionable=len(actionable),
+                    )
+                valid = actionable
         if state.config.plan_horizon > 0:
             # The prompt asks for a short plan, but the engine must not rely on
             # instruction compliance for either consensus or budget behavior.
