@@ -219,9 +219,9 @@ async def test_timed_out_action_write_cannot_follow_final(task, action, monkeypa
         lambda logger: ScriptedModel([action_decision(action)]),
     )
     await run_json_episode(
-        config(max_episode_seconds=0.01, final_response_reserve_seconds=0), transport
+        config(max_episode_seconds=0.05, final_response_reserve_seconds=0), transport
     )
-    await asyncio.sleep(0.08)
+    await asyncio.sleep(0.12)
     message_types = [json.loads(message)["type"] for message in writer.messages]
     assert message_types == ["actions"]
 
