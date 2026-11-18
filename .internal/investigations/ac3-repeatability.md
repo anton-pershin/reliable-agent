@@ -26,7 +26,7 @@ H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time f
 
 Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
 
-The expanded-budget split candidate was early-stopped after repeats of 0.70 and 0.60 made VM4 >= 0.10 unavoidable. The current self-hosted run is `20261118T102537-604510Z-deb44c446f85`: vote H=1/execution H=2 with four plan samples plus one spare, the original 45/285 budgets, optimized serving, and error-only logs.
+The 4+1 split screen was early-stopped after repeats of 0.80 and 0.55 made VM4 >= 0.25 unavoidable. The current small diagnostic is `20261118T105058-832007Z-cb4caab98b44`: three repeats of only the four stacking tasks that flipped in the lowest-variance H=1 goal-regression run. It tests optimized serving, 50/298 budgets, and error-only logs before any further full-population extension.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -51,7 +51,8 @@ Evidence:
 | C12 | `f4a621d`, H=2 3+1 with selected-prefix review and error-only logs | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.40 and 0.30; rejected |
 | C13 | `23679bb`, vote H=1 / execution H=2, 3+1, error-only logs | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | VM1 = 0.7167; VM4 = 0.15; AC7 = 1.0 |
 | C14 | `9f81d9b`, split horizons with 50 actions and 298 seconds | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.70 and 0.60; rejected |
-| C15 | `4080915`, split horizons with 4+1 samples and original budgets | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
+| C15 | `4080915`, split horizons with 4+1 samples and original budgets | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.80 and 0.55; rejected |
+| C16 | `c32b812`, H=1 goal regression on four previously flipping tasks | Four tasks x 3 unperturbed repeats, AC1/AC3/AC6/AC7 | Optimized self-hosted runtime, 50/298 budgets, error-only logs | Running |
 
 ### Current understanding
 
@@ -64,7 +65,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- Four plan samples plus one spare may balance vote quality and request latency; its effect on split-horizon repeatability is unresolved.
+- Optimized H=1 goal regression with extra compliant budget may saturate the four simple stacking flips; the targeted run will resolve this before a full extension.
 
 ### Experiments and decisions
 
@@ -102,6 +103,8 @@ Evidence:
 | E30 | Use the remaining compliant episode budget | C14 | The split candidate reached 43 actions against the constitution limit of 50 and used an internal 285-second cap despite the 300-second validation limit | Screen 50 actions and 298 seconds with all other settings unchanged. Error-only logs remain enabled to protect timely final responses. |
 | E31 | Screen split horizons with expanded budget | C14 | Run `20261118T100210-286586Z-a2deadafa740` was early-stopped after repeats of 14/20 and 12/20, guaranteeing VM4 >= 0.10 | Extra budget did not justify more episodes. Restore 45/285 and test 4+1 samples in run `20261118T102537-604510Z-deb44c446f85`. |
 | E32 | Test the middle request-load point | C15 | The 3+1 and 5+1 configurations both had unstable screens, although 3+1 produced one diagnostic AC3 acceptance before logging correction | Screen 4+1 with vote H=1/execution H=2 and error-only logs, leaving all other settings unchanged. |
+| E33 | Screen split horizons with 4+1 samples | C15 | Run `20261118T102537-604510Z-deb44c446f85` was early-stopped after repeats of 16/20 and 11/20, guaranteeing VM4 >= 0.25 | Reject immediately. Stop full-population tuning and test the four specific tasks that remained unstable in the lowest-variance candidate. |
+| E34 | Target the four H=1 goal-regression flips | C16 | Per-task analysis found 16/20 saturated tasks in run `20261118T063042-081495Z-0a70e44a788c`; only `stack_ac`, `stack_ba`, `stack_bc`, and `stack_ca` flipped | Run `20261118T105058-832007Z-cb4caab98b44` with 12 targeted episodes. Use the result to decide whether a full 10-repeat extension has evidence behind it. |
 
 ### Next candidates
 
@@ -115,8 +118,9 @@ Evidence:
 - [x] Screen and reject selected-prefix review after definitive early evidence.
 - [x] Screen vote H=1 with execution H=2 and record its VM1/VM4 tradeoff.
 - [x] Screen and reject the split candidate with 50 actions and 298 internal seconds.
-- [ ] Screen split horizons with 4+1 plan samples.
-- [ ] Select and run a 10-repeat diagnostic using only admissible self-hosted results.
+- [x] Screen and reject split horizons with 4+1 plan samples.
+- [ ] Complete the targeted four-task H=1 goal-regression diagnostic.
+- [ ] Decide whether a final full-population 10-repeat run is justified by self-hosted evidence.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
 
 ### Linked specs
