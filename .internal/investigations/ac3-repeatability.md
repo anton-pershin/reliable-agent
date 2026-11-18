@@ -26,7 +26,7 @@ H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time f
 
 Provider-hosted runs were stopped and excluded after the user determined that their results are misleading; they play no role in candidate selection or acceptance. Self-hosted A10 H=1 goal regression completed with VM1 = 0.6333 and VM4 = 0.10, so it was not extended.
 
-The error-only H=2 3+1 run restored AC7 to 1.0 and raised VM1 to 0.70, but repeat rates 0.75, 0.75, 0.60 produced VM4 = 0.15. The current self-hosted experiment is `20261118T084418-478547Z-4851faf2f94a`, which adds one post-vote validity review of only the selected two-action prefix. This targets invalid actions without reintroducing concurrent review of every long candidate.
+Selected-prefix review was early-stopped after repeats of 0.40 and 0.30, a severe success regression and guaranteed VM4 >= 0.10. The current self-hosted experiment is `20261118T093122-831421Z-69677a620fe7`: vote on one-action prefixes but execute two actions from the winning candidate. It uses the optimized H=2 3+1 error-log baseline and no selected-prefix review.
 
 Evidence:
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -48,7 +48,8 @@ Evidence:
 | C9 | `2e8ec84`, H=2 forward planning | Optimized runtime, 3-repeat screen early-stopped after 2 repeats | Self-hosted 9B with prefix caching and CUDA graphs enabled | Repeats 0.60 and 0.75; VM4 >= 0.15 |
 | C10 | `2e8ec84`, H=2 forward planning, 3 plan samples + 1 spare | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | VM1 = 0.6667; VM4 = 0.04999999999999993; AC7 = 0.7833 due to stderr overflow |
 | C11 | `2e8ec84`, identical H=2 3+1 candidate with error-only logs | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | VM1 = 0.70; VM4 = 0.15; AC7 = 1.0 |
-| C12 | `f4a621d`, H=2 3+1 with selected-prefix review and error-only logs | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
+| C12 | `f4a621d`, H=2 3+1 with selected-prefix review and error-only logs | Early-stopped after two repeats | Same optimized self-hosted runtime as C9 | Repeats 0.40 and 0.30; rejected |
+| C13 | `23679bb`, vote H=1 / execution H=2, 3+1, error-only logs | Same partial configuration as C4 | Same optimized self-hosted runtime as C9 | Running |
 
 ### Current understanding
 
@@ -61,7 +62,7 @@ Evidence:
 
 #### Tentative or unresolved
 
-- A single selected-prefix review may filter invalid actions at acceptable latency; its effect on success, round time, and repeat range is unresolved.
+- Voting on one action while executing two may combine consensus and throughput; its effect on tail validity and repeat range is unresolved.
 
 ### Experiments and decisions
 
@@ -93,6 +94,8 @@ Evidence:
 | E24 | Screen optimized-runtime H=2 with 3+1 samples | C10 | Run `20261118T074118-881019Z-e53b8726a5b3`: VM1 = 0.6667, VM4 = 0.04999999999999993 (diagnostic AC3 accepted), maximum actions = 30. AC7 was only 0.7833 because 13 episodes ended `output_limit_exceeded` after exceeding the 64 KiB stderr limit; no episode exceeded 300 seconds | Do not extend with an AC7 regression. Repeat identically with `--log-level ERROR` in run `20261118T080721-081442Z-c647297f198b` to prevent log-driven termination under the unchanged full-profile retention limit. |
 | E25 | Retry H=2 3+1 with error-only logs | C11 | Run `20261118T080721-081442Z-c647297f198b`: repeat rates 0.75, 0.75, 0.60; VM1 = 0.70, VM4 = 0.15000000000000002, maximum actions = 39, AC7 = 1.0 | The logging fix worked but repeatability did not survive. Do not extend. Add selected short-prefix review in `f4a621d`. |
 | E26 | Review only the selected short prefix | C12 | Commit `f4a621d` adds an opt-in post-vote review with index-0 rejection, k-action truncation, failure fallback, logging, and configuration; 112 tests pass. Run `20261118T084418-478547Z-4851faf2f94a` uses the optimized H=2 3+1 error-log baseline plus this review | Measure whether one short review per round improves validity and stability without the latency of the previously rejected full-candidate review stage. |
+| E27 | Screen selected-prefix review | C12 | Run `20261118T084418-478547Z-4851faf2f94a` was early-stopped: repeats 1 and 2 scored 8/20 and 6/20, guaranteeing VM4 >= 0.10 and cutting success roughly in half relative to the no-review baseline | Reject this mechanism and do not run the third repeat. Keep it opt-in and disabled in subsequent candidates. |
+| E28 | Separate vote and execution prefix lengths | C13 | Commit `23679bb` adds `plan_vote_horizon`; votes can compare one action while returning and executing a two-action representative, with completion grouping and goal review using the same vote prefix. 114 tests pass. Run `20261118T093122-831421Z-69677a620fe7` uses V=1/H=2 | Test whether first-action consensus and two-action throughput can be combined without the H=1 timeout cost. |
 
 ### Next candidates
 
@@ -103,7 +106,8 @@ Evidence:
 - [x] Screen H=2 with default prefix caching and CUDA graphs on the self-hosted A10; early-stop after definitive rejection.
 - [x] Screen optimized-runtime H=2 with 3+1 plan samples; identify and diagnose the AC7 regression.
 - [x] Repeat the H=2 3+1 candidate with error-only logs and verify AC7 recovery.
-- [ ] Screen one post-vote review of each selected short prefix.
+- [x] Screen and reject selected-prefix review after definitive early evidence.
+- [ ] Screen vote H=1 with execution H=2.
 - [ ] Select and run a 10-repeat diagnostic using only admissible self-hosted results.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.
 
