@@ -399,7 +399,16 @@
           <div style="text-align:center;padding:16px;border-radius:12px;background:#f0fdf4"><div class="muted small">Repeat 2</div><div style="font-size:28px;font-weight:850">13 / 20</div><div class="good mono">0.65</div></div>
           <div style="text-align:center;padding:16px;border-radius:12px;background:#fff7ed"><div class="muted small">Repeat 3</div><div style="font-size:28px;font-weight:850">12 / 20</div><div class="warn mono">0.60</div></div>
         </div>
-        <div class="callout danger"><strong>Early stop at 62 records.</strong> The range became <code>0.050000000000000044 &gt; 0.05</code>. Because completed-repeat rates only extend the range, the remaining 138 episodes could not restore acceptance. Run <code>20261118T110200-342470Z-dad0e927d25a</code> was marked aborted with this rationale.</div>
+        <h3 style="margin-top:24px">Status of the 10-repeat attempts</h3>
+        <p class="small muted">Neither extension completed all 10 repeats because completed-repeat ranges can only grow. Both were stopped as soon as acceptance became impossible.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Run</th><th>Complete repeat rates</th><th>Computed VM4</th><th>Distance above 0.05</th></tr></thead>
+          <tbody>
+            <tr><td><span class="run-id">20261118T043358-257621Z-989a7cf101d0</span><br>H=1 forward</td><td>0.45, 0.55</td><td class="mono">0.10000000000000003</td><td class="bad mono">+0.05000000000000003</td></tr>
+            <tr><td><span class="run-id">20261118T110200-342470Z-dad0e927d25a</span><br>H=1 goal regression</td><td>0.65, 0.65, 0.60</td><td class="mono">0.050000000000000044</td><td class="warn mono">+4.16×10⁻¹⁷</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout danger"><strong>Early-stopped after the third repeat.</strong> The closest run retained 63 records. Its mathematical range was exactly 0.05, but the computed floating-point range was <code>0.050000000000000044 &gt; 0.05</code>. Because completed-repeat rates only extend the range, the remaining planned episodes could not restore acceptance.</div>
       </div>
     </section>
 
