@@ -437,6 +437,15 @@ async def test_horizon_instructions_mention_horizon_and_flag(task) -> None:
     assert "one complete plan" in default_client._plan_instructions()
 
 
+def test_full_plan_instructions_use_goal_regression(task) -> None:
+    event_logger, _ = logger(config())
+    client = PydanticAIModelClient(event_logger, model=TestModel())
+    instructions = client._plan_instructions()
+    assert "Work backward from each goal predicate" in instructions
+    assert "forward-ordered" in instructions
+    assert "conflicting predicate" in instructions
+
+
 # AC7 (spec 04): plan review
 
 
