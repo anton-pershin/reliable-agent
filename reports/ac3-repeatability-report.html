@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Improving AC3 Repeatability · reliable-agent</title>
+  <style>
+    :root {
+      --ink: #14213d;
+      --muted: #5d6b85;
+      --paper: #f4f7fb;
+      --card: #ffffff;
+      --line: #dce5f0;
+      --navy: #111d3b;
+      --blue: #3b82f6;
+      --indigo: #6366f1;
+      --teal: #0d9488;
+      --green: #15803d;
+      --green-bg: #dcfce7;
+      --amber: #b45309;
+      --amber-bg: #fef3c7;
+      --red: #b91c1c;
+      --red-bg: #fee2e2;
+      --purple: #7c3aed;
+      --shadow: 0 16px 45px rgba(28, 45, 84, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 3%, rgba(99,102,241,.09), transparent 26rem),
+        radial-gradient(circle at 95% 20%, rgba(13,148,136,.08), transparent 28rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    a { color: #315efb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, .mono {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: .88em;
+    }
+    code { background: #edf2f8; border-radius: 5px; padding: .12rem .35rem; }
+    .wrap { width: min(1120px, calc(100% - 36px)); margin: 0 auto; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      color: white;
+      padding: 68px 0 56px;
+      background: linear-gradient(125deg, #0e1935 0%, #243a75 55%, #145d67 130%);
+    }
+    .hero::before, .hero::after {
+      content: ""; position: absolute; border-radius: 999px; pointer-events: none;
+    }
+    .hero::before {
+      width: 460px; height: 460px; right: -150px; top: -230px;
+      border: 1px solid rgba(255,255,255,.13); box-shadow: 0 0 0 70px rgba(255,255,255,.025), 0 0 0 140px rgba(255,255,255,.02);
+    }
+    .hero::after {
+      width: 240px; height: 240px; left: -130px; bottom: -180px;
+      background: rgba(45,212,191,.08);
+    }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 11px; border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px; background: rgba(255,255,255,.08);
+      color: #d9e8ff; font-size: 12px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #5eead4; }
+    h1 { max-width: 850px; margin: 18px 0 14px; font-size: clamp(36px, 6vw, 64px); line-height: 1.03; letter-spacing: -.045em; }
+    .hero p { max-width: 790px; margin: 0; color: #d7e4f6; font-size: 18px; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 26px; }
+    .hero-meta span { padding: 6px 10px; border-radius: 7px; background: rgba(255,255,255,.09); color: #e7efff; font-size: 13px; }
+    .status-ribbon {
+      margin-top: 30px; display: flex; gap: 12px; align-items: flex-start; max-width: 860px;
+      padding: 14px 16px; border-left: 3px solid #fbbf24; border-radius: 0 10px 10px 0;
+      background: rgba(15,23,42,.3); color: #fff4cf; font-size: 14px;
+    }
+    nav {
+      position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.93);
+      border-bottom: 1px solid var(--line); backdrop-filter: blur(12px);
+    }
+    nav .wrap { display: flex; gap: 22px; overflow-x: auto; padding-top: 12px; padding-bottom: 12px; }
+    nav a { flex: none; color: #42506a; font-size: 13px; font-weight: 700; }
+    main { padding: 34px 0 70px; }
+    section { scroll-margin-top: 70px; margin: 42px 0; }
+    .section-head { display: grid; grid-template-columns: 54px 1fr; gap: 14px; align-items: start; margin-bottom: 18px; }
+    .section-num {
+      display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px;
+      background: #e4eaff; color: #4338ca; font-weight: 850; font-size: 14px;
+    }
+    h2 { margin: 0; font-size: 28px; line-height: 1.2; letter-spacing: -.025em; }
+    h3 { margin: 0 0 10px; font-size: 18px; letter-spacing: -.015em; }
+    .section-head p { margin: 6px 0 0; color: var(--muted); }
+    .card {
+      background: var(--card); border: 1px solid rgba(210,221,235,.9); border-radius: 18px;
+      padding: 24px; box-shadow: var(--shadow);
+    }
+    .card + .card { margin-top: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: -54px; position: relative; z-index: 3; }
+    .kpi { padding: 19px; border-radius: 15px; background: white; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .kpi .label { color: var(--muted); font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; }
+    .kpi .value { margin: 3px 0 0; font-size: 29px; line-height: 1.2; font-weight: 850; letter-spacing: -.04em; }
+    .kpi .note { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .good { color: var(--green); } .bad { color: var(--red); } .warn { color: var(--amber); }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+    .badge.good { color: #166534; background: var(--green-bg); }
+    .badge.bad { color: #991b1b; background: var(--red-bg); }
+    .badge.warn { color: #92400e; background: var(--amber-bg); }
+    .badge.neutral { color: #374151; background: #e5e7eb; }
+    .callout { padding: 16px 18px; border-radius: 12px; border: 1px solid; margin: 16px 0; }
+    .callout.info { background: #eff6ff; border-color: #bfdbfe; color: #1e3a8a; }
+    .callout.warn { background: #fffbeb; border-color: #fde68a; color: #78350f; }
+    .callout.danger { background: #fef2f2; border-color: #fecaca; color: #7f1d1d; }
+    .callout strong { color: inherit; }
+    .muted { color: var(--muted); }
+    .small { font-size: 13px; }
+    .metric-formula {
+      display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px;
+      margin: 20px 0 10px; padding: 22px; border-radius: 14px; color: white;
+      background: linear-gradient(120deg, #172554, #312e81); text-align: center;
+    }
+    .metric-formula .formula { font-size: clamp(18px, 3vw, 27px); font-weight: 750; letter-spacing: -.02em; }
+    .metric-formula .threshold { padding: 5px 10px; border-radius: 8px; background: rgba(94,234,212,.14); color: #99f6e4; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .step { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: #fbfdff; }
+    .step b { display: block; margin-bottom: 4px; }
+    .step span { color: var(--muted); font-size: 13px; }
+    .bar-row { display: grid; grid-template-columns: 195px 1fr 72px; gap: 12px; align-items: center; margin: 14px 0; }
+    .bar-label { font-size: 13px; font-weight: 700; }
+    .bar-label small { display: block; color: var(--muted); font-weight: 500; }
+    .bar-track { position: relative; height: 17px; border-radius: 999px; background: #edf2f7; }
+    .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #f87171, #dc2626); }
+    .bar-fill.pass { background: linear-gradient(90deg, #34d399, #059669); }
+    .bar-threshold { position: absolute; top: -5px; bottom: -5px; left: 20%; width: 2px; background: #0f766e; }
+    .bar-value { text-align: right; font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; font-weight: 750; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 15px; margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+    .legend-line { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-line::before { content: ""; width: 18px; height: 3px; border-radius: 3px; background: var(--legend); }
+    .svg-card { padding: 8px 12px 0; overflow-x: auto; }
+    svg text { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    .flow-wrap { overflow-x: auto; padding: 4px; }
+    .flow-note { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+    .flow-note div { padding: 12px; border-radius: 10px; background: #f7f9fd; font-size: 13px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { padding: 11px 12px; background: #f1f5f9; color: #475569; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
+    td { padding: 11px 12px; border-top: 1px solid #e7edf4; vertical-align: top; }
+    tbody tr:hover { background: #fafcff; }
+    .run-id { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; color: #475569; }
+    .heatmap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px 18px; }
+    .task-row { display: grid; grid-template-columns: 1fr 104px; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 8px; background: #f8fafc; }
+    .task-row.flip { background: #fffbeb; box-shadow: inset 3px 0 #f59e0b; }
+    .task-name { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; }
+    .cells { display: grid; grid-template-columns: repeat(3, 30px); gap: 5px; }
+    .cell { display: grid; place-items: center; width: 30px; height: 25px; border-radius: 6px; color: white; font-size: 11px; font-weight: 850; }
+    .cell.ok { background: #10b981; } .cell.fail { background: #f87171; }
+    .heat-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0 18px; font-size: 12px; color: var(--muted); }
+    .heat-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .reject-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .reject { padding: 16px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fbfcfe; }
+    .reject h3 { font-size: 15px; margin-bottom: 5px; }
+    .reject p { margin: 0; color: var(--muted); font-size: 13px; }
+    pre {
+      overflow-x: auto; margin: 0; padding: 18px; border-radius: 12px;
+      background: #111827; color: #d8e2ef; font: 12px/1.65 "SFMono-Regular", Consolas, monospace;
+    }
+    pre .comment { color: #7dd3fc; }
+    .code-label { margin: 16px 0 8px; font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .timeline { position: relative; margin-left: 9px; padding-left: 28px; border-left: 2px solid #d9e2ef; }
+    .event { position: relative; margin: 0 0 22px; }
+    .event::before { content: ""; position: absolute; left: -36px; top: 4px; width: 13px; height: 13px; border: 3px solid white; border-radius: 50%; background: var(--indigo); box-shadow: 0 0 0 1px #c7d2fe; }
+    .event h3 { margin: 0; font-size: 16px; }
+    .event p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .final-banner { padding: 28px; border-radius: 18px; color: white; background: linear-gradient(120deg, #172554, #4c1d95); }
+    .final-banner h2 { color: white; }
+    .final-banner p { color: #e0e7ff; }
+    footer { padding: 24px 0 38px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }
+    @media (max-width: 850px) {
+      .kpis { grid-template-columns: repeat(2, 1fr); margin-top: -30px; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 140px 1fr 65px; }
+      .heatmap { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 650px) {
+      .hero { padding: 46px 0 58px; }
+      .hero p { font-size: 16px; }
+      .grid-2, .steps, .flow-note, .reject-grid { grid-template-columns: 1fr; }
+      .card { padding: 18px; border-radius: 14px; }
+      .bar-row { grid-template-columns: 1fr 70px; }
+      .bar-label { grid-column: 1 / -1; }
+      .section-head { grid-template-columns: 42px 1fr; }
+      .section-num { width: 36px; height: 36px; }
+      h2 { font-size: 24px; }
+    }
+    @media print {
+      nav { display: none; } body { background: white; } .hero { padding: 32px 0; }
+      .kpis { margin-top: 12px; } .card { box-shadow: none; break-inside: avoid; }
+      section { break-inside: avoid; } .wrap { width: 95%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Reliable-agent · Investigation report</div>
+      <h1>Improving AC3<br>repeatability</h1>
+      <p>How prefix consensus, careful validation, and failure-driven iteration reduced the repeat-success range on the self-hosted Qwen 9B agent—and why the project is not yet accepted.</p>
+      <div class="hero-meta">
+        <span>18 November 2026</span>
+        <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
+        <span>Default profile · 20 tasks</span>
+        <span>Implementation through <code>b7cb4dd</code></span>
+      </div>
+      <div class="status-ribbon">
+        <strong>Status:</strong>
+        <span>Three-repeat diagnostic AC3 acceptance was achieved twice. No self-hosted 10-repeat run met AC3, full validation was not run, and spec 06 remains incomplete.</span>
+      </div>
+    </div>
+  </header>
+
+  <nav aria-label="Report sections">
+    <div class="wrap">
+      <a href="#summary">Summary</a><a href="#metric">Metric</a><a href="#method">Method</a>
+      <a href="#results">Results</a><a href="#tasks">Task evidence</a><a href="#negative">Negative results</a>
+      <a href="#reproduce">Reproduce</a><a href="#gap">Remaining gap</a>
+    </div>
+  </nav>
+
+  <main class="wrap">
+    <div class="kpis" aria-label="Headline results">
+      <div class="kpi"><div class="label">Best diagnostic VM4</div><div class="value good">0.0500</div><div class="note">20 tasks × 3 repeats · accepted</div></div>
+      <div class="kpi"><div class="label">Best self-hosted VM1</div><div class="value">0.7167</div><div class="note">Vote H=1 / execution H=2</div></div>
+      <div class="kpi"><div class="label">Provider-independent tests</div><div class="value">114</div><div class="note">All passing · smoke run passing</div></div>
+      <div class="kpi"><div class="label">Accepted 10-repeat runs</div><div class="value bad">0</div><div class="note">Project acceptance still open</div></div>
+    </div>
+
+    <section id="summary">
+      <div class="section-head"><div class="section-num">01</div><div><h2>The improvement, in one page</h2><p>AC3 improved by changing how sampled plans become actions—not by restricting sampling.</p></div></div>
+      <div class="grid-3">
+        <div class="card"><span class="badge good">What worked</span><h3 style="margin-top:12px">Consensus before commitment</h3><p class="small muted">The engine samples complete plans, compares short action prefixes, and executes only the winning prefix. It then plans again from the resulting public observation.</p></div>
+        <div class="card"><span class="badge good">What worked</span><h3 style="margin-top:12px">Separate prompt, vote, and execution lengths</h3><p class="small muted">Independent horizons avoid the all-empty plans produced by prompt-only H=1 and allow one-action consensus with two-action execution.</p></div>
+        <div class="card"><span class="badge warn">Boundary condition</span><h3 style="margin-top:12px">Three repeats are not ten</h3><p class="small muted">Two screens reached VM4 ≈ 0.05. Every longer attempt became definitively rejected and was stopped early to preserve server time.</p></div>
+      </div>
+      <div class="callout info"><strong>Sampling remained intact.</strong> All admissible results use the self-hosted A10 deployment, temperature 0.7, established serving defaults, and the required Qwen 9B model. Deterministic serving, fixed-repeat seed tactics, alternative models, and provider-hosted evidence were excluded.</div>
+    </section>
+
+    <section id="metric">
+      <div class="section-head"><div class="section-num">02</div><div><h2>What AC3 measures</h2><p>One task changing outcome can consume the entire acceptance margin.</p></div></div>
+      <div class="card">
+        <p>For each unperturbed repeat, the validator computes the overall success rate across the same 20 tasks. VM4 is the largest repeat rate minus the smallest.</p>
+        <div class="metric-formula"><span class="formula">VM4 = max(repeat success) − min(repeat success)</span><span class="formula threshold">accept if VM4 ≤ 0.05</span></div>
+        <div class="steps">
+          <div class="step"><b>20 tasks per repeat</b><span>Each task contributes 0.05 to one repeat’s overall success rate.</span></div>
+          <div class="step"><b>One-task margin</b><span>All repeats must fit within a one-success difference, subject to floating-point comparison.</span></div>
+          <div class="step"><b>Partial ≠ accepted project</b><span>Modified configurations are diagnostic even when all 20 tasks and 10 repeats are used.</span></div>
+        </div>
+        <div class="callout warn small"><strong>Floating point matters.</strong> The validator strictly compares the computed floating-point difference. For example, <code>0.65 − 0.60</code> evaluates to <code>0.050000000000000044</code>, which is rejected even though the mathematical difference is 0.05.</div>
+      </div>
+    </section>
+
+    <section id="method">
+      <div class="section-head"><div class="section-num">03</div><div><h2>The decision-flow changes</h2><p>Consensus is enforced by the engine, while the model still produces ordinary complete plans.</p></div></div>
+      <div class="card">
+        <div class="flow-wrap">
+          <svg viewBox="0 0 1080 410" width="100%" style="min-width:880px; height:auto" role="img" aria-label="Prefix consensus planning flow">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/></marker>
+              <linearGradient id="voteFill" x1="0" x2="1"><stop stop-color="#e0e7ff"/><stop offset="1" stop-color="#ede9fe"/></linearGradient>
+              <linearGradient id="execFill" x1="0" x2="1"><stop stop-color="#ccfbf1"/><stop offset="1" stop-color="#dcfce7"/></linearGradient>
+            </defs>
+            <g stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)">
+              <path d="M185 75 H250"/><path d="M425 75 H490"/><path d="M665 75 H730"/><path d="M895 75 H955"/>
+              <path d="M1000 110 V165"/><path d="M1000 235 V300 H885"/>
+              <path d="M730 300 H665"/><path d="M490 300 H425"/>
+              <path d="M575 110 V190 H575 V215" stroke-dasharray="5 5"/>
+              <path d="M575 215 V300 H640" stroke-dasharray="5 5"/>
+            </g>
+            <g>
+              <rect x="20" y="35" width="165" height="80" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+              <text x="102" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="#1e3a8a">Sample plans</text><text x="102" y="90" text-anchor="middle" font-size="12" fill="#475569">ordinary complete plans</text>
+              <rect x="250" y="35" width="175" height="80" rx="15" fill="#fffbeb" stroke="#fcd34d"/>
+              <text x="337" y="62" text-anchor="middle" font-size="15" font-weight="700" fill="#78350f">Control empty claims</text><text x="337" y="85" text-anchor="middle" font-size="12" fill="#475569">before first observation</text>
+              <rect x="490" y="35" width="175" height="80" rx="15" fill="url(#voteFill)" stroke="#a5b4fc"/>
+              <text x="577" y="62" text-anchor="middle" font-size="15" font-weight="700" fill="#3730a3">Vote on prefix V</text><text x="577" y="85" text-anchor="middle" font-size="12" fill="#475569">normalized action sequence</text>
+              <rect x="730" y="35" width="165" height="80" rx="15" fill="#f5f3ff" stroke="#c4b5fd"/>
+              <text x="812" y="62" text-anchor="middle" font-size="15" font-weight="700" fill="#5b21b6">Unanimous completion</text><text x="812" y="85" text-anchor="middle" font-size="12" fill="#475569">within each vote group</text>
+              <rect x="955" y="35" width="105" height="80" rx="15" fill="url(#execFill)" stroke="#6ee7b7"/>
+              <text x="1007" y="66" text-anchor="middle" font-size="15" font-weight="700" fill="#065f46">Execute H</text><text x="1007" y="90" text-anchor="middle" font-size="12" fill="#475569">actions</text>
+              <rect x="885" y="165" width="230" height="70" rx="14" fill="#ffffff" stroke="#94a3b8"/>
+              <text x="1000" y="194" text-anchor="middle" font-size="15" font-weight="700" fill="#334155">Public observation</text><text x="1000" y="216" text-anchor="middle" font-size="12" fill="#64748b">success, failure, or retry</text>
+              <rect x="640" y="260" width="245" height="80" rx="15" fill="#eff6ff" stroke="#93c5fd"/>
+              <text x="762" y="291" text-anchor="middle" font-size="15" font-weight="700" fill="#1e3a8a">Replan from current state</text><text x="762" y="315" text-anchor="middle" font-size="12" fill="#475569">do not commit to a sampled tail</text>
+              <rect x="250" y="260" width="175" height="80" rx="15" fill="#f0fdf4" stroke="#86efac"/>
+              <text x="337" y="291" text-anchor="middle" font-size="15" font-weight="700" fill="#166534">Verify completion</text><text x="337" y="315" text-anchor="middle" font-size="12" fill="#475569">only for reaching plans</text>
+              <rect x="20" y="260" width="230" height="80" rx="15" fill="#f8fafc" stroke="#cbd5e1"/>
+              <text x="135" y="291" text-anchor="middle" font-size="15" font-weight="700" fill="#334155">Prefix exhausted</text><text x="135" y="315" text-anchor="middle" font-size="12" fill="#64748b">continue without verification</text>
+              <rect x="490" y="165" width="175" height="55" rx="12" fill="#fff7ed" stroke="#fdba74"/>
+              <text x="577" y="189" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">Mixed completion flags?</text><text x="577" y="208" text-anchor="middle" font-size="11" fill="#64748b">winner becomes non-reaching</text>
+            </g>
+          </svg>
+        </div>
+        <div class="flow-note">
+          <div><strong>H — execution horizon.</strong><br><span class="muted">Caps the candidate actions retained for execution. Truncated candidates become non-reaching.</span></div>
+          <div><strong>V — vote horizon.</strong><br><span class="muted">Caps only the actions compared by voting. V=1/H=2 combines first-action consensus with two-action execution.</span></div>
+          <div><strong>Prompt horizon — independent.</strong><br><span class="muted">The model can still return complete plans; the engine does not rely on short-horizon instruction compliance.</span></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><h3>Empty-plan control</h3><p class="small muted">Before the first observation, actionable valid candidates suppress empty completion claims. Empty-only rounds can still verify an initially satisfied objective. The successful H=1 screen suppressed 68 empty claims.</p></div>
+        <div class="card"><h3>Race-independent completion</h3><p class="small muted">Candidates sharing a normalized prefix must unanimously claim completion. The rule survives goal-review filtering and reversed race-completion order, preventing a fast sample from deciding verification semantics.</p></div>
+      </div>
+    </section>
+
+    <section id="results">
+      <div class="section-head"><div class="section-num">04</div><div><h2>Measured improvement</h2><p>Diagnostic screens improved substantially, but longer runs exposed the remaining variance.</p></div></div>
+      <div class="card">
+        <h3>VM4 across representative runs</h3>
+        <p class="small muted">The threshold marker is 0.05. Baselines are full 10-repeat runs; candidate screens use three repeats, so the comparison shows progress—not equivalent certification.</p>
+        <div class="bar-row"><div class="bar-label">Latest unchanged-agent full<small>20261117T150114 · 10 repeats</small></div><div class="bar-track"><div class="bar-fill" style="width:100%"></div><div class="bar-threshold"></div></div><div class="bar-value bad">0.2500</div></div>
+        <div class="bar-row"><div class="bar-label">H=1 full-plan prompts<small>20261118T034306 · 3 repeats</small></div><div class="bar-track"><div class="bar-fill pass" style="width:20%"></div><div class="bar-threshold"></div></div><div class="bar-value good">0.0500</div></div>
+        <div class="bar-row"><div class="bar-label">H=2 forward<small>20261118T050959 · 3 repeats</small></div><div class="bar-track"><div class="bar-fill" style="width:60%"></div><div class="bar-threshold"></div></div><div class="bar-value">0.1500</div></div>
+        <div class="bar-row"><div class="bar-label">H=1 goal regression<small>20261118T063042 · 3 repeats</small></div><div class="bar-track"><div class="bar-fill" style="width:40%"></div><div class="bar-threshold"></div></div><div class="bar-value">0.1000</div></div>
+        <div class="bar-row"><div class="bar-label">H=2 · 3+1 samples<small>20261118T074118 · 3 repeats</small></div><div class="bar-track"><div class="bar-fill pass" style="width:20%"></div><div class="bar-threshold"></div></div><div class="bar-value good">0.0500</div></div>
+        <div class="bar-row"><div class="bar-label">Vote H=1 / execute H=2<small>20261118T093122 · 3 repeats</small></div><div class="bar-track"><div class="bar-fill" style="width:60%"></div><div class="bar-threshold"></div></div><div class="bar-value">0.1500</div></div>
+      </div>
+      <div class="card svg-card">
+        <h3 style="padding:10px 10px 0">Repeat-to-repeat success trajectories</h3>
+        <p class="small muted" style="padding:0 10px">Each line is one three-repeat, 20-task diagnostic. Flat lines are desirable; vertical spread determines VM4.</p>
+        <svg viewBox="0 0 790 310" width="100%" style="min-width:650px; height:auto" role="img" aria-label="Per-repeat success rates for four candidate configurations">
+          <g stroke="#e2e8f0" stroke-width="1"><line x1="70" y1="245" x2="730" y2="245"/><line x1="70" y1="195" x2="730" y2="195"/><line x1="70" y1="145" x2="730" y2="145"/><line x1="70" y1="95" x2="730" y2="95"/><line x1="70" y1="45" x2="730" y2="45"/></g>
+          <g fill="#64748b" font-size="12" text-anchor="end"><text x="55" y="249">0.00</text><text x="55" y="199">0.25</text><text x="55" y="149">0.50</text><text x="55" y="99">0.75</text><text x="55" y="49">1.00</text></g>
+          <g fill="#64748b" font-size="12" text-anchor="middle"><text x="100" y="275">Repeat 1</text><text x="400" y="275">Repeat 2</text><text x="700" y="275">Repeat 3</text></g>
+          <g fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="100,135 400,125 700,135" stroke="#059669"/>
+            <polyline points="100,115 400,105 700,135" stroke="#3b82f6"/>
+            <polyline points="100,125 400,125 700,105" stroke="#7c3aed"/>
+            <polyline points="100,115 400,105 700,85" stroke="#ea580c"/>
+          </g>
+          <g stroke="white" stroke-width="2">
+            <g fill="#059669"><circle cx="100" cy="135" r="5"/><circle cx="400" cy="125" r="5"/><circle cx="700" cy="135" r="5"/></g>
+            <g fill="#3b82f6"><circle cx="100" cy="115" r="5"/><circle cx="400" cy="105" r="5"/><circle cx="700" cy="135" r="5"/></g>
+            <g fill="#7c3aed"><circle cx="100" cy="125" r="5"/><circle cx="400" cy="125" r="5"/><circle cx="700" cy="105" r="5"/></g>
+            <g fill="#ea580c"><circle cx="100" cy="115" r="5"/><circle cx="400" cy="105" r="5"/><circle cx="700" cy="85" r="5"/></g>
+          </g>
+          <g font-size="11" font-weight="700"><text x="108" y="132" fill="#047857">0.55</text><text x="408" y="122" fill="#047857">0.60</text><text x="682" y="153" fill="#047857">0.55</text><text x="682" y="78" fill="#c2410c">0.80</text></g>
+        </svg>
+        <div class="chart-legend" style="padding:0 10px 14px">
+          <span class="legend-line" style="--legend:#059669">H=1 · accepted screen</span><span class="legend-line" style="--legend:#3b82f6">H=2 forward</span>
+          <span class="legend-line" style="--legend:#7c3aed">H=1 goal regression</span><span class="legend-line" style="--legend:#ea580c">Vote H=1 / execute H=2</span>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><span class="badge good">AC3 diagnostic accepted</span><h3 style="margin-top:12px">Best repeatability screen</h3><p class="small muted">Run <code>20261118T034306-781510Z-53b3a0db4c66</code></p><p><strong>0.55 / 0.60 / 0.55</strong><br>VM1 0.5667 · VM4 0.04999999999999993<br>AC6 and AC7 accepted.</p></div>
+        <div class="card"><span class="badge neutral">Highest success</span><h3 style="margin-top:12px">Best VM1 screen</h3><p class="small muted">Run <code>20261118T093122-831421Z-69677a620fe7</code></p><p><strong>0.65 / 0.70 / 0.80</strong><br>VM1 0.7167 · VM4 0.15<br>Higher success did not imply higher consistency.</p></div>
+      </div>
+    </section>
+
+    <section id="tasks">
+      <div class="section-head"><div class="section-num">05</div><div><h2>Where the remaining variance lives</h2><p>The lowest-variance candidate saturated 16 of 20 tasks; four simple stacking tasks still flipped.</p></div></div>
+      <div class="card">
+        <h3>H=1 goal regression · per-task outcomes</h3>
+        <p class="small muted">Run <code>20261118T063042-081495Z-0a70e44a788c</code>. Green is success, red is failure, and amber rows changed outcome across repeats.</p>
+        <div class="heat-legend"><span><i class="dot" style="background:#10b981"></i>Success</span><span><i class="dot" style="background:#f87171"></i>Failure</span><span><i class="dot" style="background:#f59e0b"></i>Unstable task</span></div>
+        <div class="heatmap">
+          <div class="task-row"><span class="task-name">move_c</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">restack_abc</span><div class="cells"><i class="cell fail">×</i><i class="cell fail">×</i><i class="cell fail">×</i></div></div>
+          <div class="task-row"><span class="task-name">restack_bac</span><div class="cells"><i class="cell fail">×</i><i class="cell fail">×</i><i class="cell fail">×</i></div></div>
+          <div class="task-row"><span class="task-name">restack_bca</span><div class="cells"><i class="cell fail">×</i><i class="cell fail">×</i><i class="cell fail">×</i></div></div>
+          <div class="task-row"><span class="task-name">restack_cab</span><div class="cells"><i class="cell fail">×</i><i class="cell fail">×</i><i class="cell fail">×</i></div></div>
+          <div class="task-row"><span class="task-name">stack_ab</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row flip"><span class="task-name">stack_ac</span><div class="cells"><i class="cell ok">✓</i><i class="cell fail">×</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row flip"><span class="task-name">stack_ba</span><div class="cells"><i class="cell ok">✓</i><i class="cell fail">×</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">stack_ba_on_c</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row flip"><span class="task-name">stack_bc</span><div class="cells"><i class="cell fail">×</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row flip"><span class="task-name">stack_ca</span><div class="cells"><i class="cell fail">×</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">stack_ca_on_b</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">stack_cb</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">stack_three</span><div class="cells"><i class="cell fail">×</i><i class="cell fail">×</i><i class="cell fail">×</i></div></div>
+          <div class="task-row"><span class="task-name">tower_four</span><div class="cells"><i class="cell fail">×</i><i class="cell fail">×</i><i class="cell fail">×</i></div></div>
+          <div class="task-row"><span class="task-name">unstack_ab</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">unstack_ba</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">unstack_bc</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">unstack_ca</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+          <div class="task-row"><span class="task-name">unstack_tower</span><div class="cells"><i class="cell ok">✓</i><i class="cell ok">✓</i><i class="cell ok">✓</i></div></div>
+        </div>
+        <div class="callout warn small"><strong>The final four flips:</strong> <code>stack_ac</code>, <code>stack_ba</code>, <code>stack_bc</code>, and <code>stack_ca</code>. A targeted 12-episode optimized/budget experiment scored 0.50 / 0.75 / 1.00 on these tasks, producing VM4 = 0.50. It did not justify a full extension.</div>
+      </div>
+      <div class="card">
+        <h3>The last 10-repeat attempt</h3>
+        <div class="grid-3" style="margin:18px 0">
+          <div style="text-align:center;padding:16px;border-radius:12px;background:#f0fdf4"><div class="muted small">Repeat 1</div><div style="font-size:28px;font-weight:850">13 / 20</div><div class="good mono">0.65</div></div>
+          <div style="text-align:center;padding:16px;border-radius:12px;background:#f0fdf4"><div class="muted small">Repeat 2</div><div style="font-size:28px;font-weight:850">13 / 20</div><div class="good mono">0.65</div></div>
+          <div style="text-align:center;padding:16px;border-radius:12px;background:#fff7ed"><div class="muted small">Repeat 3</div><div style="font-size:28px;font-weight:850">12 / 20</div><div class="warn mono">0.60</div></div>
+        </div>
+        <div class="callout danger"><strong>Early stop at 62 records.</strong> The range became <code>0.050000000000000044 &gt; 0.05</code>. Because completed-repeat rates only extend the range, the remaining 138 episodes could not restore acceptance. Run <code>20261118T110200-342470Z-dad0e927d25a</code> was marked aborted with this rationale.</div>
+      </div>
+    </section>
+
+    <section id="negative">
+      <div class="section-head"><div class="section-num">06</div><div><h2>What did not work</h2><p>Negative results prevented repeated spending on mechanisms that looked plausible but failed in episodes.</p></div></div>
+      <div class="reject-grid">
+        <div class="reject"><span class="badge bad">Aborted</span><h3 style="margin-top:9px">Prompt-controlled H=1</h3><p>All five initial candidates were empty on easy tasks. No prefix truncation occurred, so the run did not test the intended mechanism.</p></div>
+        <div class="reject"><span class="badge bad">Rejected</span><h3 style="margin-top:9px">Selected-prefix review</h3><p>Repeats fell to 0.40 and 0.30. Even short post-vote reviews rejected trajectories the environment could use for progress.</p></div>
+        <div class="reject"><span class="badge bad">Mixed</span><h3 style="margin-top:9px">Goal regression</h3><p>H=2 gave 0.70 / 0.70 / 0.50. H=1 gave 0.60 / 0.60 / 0.70. VM1 improved in some contexts, but 10-repeat durability remained unproven.</p></div>
+        <div class="reject"><span class="badge bad">Rejected</span><h3 style="margin-top:9px">More budget or more samples</h3><p>50 actions / 298 seconds produced 0.70 / 0.60. Split 4+1 samples produced 0.80 / 0.55. Both were stopped after definitive rejection.</p></div>
+        <div class="reject"><span class="badge warn">Operational</span><h3 style="margin-top:9px">Prefix caching and CUDA graphs</h3><p>Performance changes did not stabilize AC3. A separate 3+1 screen passed AC3 but exposed stderr-driven final-response loss.</p></div>
+        <div class="reject"><span class="badge good">Fixed operationally</span><h3 style="margin-top:9px">Error-only logging</h3><p>Thirteen missing finals were caused by the 64 KiB stderr limit, not slow episodes. <code>--log-level ERROR</code> restored AC7 to 1.0; VM4 remained 0.15.</p></div>
+      </div>
+      <div class="callout info small"><strong>Efficient partial validation.</strong> Screens used all 20 tasks and three unperturbed repeats with only AC1/AC3/AC6/AC7. Prompt variants and failure scenarios were omitted. Completed-repeat bounds enabled early stopping whenever the VM4 threshold became mathematically unrecoverable.</div>
+    </section>
+
+    <section id="reproduce">
+      <div class="section-head"><div class="section-num">07</div><div><h2>Implementation and reproduction</h2><p>The report is backed by a numbered spec, pushed implementation, tests, and append-only run evidence.</p></div></div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Best diagnostic AC3 screen</h3>
+          <div class="code-label">Solution overrides</div>
+          <pre>--model openai:qwen/qwen3.5-9b
+--temperature 0.7
+--model-timeout 90
+--sample-retries 2
+--plan-max-output-tokens 3000
+--plan-samples 5 --plan-spares 1
+--plan-execution-horizon 1
+--max-replans 20
+--no-plan-review --no-goal-review</pre>
+          <p class="small muted">Revision <code>e0847c3269aa96ffe1b73a0cfda7ece013b728df</code><br>Run <code>20261118T034306-781510Z-53b3a0db4c66</code></p>
+        </div>
+        <div class="card">
+          <h3>Highest-VM1 split configuration</h3>
+          <div class="code-label">Solution overrides</div>
+          <pre>--model openai:qwen/qwen3.5-9b
+--temperature 0.7
+--model-timeout 90
+--sample-retries 2
+--plan-max-output-tokens 3000
+--plan-samples 3 --plan-spares 1
+--plan-execution-horizon 2
+--plan-vote-horizon 1
+--max-replans 20
+--no-plan-review --no-goal-review
+--log-level ERROR</pre>
+          <p class="small muted">Revision <code>23679bb1bb0e3f8e1a5ca20e8c7ba5154662626e</code><br>Run <code>20261118T093122-831421Z-69677a620fe7</code></p>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Partial-validation configuration pattern</h3>
+        <div class="code-label">Complete modified default configuration</div>
+        <pre><span class="comment"># Preserve every discovered field; change only the diagnostic scope.</span>
+configuration["full"]["task_ids"] = all_20_default_tasks
+configuration["full"]["repeats"] = 3             <span class="comment"># use 10 for extension</span>
+configuration["full"]["prompt_variant_ids"] = []
+configuration["full"]["failure_scenario_ids"] = []
+configuration["full"]["failure_task_ids"] = {}
+configuration["acceptance_criteria"] = [
+    "AC1", "AC3", "AC6", "AC7"
+]</pre>
+        <p class="small muted">Submit the complete object to <code>POST /validate_partial</code>. Partial results are diagnostic and are never added to the full-validation history.</p>
+      </div>
+      <div class="card">
+        <h3>Source and verification</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
+            <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6/AC8 open</span></td></tr>
+            <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
+            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run</td><td><span class="badge good">114 passed</span></td></tr>
+            <tr><td>Run evidence</td><td><code>agent-validation/artifacts/runs/&lt;run-id&gt;/</code></td><td><span class="badge neutral">Retained</span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section id="gap">
+      <div class="final-banner">
+        <span class="badge warn">Remaining gap</span>
+        <h2 style="margin-top:14px">Repeatability improved. Acceptance did not.</h2>
+        <p>The investigation produced two three-repeat diagnostic AC3 passes and raised the best self-hosted VM1 to 0.7167. However, no tested self-hosted configuration sustained VM4 ≤ 0.05 over 10 repeats.</p>
+        <div class="grid-3" style="margin-top:20px">
+          <div><strong style="font-size:20px">1. Saturate the simple flips</strong><p class="small">Future work must make the four stacking outcomes reliably successful or reliably recoverable without benchmark-specific logic.</p></div>
+          <div><strong style="font-size:20px">2. Keep ten-repeat evidence central</strong><p class="small">A three-repeat pass is useful screening evidence only. Extensions must use exact floating-point comparison and early-stop bounds.</p></div>
+          <div><strong style="font-size:20px">3. Validate fully only after screening</strong><p class="small">Spec 06 requires an accepted self-hosted 10-repeat diagnostic before the expensive authoritative full run.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <strong>Reliable-agent · AC3 repeatability investigation</strong><br>
+      Generated 18 November 2026 from the implementation, test suite, investigation record, and retained validation artifacts. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
+    </div>
+  </footer>
+</body>
+</html>
