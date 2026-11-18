@@ -26,6 +26,7 @@ https://github.com/anton-pershin/reliable-agent — management and implementatio
 - **FR6. Observability.** Log the effective execution horizon, number of truncated candidates, selected completion flag, and number of empty claims suppressed with episode and plan-round identifiers. Existing plan candidate, vote, selection, exhaustion, failure, verification, and termination evidence must remain available.
 - **FR7. General-purpose boundaries.** The mechanism must operate only on public action requests and observations. It must not parse benchmark identities, inspect private goals or results, add a benchmark-specific solver, or move benchmark integration into the decision engine.
 - **FR8. Configuration compatibility.** Defaults must preserve the previous complete-plan voting and execution behavior apart from the explicit empty-claim rule. Existing overrides and public protocol shapes must continue to work.
+- **FR9. Optional goal-regression instructions.** `AgentConfig.planning_strategy` and `--planning-strategy` must support `forward` (default) and `goal_regression`. The latter asks for backward derivation from goal predicates and conflicts before forward plan validation. This general-purpose instruction variant must be explicit and recorded in effective configuration; it must not change the default distribution used by the prefix candidate or apply implicitly to prompt-controlled horizons.
 
 #### 2.2 Non-functional requirements
 
@@ -37,7 +38,7 @@ https://github.com/anton-pershin/reliable-agent — management and implementatio
 
 ### 3. Acceptance criteria
 
-- **AC1. Configuration contract.** Tests must show the default execution horizon is 0, valid overrides parse, invalid values are rejected, explicit execution H takes precedence over prompt horizon, and execution H alone leaves complete-plan instructions unchanged. Covers FR2 and FR8.
+- **AC1. Configuration contract.** Tests must show the default execution horizon is 0, valid overrides parse, invalid values are rejected, explicit execution H takes precedence over prompt horizon, and execution H alone leaves complete-plan instructions unchanged. Tests must also show that `forward` is the default planning strategy and `goal_regression` is explicit and contains the required backward-derivation guidance. Covers FR2, FR8, and FR9.
 - **AC2. Prefix vote.** Tests with distinct plan tails must show that pre-vote truncation turns a raw tie into a prefix majority, selects the correct sample, executes only that prefix, and records the effective horizon and truncation count. A mixed-completion vote group must produce a non-reaching winner independent of sample completion order. Covers FR3 and FR6.
 - **AC3. Round flow.** Tests must show that truncated candidates become `reaches_goal=false`, exhaust into re-planning without verification or failure feedback, preserve transient retries, and allow a later reaching plan to verify and complete. Covers FR3 and FR4.
 - **AC4. Empty claims.** Tests must show that actionable candidates suppress empty completion claims before the first observation, an empty-only initial round still verifies, and an empty claim after an observation retains its prior behavior. Covers FR5.

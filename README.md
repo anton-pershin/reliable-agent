@@ -40,6 +40,10 @@ By default, the agent plans before it acts. It fires several concurrent candidat
 
 With `--plan-horizon N`, the planner returns at most N actions per candidate plus a `reaches_goal` flag instead of one complete plan. A plan exhausted without `reaches_goal` starts a new plan round immediately, without verification. Shorter plans agree with each other more often, which sharpens the majority vote on noisy models.
 
+`--plan-execution-horizon N` enforces a prefix without changing those plan instructions. The engine can therefore sample ordinary complete plans, truncate every candidate to its first N actions before voting, execute only the winning prefix, and plan again from the resulting observation. This avoids relying on the model to comply with a short-plan prompt. Before the first observation, valid actionable candidates suppress empty completion claims; an empty-only round can still verify an initially satisfied objective. Candidates with the same normalized prefix must unanimously claim completion before the selected prefix can enter completion verification. The default execution horizon is 0, which preserves complete-plan execution.
+
+`--planning-strategy goal_regression` optionally asks the planner to derive required actions backward from goal predicates and conflicts before checking the forward plan. The default `forward` strategy keeps the established complete-plan instructions.
+
 ## JSON Lines execution
 
 The process entry point is:
@@ -61,11 +65,13 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--temperature N` | `0.0` | Generation temperature |
 | `--max-output-tokens N` | `8000` | Output-token limit |
 | `--prompt-version VERSION` | `consistent-planning-v1` | Prompt version recorded in logs |
+| `--planning-strategy MODE` | `forward` | `forward` or `goal_regression` complete-plan reasoning |
 | `--planning / --no-planning` | on | Plan-vote-execute decision flow |
 | `--plan-samples N` | `3` | Candidate plans per vote |
 | `--plan-spares N` | `1` | Extra plan samples per vote; only the fastest completions count |
 | `--plan-max-output-tokens N` | `0` | Per-sample plan output cap; `0` uses the global limit |
-| `--plan-horizon N` | `0` | Maximum actions per candidate plan; `0` requires a complete plan |
+| `--plan-horizon N` | `0` | Maximum actions requested per candidate; `0` requires a complete plan |
+| `--plan-execution-horizon N` | `0` | Prefix length enforced before voting/execution, independent of plan instructions |
 | `--plan-review / --no-plan-review` | on | Validity review of candidate plans with prefix truncation |
 | `--sample-retries N` | `1` | Retries per plan or verification sample after a transient failure |
 | `--verification-samples N` | `2` | Concurrent verification samples; the fastest verdict wins |
