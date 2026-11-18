@@ -24,6 +24,7 @@ class AgentConfig(ContractModel):
     plan_max_output_tokens: int = Field(default=0, ge=0)
     plan_horizon: int = Field(default=0, ge=0, le=50)
     plan_execution_horizon: int = Field(default=0, ge=0, le=50)
+    plan_vote_horizon: int = Field(default=0, ge=0, le=50)
     plan_review_enabled: bool = True
     selected_plan_review_enabled: bool = False
     goal_review_enabled: bool = True

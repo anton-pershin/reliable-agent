@@ -105,6 +105,23 @@ def test_vote_requires_unanimous_completion_for_same_prefix(action) -> None:
         assert winner.reaches_goal is False
 
 
+def test_vote_prefix_can_select_without_truncating_winner(action) -> None:
+    agreed = ActionRequest(name="pick_up", arguments={"block": "a"})
+    first_tail = ActionRequest(name="pick_up", arguments={"block": "b"})
+    second_tail = ActionRequest(name="get_action_catalog", arguments={})
+    wrong = plan_of(action, first_tail)
+    first = plan_of(agreed, first_tail)
+    second = plan_of(agreed, second_tail)
+    index, winner, counts = vote_plans(
+        [(0, wrong), (1, first), (2, second)], horizon=1
+    )
+    assert index == 1
+    assert winner == first
+    assert len(winner.actions) == 2
+    assert sorted(counts.values()) == [1, 2]
+    assert all("pick_up" in key or "get_action_catalog" in key for key in counts)
+
+
 def test_vote_ignores_argument_order_in_json(action) -> None:
     one = PlanCandidate(
         actions=[ActionRequest(name="pick_up", arguments={"a": 1, "b": 2})],
@@ -409,6 +426,46 @@ async def test_horizon_is_enforced_before_voting(task, action, final_decision) -
     assert vote["horizon"] == 1
     selected = next(event for event in events if event["event"] == "plan_selected")
     assert selected["reaches_goal"] is False
+
+
+async def test_vote_horizon_is_independent_of_execution_horizon(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            plan_execution_horizon=2,
+            plan_vote_horizon=1,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+        ),
+        clock=clock,
+    )
+    agreed = ActionRequest(name="pick_up", arguments={"block": "a"})
+    first_tail = ActionRequest(name="pick_up", arguments={"block": "b"})
+    second_tail = ActionRequest(name="get_action_catalog", arguments={})
+    model = ScriptedModel(
+        [final_decision],
+        plans=[
+            [
+                plan_of(action, first_tail),
+                plan_of(agreed, first_tail),
+                plan_of(agreed, second_tail),
+            ]
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    # Voting compares one action, but the representative winner keeps and
+    # executes its two-action candidate instead of re-planning after action 1.
+    assert [batch.actions for batch in executor.batches] == [[agreed], [first_tail]]
+    assert len(model.plan_calls) == 1
+    assert len(model.verify_calls) == 1
+    vote = next(event for event in read_logs(stream) if event["event"] == "plan_vote")
+    assert vote["winner_sample"] == 1
+    assert vote["vote_horizon"] == 1
+    assert vote["horizon"] == 2
 
 
 async def test_empty_completion_claim_triggers_verification(task, final_decision) -> None:
@@ -1022,6 +1079,8 @@ def test_planning_overrides_parse() -> None:
             "goal_regression",
             "--plan-execution-horizon",
             "1",
+            "--plan-vote-horizon",
+            "1",
             "--selected-plan-review",
             "--max-replans",
             "2",
@@ -1032,6 +1091,7 @@ def test_planning_overrides_parse() -> None:
     assert parsed.plan_samples == 5
     assert parsed.planning_strategy == "goal_regression"
     assert parsed.plan_execution_horizon == 1
+    assert parsed.plan_vote_horizon == 1
     assert parsed.selected_plan_review_enabled is True
     assert parsed.max_replans == 2
     assert parsed.completion_verification is False
@@ -1043,6 +1103,7 @@ def test_planning_defaults() -> None:
     assert parsed.plan_samples == 3
     assert parsed.planning_strategy == "forward"
     assert parsed.plan_execution_horizon == 0
+    assert parsed.plan_vote_horizon == 0
     assert parsed.selected_plan_review_enabled is False
     assert parsed.max_replans == 12
     assert parsed.completion_verification is True
@@ -1058,6 +1119,10 @@ def test_invalid_execution_horizon_is_rejected() -> None:
         config(plan_execution_horizon=-1)
     with pytest.raises(ValueError):
         config(plan_execution_horizon=51)
+    with pytest.raises(ValueError):
+        config(plan_vote_horizon=-1)
+    with pytest.raises(ValueError):
+        config(plan_vote_horizon=51)
 
 
 # AC1 (model level): sub-seeds reach the provider settings

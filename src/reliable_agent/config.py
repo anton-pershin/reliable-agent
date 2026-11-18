@@ -29,6 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--plan-max-output-tokens", type=int)
     parser.add_argument("--plan-horizon", type=int)
     parser.add_argument("--plan-execution-horizon", type=int)
+    parser.add_argument("--plan-vote-horizon", type=int)
     parser.add_argument(
         "--plan-review", dest="plan_review_enabled", action=argparse.BooleanOptionalAction
     )

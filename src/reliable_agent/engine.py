@@ -458,7 +458,7 @@ class DecisionEngine:
             # non-reaching member must not make the survivors look unanimous.
             group_reaching: dict[str, bool] = {}
             for _, candidate in fresh:
-                key = plan_key(candidate)
+                key = plan_key(candidate, state.config.plan_vote_horizon)
                 group_reaching[key] = group_reaching.get(key, True) and candidate.reaches_goal
             # Candidates that still claim completion are eligible for the goal
             # check. Truncated prefixes make progress by construction instead.
@@ -501,18 +501,21 @@ class DecisionEngine:
                         (
                             index,
                             candidate
-                            if group_reaching[plan_key(candidate)]
+                            if group_reaching[plan_key(candidate, state.config.plan_vote_horizon)]
                             else candidate.model_copy(update={"reaches_goal": False}),
                         )
                         for index, candidate in filtered
                     ]
-        winner_index, winner, counts = vote_plans(fresh)
+        winner_index, winner, counts = vote_plans(
+            fresh, horizon=state.config.plan_vote_horizon
+        )
         self.logger.log(
             "plan_vote",
             plan_round=state.plan_rounds,
             winner_sample=winner_index,
             vote_counts=counts,
             horizon=state.config.plan_execution_horizon or state.config.plan_horizon,
+            vote_horizon=state.config.plan_vote_horizon,
         )
         winner = await self._review_selected_prefix(state, winner_index, winner)
         if winner is None:
