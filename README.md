@@ -139,16 +139,67 @@ The test suite and smoke run need no model provider.
 
 ## HTTP validation
 
-With the validation service running, send the exact repository and commit:
+The `default` registered profile is authoritative for project acceptance; `blocksworld_hard` is supplementary. With the validation service running, set its base URL and the exact solution commit:
 
 ```bash
-curl -sS -X POST http://127.0.0.1:8000/validate \
+BASE=http://127.0.0.1:8000
+COMMIT=FULL_COMMIT_HASH
+```
+
+### Full validation
+
+`POST /validate` uses the active registered profile unchanged and does not accept inline configuration:
+
+```bash
+curl -sS -X POST "$BASE/validate" \
   -H 'Content-Type: application/json' \
   -d '{
     "repo": "https://github.com/anton-pershin/reliable-agent.git",
-    "commit": "FULL_COMMIT_HASH",
+    "commit": "'"$COMMIT"'",
     "solution_overrides": "--model openai:gpt-5-mini"
   }'
 ```
 
-Use `/validate_partial` for faster diagnostic runs. Only a full response with every criterion accepted certifies acceptance.
+### Configuration discovery and partial validation
+
+Retrieve the complete normalized configuration and its JSON Schema:
+
+```bash
+curl -sS "$BASE/profiles/default/configuration" > /tmp/reliable-agent-default-discovery.json
+```
+
+The response contains `profile`, `configuration`, and `schema`. Edit the complete `configuration` value, then submit it as `configuration` to `/validate_partial`. For example, the following standard-library Python snippet creates a valid payload with one repeat per planned condition; modify the configuration as needed before writing the payload:
+
+```bash
+python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+with open("/tmp/reliable-agent-default-discovery.json", encoding="utf-8") as stream:
+    document = json.load(stream)
+configuration = document["configuration"]
+configuration["full"]["repeats"] = 1
+payload = {
+    "repo": "https://github.com/anton-pershin/reliable-agent.git",
+    "commit": os.environ["COMMIT"],
+    "solution_overrides": "--model openai:gpt-5-mini",
+    "profile": "default",
+    "configuration": configuration,
+}
+Path("/tmp/reliable-agent-partial-payload.json").write_text(
+    json.dumps(payload), encoding="utf-8"
+)
+PY
+curl -sS -X POST "$BASE/validate_partial" \
+  -H 'Content-Type: application/json' \
+  --data-binary @/tmp/reliable-agent-partial-payload.json
+```
+
+A partial request must submit the complete modified configuration, not a patch. The optional `profile` selects its registered base and defaults to the service's active profile. Partial configurations may change any setting and need not be smaller or faster than full validation. Partial results are diagnostic only and cannot certify acceptance, even when all reported criteria are accepted.
+
+### Results and run history
+
+Successful results contain `run_id`, `artifacts_location`, the registered base `profile`, `validation_scope`, and the in-scope criteria. Errors raised after run creation contain the same run identity. For a completed run, the complete response is stored at `<artifacts_location>/result.json`; `<artifacts_location>/run.json` records a terminal status of `completed`, `failed`, or `aborted`.
+
+Only a completed full result from the unchanged `default` profile with every criterion accepted certifies an accepted implementation. Append every completed, failed, or aborted full run to `.internal/validation-results.md`, including its run ID, related spec, solution commit, run status, and returned `artifacts_location`. Never replace an earlier entry or add partial runs. Results produced before the run-aware contract are retained in `.internal/validation-results-old.md`.
