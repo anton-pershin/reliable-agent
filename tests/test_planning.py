@@ -311,6 +311,46 @@ async def test_partial_plan_exhaustion_skips_verification(task, action, final_de
     assert model.plan_calls[1]["feedback"] == []
 
 
+async def test_horizon_is_enforced_before_voting(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(plan_horizon=1, plan_review_enabled=False, goal_review_enabled=False),
+        clock=clock,
+    )
+    agreed = ActionRequest(name="pick_up", arguments={"block": "a"})
+    first_tail = ActionRequest(name="pick_up", arguments={"block": "b"})
+    second_tail = ActionRequest(name="get_action_catalog", arguments={})
+    next_round = ActionRequest(name="pick_up", arguments={"block": "b"})
+    # The raw complete plans are all distinct and the wrong plan has the lowest
+    # sample index. Two plans agree on their first action, so enforcing the
+    # horizon before the vote must select that prefix instead of the raw tie.
+    model = ScriptedModel(
+        [final_decision],
+        plans=[
+            [
+                plan_of(action, first_tail),
+                plan_of(agreed, first_tail),
+                plan_of(agreed, second_tail),
+            ],
+            plan_of(next_round),
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[agreed], [next_round]]
+    assert len(model.verify_calls) == 1
+    events = read_logs(stream)
+    enforced = next(event for event in events if event["event"] == "plan_horizon_enforced")
+    assert enforced["truncated"] == 3
+    vote = next(event for event in events if event["event"] == "plan_vote")
+    assert vote["winner_sample"] == 1
+    assert sorted(vote["vote_counts"].values()) == [1, 2]
+    assert vote["horizon"] == 1
+    selected = next(event for event in events if event["event"] == "plan_selected")
+    assert selected["reaches_goal"] is False
+
+
 async def test_empty_completion_claim_triggers_verification(task, final_decision) -> None:
     clock = FakeClock()
     event_logger, _ = logger(config(plan_horizon=2), clock=clock)

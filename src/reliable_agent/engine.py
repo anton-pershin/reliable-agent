@@ -278,6 +278,32 @@ class DecisionEngine:
                 continue
             if not self._validation_errors(state, ActionDecision(actions=candidate.actions)):
                 valid.append((index, candidate))
+        if state.config.plan_horizon > 0:
+            # The prompt asks for a short plan, but the engine must not rely on
+            # instruction compliance for either consensus or budget behavior.
+            # Truncating before the vote groups candidates by their agreed
+            # prefix; executing only that prefix then obtains a fresh decision
+            # from the observed state instead of committing to a sampled tail.
+            horizon = state.config.plan_horizon
+            truncated = 0
+            adjusted = []
+            for index, candidate in valid:
+                if len(candidate.actions) > horizon:
+                    candidate = candidate.model_copy(
+                        update={
+                            "actions": candidate.actions[:horizon],
+                            "reaches_goal": False,
+                        }
+                    )
+                    truncated += 1
+                adjusted.append((index, candidate))
+            valid = adjusted
+            self.logger.log(
+                "plan_horizon_enforced",
+                plan_round=state.plan_rounds,
+                horizon=horizon,
+                truncated=truncated,
+            )
         fresh = [
             (index, candidate)
             for index, candidate in valid
@@ -445,6 +471,7 @@ class DecisionEngine:
             plan_round=state.plan_rounds,
             winner_sample=winner_index,
             vote_counts=counts,
+            horizon=state.config.plan_horizon,
         )
         state.plan_actions = list(winner.actions)
         state.plan_broken = False
