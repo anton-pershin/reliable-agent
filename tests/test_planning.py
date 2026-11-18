@@ -90,13 +90,19 @@ def test_vote_tie_selects_lowest_sample_index(action) -> None:
 def test_vote_requires_unanimous_completion_for_same_prefix(action) -> None:
     reaching = plan_of(action)
     continuing = PlanCandidate(actions=[action], reaches_goal=False)
-    index, winner, counts = vote_plans([(0, reaching), (1, continuing), (2, reaching)])
-    assert index == 0
-    assert list(counts.values()) == [3]
-    # The lowest-index representative claims completion, but another candidate
-    # with the same normalized prefix does not. Race completion order must not
-    # turn that disagreement into a premature verification.
-    assert winner.reaches_goal is False
+    orders = [
+        [(0, reaching), (1, continuing), (2, reaching)],
+        [(2, reaching), (1, continuing), (0, reaching)],
+        [(0, reaching), (2, reaching), (1, continuing)],
+    ]
+    for candidates in orders:
+        index, winner, counts = vote_plans(candidates)
+        assert index == 0
+        assert list(counts.values()) == [3]
+        # The lowest-index representative claims completion, but another
+        # candidate with the same normalized prefix does not. Input or race
+        # completion order must not permit premature verification.
+        assert winner.reaches_goal is False
 
 
 def test_vote_ignores_argument_order_in_json(action) -> None:
@@ -184,6 +190,43 @@ async def test_transient_retry_keeps_plan_head(task, action, final_decision) -> 
     assert result.completed is True
     assert len(model.plan_calls) == 1
     assert [batch.actions for batch in executor.batches] == [[action], [action], [second]]
+
+
+async def test_truncated_prefix_retry_replans_within_action_budget(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            plan_execution_horizon=1,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+            max_replans=0,
+        ),
+        clock=clock,
+    )
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    model = ScriptedModel(
+        [final_decision],
+        plans=[plan_of(action, second), plan_of(second)],
+    )
+    executor = ScriptedExecutor(
+        [
+            failed_observation("episode-test-call-1", "transient_failure"),
+            ok_observation("episode-test-call-2"),
+            ok_observation("episode-test-call-3"),
+        ]
+    )
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action], [action], [second]]
+    assert len(model.plan_calls) == 2
+    assert len(model.verify_calls) == 1
+    events = read_logs(stream)
+    assert any(event["event"] == "plan_exhausted" for event in events)
+    assert not any(
+        event.get("termination_reason") == "replanning_limit_reached" for event in events
+    )
 
 
 async def test_replanning_filters_previously_failed_plans(task, action, final_decision) -> None:
@@ -326,7 +369,12 @@ async def test_partial_plan_exhaustion_skips_verification(task, action, final_de
 async def test_horizon_is_enforced_before_voting(task, action, final_decision) -> None:
     clock = FakeClock()
     event_logger, stream = logger(
-        config(plan_execution_horizon=1, plan_review_enabled=False, goal_review_enabled=False),
+        config(
+            plan_horizon=3,
+            plan_execution_horizon=1,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+        ),
         clock=clock,
     )
     agreed = ActionRequest(name="pick_up", arguments={"block": "a"})
@@ -578,6 +626,31 @@ async def test_goal_review_selects_goal_satisfying_candidate(task, action, final
     review = next(event for event in read_logs(stream) if event["event"] == "goal_review")
     assert review["checked"] == 3
     assert review["goal_ok"] == 2
+
+
+async def test_goal_review_keeps_mixed_prefix_non_reaching(task, action, final_decision) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(
+        config(plan_execution_horizon=1, plan_review_enabled=False), clock=clock
+    )
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    third = ActionRequest(name="pick_up", arguments={"block": "b"})
+    model = ScriptedModel(
+        [final_decision],
+        plans=[
+            [plan_of(action), plan_of(action, second), plan_of(action)],
+            plan_of(third),
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    # The truncated middle candidate shares the first action but is
+    # non-reaching. Goal review keeps only the reaching members; their original
+    # vote group's mixed verdict must nevertheless survive filtering.
+    assert model.goal_review_calls[0] == [0, 2]
+    assert [batch.actions for batch in executor.batches] == [[action], [third]]
+    assert len(model.verify_calls) == 1
 
 
 async def test_goal_review_keeps_all_when_none_satisfy(task, action, final_decision) -> None:
@@ -885,6 +958,13 @@ def test_planning_defaults() -> None:
 def test_invalid_plan_sample_count_is_rejected() -> None:
     with pytest.raises(ValueError):
         config(plan_samples=0)
+
+
+def test_invalid_execution_horizon_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        config(plan_execution_horizon=-1)
+    with pytest.raises(ValueError):
+        config(plan_execution_horizon=51)
 
 
 # AC1 (model level): sub-seeds reach the provider settings
