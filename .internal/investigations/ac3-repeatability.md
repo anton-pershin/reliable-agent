@@ -50,6 +50,8 @@ Evidence:
 | ID | Idea or question | Context | Result and evidence links | Decision and rationale |
 |----|------------------|---------|---------------------------|------------------------|
 | E1 | Analyze the latest self-hosted baseline and earlier mechanism results | C1 | VM4 = 0.15 and VM1 = 0.67 in run `20261114T053703-525279Z-b864ae241134`; methods report records weak whole-plan agreement and unsuccessful horizon/review variants | Do not repeat prompt-only horizons or costly review-only variants. Test engine-enforced prefix consensus and a stronger model. |
+| E2 | Make the existing planning horizon enforce consensus even when the model returns a longer plan | C2 | Commit `26c32e6` truncates candidates before voting, marks truncated plans as non-reaching, logs enforcement, and passes 100 provider-independent tests | Keep as an experimental fallback. First isolate the stronger-model effect with horizon 0 because extra rounds may hurt difficult tasks. |
+| E3 | Obtain a stronger general-purpose model within the A10 memory budget | C3 | Official `Qwen/Qwen3.5-27B-GPTQ-Int4` downloaded successfully to the A10 HF cache at revision `8f0c09f227ae570e79617c6d9172b59df9c16081` | Serve the 27B model with default sampling and run a 3-repeat unperturbed-only screen. |
 
 ### Next candidates
 
