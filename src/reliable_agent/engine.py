@@ -20,10 +20,20 @@ from .contracts import (
     VerificationResult,
 )
 from .errors import ModelRequestError
-from .goal_evidence import formal_goal_verdict
+from .goal_evidence import (
+    formal_goal_verdict,
+    formal_initial_state,
+    formal_state_predicates,
+)
 from .model import DecisionModel
 from .observability import EventLogger
 from .planning import plan_key, vote_plans
+from .transition_learning import (
+    formal_transition_key,
+    learn_action_rule,
+    predict_action_state,
+    search_learned_plan,
+)
 
 
 class DecisionEngine:
@@ -137,6 +147,7 @@ class DecisionEngine:
 
     def record_attempt(self, state: TaskState, attempt: ActionAttempt) -> None:
         observation_key = self._public_observation_key(state)
+        formal_before = self._current_formal_state(state)
         state.attempts.append(attempt)
         self.logger.log(
             "action_observation",
@@ -165,6 +176,7 @@ class DecisionEngine:
         state.pending_retry_actions = pending
         self._update_plan(state, attempt)
         self._record_observed_transition(state, observation_key, attempt)
+        self._learn_observed_transition(state, formal_before, attempt)
 
     def stop(self, state: TaskState, reason: str, details: str | None = None) -> FinalDecision:
         state.termination_reason = reason
@@ -295,6 +307,49 @@ class DecisionEngine:
         state.plan_rounds += 1
         cause = state.replan_cause or "initial"
         self.logger.log("plan_round", plan_round=state.plan_rounds, cause=cause)
+        learned_actions, visited = self._learned_plan(state)
+        if learned_actions is not None:
+            candidate = PlanCandidate(actions=learned_actions, reaches_goal=True)
+            errors = (
+                self._validation_errors(state, ActionDecision(actions=learned_actions))
+                if learned_actions
+                else []
+            )
+            if not errors:
+                state.plan_actions = list(learned_actions)
+                state.completion_check_pending = False
+                state.plan_broken = False
+                state.replan_cause = None
+                state.active_plan_key = plan_key(candidate)
+                state.active_plan_reaches_goal = True
+                self.logger.log(
+                    "learned_plan",
+                    plan_round=state.plan_rounds,
+                    actions=[action.model_dump() for action in learned_actions],
+                    learned_actions=sorted(state.learned_action_rules),
+                    visited_states=visited,
+                )
+                self.logger.log(
+                    "plan_selected",
+                    plan_round=state.plan_rounds,
+                    reaches_goal=True,
+                    actions=[action.model_dump() for action in learned_actions],
+                    selection_source="learned_public_transitions",
+                )
+                return "planned"
+            self.logger.log(
+                "learned_plan_invalid",
+                level="ERROR",
+                plan_round=state.plan_rounds,
+                errors=errors,
+            )
+        elif visited:
+            self.logger.log(
+                "learned_plan_unavailable",
+                plan_round=state.plan_rounds,
+                visited_states=visited,
+                learned_actions=sorted(state.learned_action_rules),
+            )
         plan_method = getattr(self.model, "plan", None)
         if plan_method is None:
             state.reactive_mode = True
@@ -699,6 +754,109 @@ class DecisionEngine:
             decision=decision.model_dump(),
         )
         return decision
+
+    def _current_formal_state(self, state: TaskState) -> frozenset[str] | None:
+        if not state.config.transition_learning_enabled:
+            return None
+        if not state.attempts:
+            return formal_initial_state(state.task.input)
+        latest = state.attempts[-1].results
+        if not latest or not all(
+            isinstance(result.observation.get("state"), list) for result in latest
+        ):
+            return None
+        return formal_state_predicates(latest[-1].observation["state"])
+
+    def _learn_observed_transition(
+        self,
+        state: TaskState,
+        before: frozenset[str] | None,
+        attempt: ActionAttempt,
+    ) -> None:
+        if before is None or len(attempt.actions) != 1 or len(attempt.results) != 1:
+            return
+        action = attempt.actions[0]
+        result = attempt.results[0]
+        transition_key = formal_transition_key(before, action)
+        if result.status != "ok":
+            if result.error is not None and result.error.type == "transient_failure":
+                return
+            if transition_key not in state.failed_formal_transitions:
+                state.failed_formal_transitions.append(transition_key)
+            self.logger.log(
+                "failed_formal_transition",
+                plan_round=state.plan_rounds,
+                action=action.model_dump(),
+            )
+            return
+        if transition_key in state.failed_formal_transitions:
+            state.failed_formal_transitions.remove(transition_key)
+            self.logger.log(
+                "formal_transition_recovered",
+                plan_round=state.plan_rounds,
+                action=action.model_dump(),
+            )
+        if action.name in state.rejected_learned_actions:
+            return
+        after = formal_state_predicates(attempt.results[0].observation.get("state"))
+        if after is None:
+            return
+        existing = state.learned_action_rules.get(action.name)
+        if existing is not None:
+            predicted = predict_action_state(existing, action, before)
+            if predicted == after:
+                self.logger.log(
+                    "transition_rule_confirmed",
+                    plan_round=state.plan_rounds,
+                    action=action.model_dump(),
+                )
+                return
+            # A prediction mismatch, including an unexpected no-op, invalidates
+            # the existing rule and any remaining tail based on it.
+            state.learned_action_rules.pop(action.name, None)
+            state.rejected_learned_actions.append(action.name)
+            state.plan_actions = []
+            state.completion_check_pending = False
+            state.plan_broken = True
+            state.replan_cause = "transition_rule_conflict"
+            self.logger.log(
+                "transition_rule_conflict",
+                level="ERROR",
+                plan_round=state.plan_rounds,
+                action=action.model_dump(),
+                previous_rule=existing.model_dump(),
+                predicted_state=sorted(predicted) if predicted is not None else None,
+                observed_state=sorted(after),
+            )
+            return
+        rule = learn_action_rule(action, before, after)
+        if rule is None:
+            return
+        state.learned_action_rules[action.name] = rule
+        self.logger.log(
+            "transition_rule_learned",
+            plan_round=state.plan_rounds,
+            action=action.model_dump(),
+            rule=rule.model_dump(),
+            learned_actions=len(state.learned_action_rules),
+        )
+
+    def _learned_plan(
+        self, state: TaskState
+    ) -> tuple[list[ActionRequest] | None, int]:
+        current = self._current_formal_state(state)
+        if current is None or state.config.plan_execution_horizon or state.config.plan_horizon:
+            return None, 0
+        return search_learned_plan(
+            state.task,
+            current,
+            state.learned_action_rules,
+            max_states=state.config.learned_search_max_states,
+            max_actions=max(0, state.config.max_action_attempts - state.action_attempts),
+            failed_transitions=frozenset(state.failed_formal_transitions),
+            deadline=self.clock() + max(0.0, self._remaining(state) - self._reserve(state)),
+            clock=self.clock,
+        )
 
     def _record_observed_transition(
         self, state: TaskState, observation_key: str, attempt: ActionAttempt

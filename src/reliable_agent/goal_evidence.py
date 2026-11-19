@@ -49,20 +49,8 @@ def formal_goal_verdict(task_input: str, state_values: Any) -> VerificationResul
 
 
 def _formal_goals(task_input: str) -> frozenset[str] | None:
-    try:
-        expression = _parse_expression(task_input)
-    except (TypeError, ValueError, RecursionError):
-        return None
-    if not expression or expression[0] != "define":
-        return None
-    problems = [
-        child
-        for child in expression[1:]
-        if isinstance(child, list) and child and child[0] == "problem"
-    ]
-    if len(problems) != 1 or len(problems[0]) != 2:
-        return None
-    if not all(isinstance(part, str) and part for part in problems[0]):
+    expression = _problem_expression(task_input)
+    if expression is None:
         return None
     sections = [
         child
@@ -82,6 +70,94 @@ def _formal_goals(task_input: str) -> frozenset[str] | None:
     else:
         predicates = [goal]
     if not predicates or any(not _atomic_predicate(value) for value in predicates):
+        return None
+    if any(value[0] in _UNSUPPORTED_OPERATORS for value in predicates):
+        return None
+    if any(part.startswith("?") for value in predicates for part in value):
+        return None
+    return frozenset(_format_predicate(value) for value in predicates)
+
+
+def formal_goal_predicates(task_input: str) -> frozenset[str] | None:
+    """Return supported public goals without evaluating them."""
+    return _formal_goals(task_input)
+
+
+def formal_initial_state(task_input: str) -> frozenset[str] | None:
+    """Return the public grounded initial state for a supported problem."""
+    expression = _problem_expression(task_input)
+    if expression is None:
+        return None
+    sections = [
+        child
+        for child in expression[1:]
+        if isinstance(child, list) and child and child[0] == ":init"
+    ]
+    if len(sections) != 1:
+        return None
+    predicates = sections[0][1:]
+    return _ground_predicates(predicates)
+
+
+def formal_objects(task_input: str) -> tuple[str, ...] | None:
+    """Return public object symbols from typed or untyped declarations."""
+    expression = _problem_expression(task_input)
+    if expression is None:
+        return None
+    sections = [
+        child
+        for child in expression[1:]
+        if isinstance(child, list) and child and child[0] == ":objects"
+    ]
+    if len(sections) != 1:
+        return None
+    tokens = sections[0][1:]
+    if not all(isinstance(token, str) for token in tokens):
+        return None
+    objects = []
+    skip_type = False
+    for token in tokens:
+        if token == "-":
+            if skip_type:
+                return None
+            skip_type = True
+        elif skip_type:
+            skip_type = False
+        else:
+            objects.append(token)
+    if skip_type:
+        return None
+    return tuple(sorted(set(objects)))
+
+
+def formal_state_predicates(values: Any) -> frozenset[str] | None:
+    """Return canonical public state predicates when every entry is atomic."""
+    return _state_predicates(values)
+
+
+def _problem_expression(task_input: str) -> list[Any] | None:
+    try:
+        expression = _parse_expression(task_input)
+    except (TypeError, ValueError, RecursionError):
+        return None
+    if not expression or expression[0] != "define":
+        return None
+    problems = [
+        child
+        for child in expression[1:]
+        if isinstance(child, list) and child and child[0] == "problem"
+    ]
+    if len(problems) != 1 or len(problems[0]) != 2:
+        return None
+    if not all(isinstance(part, str) and part for part in problems[0]):
+        return None
+    return expression
+
+
+def _ground_predicates(predicates: Any) -> frozenset[str] | None:
+    if not isinstance(predicates, list) or not predicates:
+        return None
+    if any(not _atomic_predicate(value) for value in predicates):
         return None
     if any(value[0] in _UNSUPPORTED_OPERATORS for value in predicates):
         return None

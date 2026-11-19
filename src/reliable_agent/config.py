@@ -52,6 +52,12 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
     )
     parser.add_argument(
+        "--transition-learning",
+        dest="transition_learning_enabled",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument("--learned-search-max-states", type=int)
+    parser.add_argument(
         "--planning", dest="planning_enabled", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--plan-samples", type=int)
