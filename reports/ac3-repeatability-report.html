@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>AC3 Repeatability: Evidence and Negative Results · reliable-agent</title>
+  <title>AC3 Repeatability: Validated Solution · reliable-agent</title>
   <style>
     :root {
       --ink: #14213d;
@@ -210,17 +210,17 @@
   <header class="hero">
     <div class="wrap">
       <div class="eyebrow">Reliable-agent · Investigation report</div>
-      <h1>AC3 repeatability:<br>what the evidence shows</h1>
-      <p>An evidence review of prefix-consensus experiments on the self-hosted Qwen 9B agent. Three-repeat signals looked promising but did not generalize; the completed 10-repeat run gives the authoritative result for this candidate.</p>
+      <h1>AC3 repeatability:<br>validated at 840 / 840</h1>
+      <p>How exact public goal evidence, episode-local transition learning, and bounded recovery produced an accepted self-hosted Qwen 9B implementation—across unperturbed, prompt-variant, and transient-failure validation.</p>
       <div class="hero-meta">
         <span>18 November 2026 · Updated 19 November 2026</span>
         <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
         <span>Default profile · 20 tasks</span>
-        <span>Investigation through <code>d503f33</code></span>
+        <span>Investigation through <code>be88a98</code></span>
       </div>
       <div class="status-ribbon">
         <strong>Status:</strong>
-        <span>C28 completed all 200 episodes successfully: VM1 = 1.0 and VM4 = 0.0, so the 10-repeat AC3 diagnostic is accepted and spec 06 AC6 is satisfied. Authoritative full <code>default</code> validation is running as <code>20261119T104916-200097Z-56ebe409152d</code>; AC8 and project acceptance remain undecided.</span>
+        <span>C28 is an accepted implementation at <code>46bddba</code>. Authoritative full <code>default</code> run <code>20261119T104916-200097Z-56ebe409152d</code> completed 840/840 episodes successfully and accepted AC1–AC7. Spec 06 AC6 and AC8 are satisfied; overall project completion now awaits user integration into <code>main</code>.</span>
       </div>
     </div>
   </header>
@@ -238,15 +238,15 @@
       <div class="kpi"><div class="label">Latest completed 10-repeat VM4</div><div class="value good">0.00</div><div class="note">C28 · accepted diagnostic</div></div>
       <div class="kpi"><div class="label">AC3 acceptance threshold</div><div class="value">0.05</div><div class="note">All ten C28 repeat rates were 1.00</div></div>
       <div class="kpi"><div class="label">Latest completed 10-repeat VM1</div><div class="value good">1.000</div><div class="note">200 successes out of 200 episodes</div></div>
-      <div class="kpi"><div class="label">Accepted 10-repeat runs</div><div class="value good">1</div><div class="note">Full validation still pending</div></div>
+      <div class="kpi"><div class="label">Authoritative full validation</div><div class="value good">7 / 7</div><div class="note">AC1–AC7 accepted</div></div>
     </div>
 
     <section id="summary">
-      <div class="section-head"><div class="section-num">01</div><div><h2>The evidence, in one page</h2><p>C28 achieved 200/200 successes and VM4 = 0.0 in a completed diagnostic; authoritative full validation remains pending.</p></div></div>
+      <div class="section-head"><div class="section-num">01</div><div><h2>The validated solution, in one page</h2><p>C28 passed every criterion over 840 authoritative episodes. Integration into main is the remaining step.</p></div></div>
       <div class="grid-3">
         <div class="card"><span class="badge neutral">C27 mechanism</span><h3 style="margin-top:12px">Learn from public transitions</h3><p class="small muted">Episode-local action rules are learned from observed state changes. Bounded generic search can replace model re-planning once enough consistent rules exist.</p></div>
         <div class="card"><span class="badge neutral">Correctness controls</span><h3 style="margin-top:12px">Exact goals and conservative fallback</h3><p class="small muted">Formal public-goal evidence eliminates false completions. Prediction conflicts, unsupported inputs, and missing rules retain controlled model recovery.</p></div>
-        <div class="card"><span class="badge good">Completed evidence</span><h3 style="margin-top:12px">Sustained AC3 acceptance</h3><p class="small muted">C28 succeeded in every episode across all 20 tasks and ten repeats. VM1 = 1.0, VM4 = 0.0, AC6/AC7 accepted, and no final response was missing.</p></div>
+        <div class="card"><span class="badge good">Authoritative acceptance</span><h3 style="margin-top:12px">Every criterion passed</h3><p class="small muted">All 840 episodes succeeded across unperturbed, concise/formal prompt, and transient-failure conditions. AC1–AC7 are accepted; no final response was missing.</p></div>
       </div>
       <div class="callout info"><strong>Sampling and runtime boundary.</strong> All included episode results use the self-hosted A10 deployment, temperature 0.7, established serving defaults, and the required Qwen 9B model. C19 and later explicitly omit provider seeds with <code>--free-sampling</code>; earlier runs used the legacy configured seed and are retained as observational baselines, not final sampling-compliance evidence. Deterministic serving, fixed-repeat seed tactics, alternative models, and provider-hosted evidence are excluded.</div>
     </section>
@@ -325,7 +325,7 @@
         <p class="small muted">C28 completed all 200 episodes. Every repeat rate was 1.0, producing an exact range of zero.</p>
         <div class="bar-row"><div class="bar-label">C28 transition learning, completed<small>20261119T101214 · completed 10 repeats</small></div><div class="bar-track"><div class="bar-fill pass" style="width:1%"></div><div class="bar-threshold"></div></div><div class="bar-value good">0.0000</div></div>
         <div class="bar-row"><div class="bar-label">AC3 threshold<small>Required maximum repeat range</small></div><div class="bar-track"><div class="bar-fill pass" style="width:20%"></div><div class="bar-threshold"></div></div><div class="bar-value good">0.0500</div></div>
-        <div class="callout info small"><strong>Completed diagnostic accepted.</strong> C28 achieved VM4 = 0.0 with VM1 = 1.0 and AC6/AC7 accepted. This satisfies spec 06 AC6; unchanged full validation is required for AC8 and project acceptance.</div>
+        <div class="callout info small"><strong>Diagnostic and full validation accepted.</strong> C28 achieved VM4 = 0.0 with VM1 = 1.0 in the diagnostic, then accepted every criterion in authoritative full validation. Spec 06 AC6 and AC8 are satisfied.</div>
       </div>
       <div class="card svg-card">
         <h3 style="padding:10px 10px 0">Three-repeat screening observations — superseded</h3>
@@ -508,7 +508,24 @@
           <div class="step"><b>VM1 1.0 · VM4 0.0</b><span>First sustained AC3 acceptance in the investigation; spec 06 AC6 satisfied.</span></div>
           <div class="step"><b>17.65 s mean</b><span>Maximum 64.55 s; maximum 40 actions; AC6/AC7 accepted.</span></div>
         </div>
-        <div class="callout info small" style="margin-top:18px"><strong>Authoritative full validation is running.</strong> Run <code>20261119T104916-200097Z-56ebe409152d</code> uses unchanged <code>default</code> on <code>46bddba</code>. AC8 and project-level acceptance remain undecided until it terminates.</div>
+        <div class="callout info small" style="margin-top:18px"><strong>Authoritative full validation accepted.</strong> Run <code>20261119T104916-200097Z-56ebe409152d</code> used unchanged <code>default</code> on <code>46bddba</code> and accepted AC1–AC7.</div>
+      </div>
+      <div class="card">
+        <span class="badge good">Authoritative full default · accepted</span>
+        <h3 style="margin-top:14px">840 / 840 episodes successful across every condition</h3>
+        <p class="small muted">Run <code>20261119T104916-200097Z-56ebe409152d</code> · approximately 2 h 39 min · mean 19.42 s, maximum 148.97 s · 200 unperturbed, 400 prompt-variant, and 240 transient-failure episodes.</p>
+        <div class="table-wrap" style="margin-top:18px"><table>
+          <thead><tr><th>Criterion</th><th>Measured outcomes</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>AC1 · Overall success</td><td>VM1 = 1.0</td><td><span class="badge good">Accepted</span></td></tr>
+            <tr><td>AC2 · Error awareness</td><td>VM2 precision = 1.0 · VM3 recall = 1.0</td><td><span class="badge good">Accepted</span></td></tr>
+            <tr><td>AC3 · Repeatability</td><td>VM4 range = 0.0</td><td><span class="badge good">Accepted</span></td></tr>
+            <tr><td>AC4 · Prompt robustness</td><td>VM5 concise/formal loss = 0.0 / 0.0 · VM6 range = 0.0</td><td><span class="badge good">Accepted</span></td></tr>
+            <tr><td>AC5 · Resilience</td><td>VM7 pick-up/unstack loss = 0.0 / 0.0 · VM8 range = 0.0</td><td><span class="badge good">Accepted</span></td></tr>
+            <tr><td>AC6 · Action budget</td><td>VM9 maximum = 40 actions, limit 50</td><td><span class="badge good">Accepted</span></td></tr>
+            <tr><td>AC7 · Time performance</td><td>VM10 timely final responses = 1.0</td><td><span class="badge good">Accepted</span></td></tr>
+          </tbody>
+        </table></div>
       </div>
     </section>
 
@@ -580,7 +597,7 @@
 --max-replans 50
 --no-plan-review --no-goal-review
 --log-level ERROR</pre>
-        <p class="small muted">Revision <code>46bddba5bc90a0b2892bb48aea17afe3397ecb34</code><br>Accepted completed diagnostic <code>20261119T101214-088465Z-2ff094677400</code><br>Full validation <code>20261119T104916-200097Z-56ebe409152d</code> is pending.</p>
+        <p class="small muted">Revision <code>46bddba5bc90a0b2892bb48aea17afe3397ecb34</code><br>Accepted completed diagnostic <code>20261119T101214-088465Z-2ff094677400</code><br>Full validation <code>20261119T104916-200097Z-56ebe409152d</code> accepted AC1–AC7 (840/840 episodes).</p>
       </div>
       <div class="card">
         <h3>Partial-validation configuration pattern</h3>
@@ -602,8 +619,9 @@ configuration["acceptance_criteria"] = [
           <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
-            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>d503f33</code></td><td><span class="badge warn">C28 full validation running</span></td></tr>
-            <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6 met · AC8 running</span></td></tr>
+            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>be88a98</code></td><td><span class="badge good">Objective achieved · integration pending</span></td></tr>
+            <tr><td>Full-validation history</td><td><code>.internal/validation-results.md</code> · run <code>20261119T104916-200097Z-56ebe409152d</code></td><td><span class="badge good">Terminal record appended</span></td></tr>
+            <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge good">AC6/AC8 met</span></td></tr>
             <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
             <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; reviewed C28 implementation <code>46bddba</code></td><td><span class="badge good">171 passed</span></td></tr>
             <tr><td>Run evidence</td><td><code>agent-validation/artifacts/runs/&lt;run-id&gt;/</code></td><td><span class="badge neutral">Retained</span></td></tr>
@@ -615,12 +633,12 @@ configuration["acceptance_criteria"] = [
     <section id="gap">
       <div class="final-banner">
         <span class="badge warn">Remaining gap</span>
-        <h2 style="margin-top:14px">Sustained AC3 achieved. Full validation remains.</h2>
-        <p>C28 completed all 200 episodes with VM1 = 1.0 and VM4 = 0.0. The accepted diagnostic satisfies spec 06 AC6. Unchanged full <code>default</code> validation is running as <code>20261119T104916-200097Z-56ebe409152d</code>; AC8 and project-level acceptance are not yet decided.</p>
+        <h2 style="margin-top:14px">All criteria accepted. Ready for user integration.</h2>
+        <p>C28 is an accepted implementation at <code>46bddba</code>. The unchanged full <code>default</code> run succeeded in all 840 episodes and accepted AC1–AC7, satisfying spec 06 AC6 and AC8. Nothing has been merged into <code>main</code>; overall project completion occurs only after user integration.</p>
         <div class="grid-3" style="margin-top:20px">
-          <div><strong style="font-size:20px">1. Preserve the accepted diagnostic</strong><p class="small">C28 is the completed reference: 200/200 successes, zero repeat range, AC6/AC7 accepted.</p></div>
-          <div><strong style="font-size:20px">2. Evaluate every criterion</strong><p class="small">Full validation must measure AC2/AC4/AC5 as well as AC1/AC3/AC6/AC7; no outcome is inferred from the unperturbed screen.</p></div>
-          <div><strong style="font-size:20px">3. Record and review before integration</strong><p class="small">Append the terminal full run to validation history, update spec 06 AC8, and wait for user integration. No project acceptance is claimed yet.</p></div>
+          <div><strong style="font-size:20px">1. 840 / 840 episodes</strong><p class="small">Unperturbed, concise/formal prompt, and transient-failure conditions all succeeded, with zero missing final responses.</p></div>
+          <div><strong style="font-size:20px">2. 7 / 7 criteria accepted</strong><p class="small">Success, error awareness, repeatability, prompt robustness, resilience, action budget, and time performance all passed.</p></div>
+          <div><strong style="font-size:20px">3. User integration remains</strong><p class="small">Validation history is recorded and the investigation objective is closed. Review and integrate the accepted revision into main to complete the project.</p></div>
         </div>
       </div>
     </section>
@@ -629,7 +647,7 @@ configuration["acceptance_criteria"] = [
   <footer>
     <div class="wrap">
       <strong>Reliable-agent · AC3 repeatability investigation</strong><br>
-      Generated 18 November 2026 and revised 19 November 2026 through C28's accepted 200-episode diagnostic. Authoritative full validation is pending. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
+      Generated 18 November 2026 and revised 19 November 2026 through C28's accepted authoritative full validation: 840/840 episodes and AC1–AC7 accepted. Integration into main remains pending. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
     </div>
   </footer>
 </body>
