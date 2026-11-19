@@ -216,7 +216,7 @@
         <span>18 November 2026 · Updated 19 November 2026</span>
         <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
         <span>Default profile · 20 tasks</span>
-        <span>Investigation through <code>8aa4c75</code></span>
+        <span>Investigation through <code>c6f2cef</code></span>
       </div>
       <div class="status-ribbon">
         <strong>Status:</strong>
@@ -443,6 +443,18 @@
         <p class="small muted" style="margin-top:16px"><strong>Stable 3/3 in this screen:</strong> <code>restack_bac</code>, <code>stack_ac</code>, <code>stack_ba_on_c</code>, <code>stack_ca_on_b</code>. <strong>Persistent 0/3:</strong> <code>restack_abc</code>, <code>restack_cab</code>, <code>tower_four</code>.</p>
         <div class="callout danger small"><strong>Extension rejected.</strong> Seven mixed tasks and three persistent failures did not justify another 200-episode run. Four INFO-log retention terminations also reduced AC7 to 0.9048; error-only logging addresses that operational issue but not the AC3 gap. The completed C18 result remains VM4 = 0.20.</div>
       </div>
+      <div class="card">
+        <span class="badge warn">C23 follow-up · not AC3 evidence</span>
+        <h3 style="margin-top:14px">State-centred recovery improved the diagnostic, but five mixed tasks remained</h3>
+        <p class="small muted">Run <code>20261119T052217-043682Z-5477c10a57fe</code> · revision <code>8aa4c75</code> · same 14 tasks × 3 repeats, with retained full plans, transition tabu, three-verifier consensus, state-centred prompts, intermediate completion checks, and error-only logs.</p>
+        <div class="grid-3" style="margin-top:18px">
+          <div class="step"><b>32 / 42</b><span>Successes, up from 24/42 in C19. Repeat rates: 0.8571, 0.7143, 0.7143.</span></div>
+          <div class="step"><b>8 / 5 / 1</b><span>Stable-success / mixed / persistent-failure tasks, versus 4 / 7 / 3 in C19.</span></div>
+          <div class="step"><b>110.5 s · AC7 1.0</b><span>Mean episode time fell from 151.8 s; error-only logs removed retention terminations.</span></div>
+        </div>
+        <div class="callout danger small" style="margin-top:18px"><strong>No 200-episode extension.</strong> Five mixed tasks exceeded the extension bar, and three 2/3-consensus false completions appeared. The strong aggregate diagnostic did not establish AC3.</div>
+        <div class="callout info small"><strong>C24 offline correctness replay only.</strong> Exact public formal-goal checking agreed with independent labels on all 1,613 retained C18/C23 observations, with zero unsupported cases, and rejected all 12 retained false completions. This says nothing about new episode success until measured.</div>
+      </div>
     </section>
 
     <section id="negative">
@@ -516,10 +528,10 @@ configuration["acceptance_criteria"] = [
           <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
-            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>8aa4c75</code></td><td><span class="badge warn">Active · no 10-repeat claim</span></td></tr>
+            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>c6f2cef</code></td><td><span class="badge warn">Active · no 10-repeat claim</span></td></tr>
             <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6/AC8 open</span></td></tr>
             <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
-            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; continuation through <code>8aa4c75</code></td><td><span class="badge good">133 passed</span></td></tr>
+            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; continuation through <code>c6f2cef</code></td><td><span class="badge good">152 passed</span></td></tr>
             <tr><td>Run evidence</td><td><code>agent-validation/artifacts/runs/&lt;run-id&gt;/</code></td><td><span class="badge neutral">Retained</span></td></tr>
           </tbody>
         </table></div>
