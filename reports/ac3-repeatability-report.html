@@ -216,7 +216,7 @@
         <span>18 November 2026 · Updated 19 November 2026</span>
         <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
         <span>Default profile · 20 tasks</span>
-        <span>Implementation through <code>b7cb4dd</code></span>
+        <span>Investigation through <code>8aa4c75</code></span>
       </div>
       <div class="status-ribbon">
         <strong>Status:</strong>
@@ -248,7 +248,7 @@
         <div class="card"><span class="badge neutral">Implementation change</span><h3 style="margin-top:12px">Separate prompt, vote, and execution lengths</h3><p class="small muted">Independent horizons avoid the all-empty plans produced by prompt-only H=1 and allow one-action consensus with two-action execution.</p></div>
         <div class="card"><span class="badge bad">Completed evidence</span><h3 style="margin-top:12px">Three repeats are not ten</h3><p class="small muted">Short screens near 0.05 were premature. The final best-candidate run completed all 200 episodes and returned VM4 = 0.20, superseding claims based on those screens.</p></div>
       </div>
-      <div class="callout info"><strong>Sampling remained intact.</strong> All admissible results use the self-hosted A10 deployment, temperature 0.7, established serving defaults, and the required Qwen 9B model. Deterministic serving, fixed-repeat seed tactics, alternative models, and provider-hosted evidence were excluded.</div>
+      <div class="callout info"><strong>Sampling and runtime boundary.</strong> All included episode results use the self-hosted A10 deployment, temperature 0.7, established serving defaults, and the required Qwen 9B model. C19 and later explicitly omit provider seeds with <code>--free-sampling</code>; earlier runs used the legacy configured seed and are retained as observational baselines, not final sampling-compliance evidence. Deterministic serving, fixed-repeat seed tactics, alternative models, and provider-hosted evidence are excluded.</div>
     </section>
 
     <section id="metric">
@@ -423,6 +423,26 @@
           <div class="step"><b>AC6 / AC7 accepted</b><span>Maximum 18 actions; 99.5% timely final responses.</span></div>
         </div>
       </div>
+      <div class="card">
+        <span class="badge warn">Continuation diagnostic · not AC3 evidence</span>
+        <h3 style="margin-top:14px">C19: retained full plans, transition tabu, and verifier consensus</h3>
+        <p class="small muted">Run <code>20261119T040536-592232Z-244521ae368b</code> · revision <code>248f214</code> · all 14 tasks not universally successful in the completed baseline × 3 repeats = 42 episodes. This subset screen cannot replace or certify a full-population 10-repeat result.</p>
+        <div class="grid-3" style="margin-top:18px">
+          <div class="step"><b>10/42 → 24/42</b><span>Matched first-three-repeat diagnostic successes. Observational only; not a controlled causal estimate.</span></div>
+          <div class="step"><b>54 → 10</b><span>Repeated public state/action attempts in those matched traces.</span></div>
+          <div class="step"><b>4 → 0</b><span>False completions. Three-verifier consensus removed this failure mode in the screen.</span></div>
+        </div>
+        <div class="table-wrap" style="margin-top:20px"><table>
+          <thead><tr><th>Diagnostic repeat</th><th>Successes</th><th>Subset rate</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr><td>R1</td><td>8 / 14</td><td class="mono">0.5714</td><td rowspan="3">Seven tasks remained mixed across only three repeats; the subset range of 0.1429 is not project VM4.</td></tr>
+            <tr><td>R2</td><td>7 / 14</td><td class="mono">0.5000</td></tr>
+            <tr><td>R3</td><td>9 / 14</td><td class="mono">0.6429</td></tr>
+          </tbody>
+        </table></div>
+        <p class="small muted" style="margin-top:16px"><strong>Stable 3/3 in this screen:</strong> <code>restack_bac</code>, <code>stack_ac</code>, <code>stack_ba_on_c</code>, <code>stack_ca_on_b</code>. <strong>Persistent 0/3:</strong> <code>restack_abc</code>, <code>restack_cab</code>, <code>tower_four</code>.</p>
+        <div class="callout danger small"><strong>Extension rejected.</strong> Seven mixed tasks and three persistent failures did not justify another 200-episode run. Four INFO-log retention terminations also reduced AC7 to 0.9048; error-only logging addresses that operational issue but not the AC3 gap. The completed C18 result remains VM4 = 0.20.</div>
+      </div>
     </section>
 
     <section id="negative">
@@ -434,8 +454,11 @@
         <div class="reject"><span class="badge bad">Rejected</span><h3 style="margin-top:9px">More budget or more samples</h3><p>50 actions / 298 seconds produced 0.70 / 0.60. Split 4+1 samples produced 0.80 / 0.55. Both were stopped after definitive rejection.</p></div>
         <div class="reject"><span class="badge warn">Operational</span><h3 style="margin-top:9px">Prefix caching and CUDA graphs</h3><p>Performance changes did not stabilize AC3. A separate 3+1 screen passed AC3 but exposed stderr-driven final-response loss.</p></div>
         <div class="reject"><span class="badge good">Fixed operationally</span><h3 style="margin-top:9px">Error-only logging</h3><p>Thirteen missing finals were caused by the 64 KiB stderr limit, not slow episodes. <code>--log-level ERROR</code> restored AC7 to 1.0; VM4 remained 0.15.</p></div>
+        <div class="reject"><span class="badge bad">Rejected offline</span><h3 style="margin-top:9px">Model-compiled predicate search</h3><p>Only 8/21 generic search plans reached the goal. <code>restack_abc</code>, <code>stack_three</code>, and <code>tower_four</code> were 0/3; model-supplied transition semantics were not reliable enough.</p></div>
+        <div class="reject"><span class="badge bad">Rejected offline</span><h3 style="margin-top:9px">Invariant-ledger prompt</h3><p>Invariant/resource bookkeeping produced 6/40 solving samples versus 3/40 for goal regression, but both voted only 1/8 tasks. The raw increase did not justify implementation or episodes.</p></div>
+        <div class="reject"><span class="badge bad">Rejected offline</span><h3 style="margin-top:9px">Direct next-action voting</h3><p>With output names constrained to public tools, only <code>stack_ab</code> had an optimal voted first action. All three restack votes were invalid pickups; no episodes were spent.</p></div>
       </div>
-      <div class="callout info small"><strong>Efficient partial validation.</strong> Screens used all 20 tasks and three unperturbed repeats with only AC1/AC3/AC6/AC7. Prompt variants and failure scenarios were omitted. Completed-repeat bounds enabled early stopping whenever the VM4 threshold became mathematically unrecoverable.</div>
+      <div class="callout info small"><strong>Efficient partial validation.</strong> Earlier screens used all 20 tasks and three unperturbed repeats with only AC1/AC3/AC6/AC7. C19 used the 14 non-saturated tasks to test recovery mechanisms; offline probes rejected weaker ideas without episodes. Prompt variants and failure scenarios were omitted from experiments. Completed-repeat bounds enabled early stopping whenever a 10-repeat VM4 threshold became mathematically unrecoverable.</div>
     </section>
 
     <section id="reproduce">
@@ -493,9 +516,10 @@ configuration["acceptance_criteria"] = [
           <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
+            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>8aa4c75</code></td><td><span class="badge warn">Active · no 10-repeat claim</span></td></tr>
             <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6/AC8 open</span></td></tr>
             <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
-            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run</td><td><span class="badge good">114 passed</span></td></tr>
+            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; continuation through <code>8aa4c75</code></td><td><span class="badge good">133 passed</span></td></tr>
             <tr><td>Run evidence</td><td><code>agent-validation/artifacts/runs/&lt;run-id&gt;/</code></td><td><span class="badge neutral">Retained</span></td></tr>
           </tbody>
         </table></div>
@@ -519,7 +543,7 @@ configuration["acceptance_criteria"] = [
   <footer>
     <div class="wrap">
       <strong>Reliable-agent · AC3 repeatability investigation</strong><br>
-      Generated 18 November 2026 and revised 19 November 2026 after the completed 10-repeat result. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
+      Generated 18 November 2026 and revised 19 November 2026 after the completed 10-repeat result and the bounded C19/offline continuation experiments. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
     </div>
   </footer>
 </body>
