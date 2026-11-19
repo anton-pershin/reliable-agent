@@ -19,6 +19,7 @@ from pydantic_ai.models.test import TestModel
 
 from reliable_agent.config import config_from_overrides
 from reliable_agent.contracts import (
+    ActionAttempt,
     ActionDecision,
     ActionError,
     ActionRequest,
@@ -60,6 +61,7 @@ def failed_observation(call_id: str, error_type: str = "precondition_failed") ->
         results=[
             ActionResult(
                 status="error",
+                observation={"state": ["public"]},
                 error=ActionError(type=error_type, message="public failure"),
             )
         ],
@@ -356,6 +358,57 @@ async def test_transition_tabu_also_breaks_successful_observation_cycles(
     assert executor.batches[-1].actions == [second]
     transitions = [event for event in read_logs(stream) if event["event"] == "observed_transition"]
     assert any(event["status"] == "ok" for event in transitions)
+
+
+def test_transition_tabu_does_not_alias_empty_observations(task, action) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(transition_tabu_enabled=True), clock=clock)
+    engine = DecisionEngine(ScriptedModel([]), event_logger, clock=clock)
+    state = engine.new_state(task)
+    for index in range(2):
+        engine.record_attempt(
+            state,
+            ActionAttempt(
+                call_id=f"empty-{index}",
+                actions=[action],
+                results=[ActionResult(status="ok", observation={})],
+            ),
+        )
+        if index == 0:
+            first_key = engine._public_observation_key(state)
+    assert engine._public_observation_key(state) != first_key
+    assert "unobserved_attempt" in engine._public_observation_key(state)
+
+
+def test_transition_action_keys_preserve_json_value_types() -> None:
+    boolean = ActionRequest(name="tool", arguments={"value": True})
+    integer = ActionRequest(name="tool", arguments={"value": 1})
+    assert DecisionEngine._transition_action_key(boolean) != DecisionEngine._transition_action_key(
+        integer
+    )
+
+
+async def test_first_action_vote_retains_and_executes_complete_plan(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    complete = plan_of(action, second)
+    clock = FakeClock()
+    event_logger, _ = logger(
+        config(
+            plan_vote_horizon=1,
+            plan_execution_horizon=0,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+        ),
+        clock=clock,
+    )
+    model = ScriptedModel([final_decision], plans=[[complete, plan_of(action)]])
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 1
+    assert [batch.actions for batch in executor.batches] == [[action], [second]]
 
 
 async def test_replanning_limit_stops_episode(task, action) -> None:
