@@ -99,7 +99,7 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--selected-plan-review / --no-selected-plan-review` | off | One post-vote validity review of the selected short prefix |
 | `--sample-retries N` | `1` | Retries per plan or verification sample after a transient failure |
 | `--verification-samples N` | `2` | Fastest-verdict race size, or independent consensus size with `--verification-consensus` |
-| `--max-replans N` | `12` | Re-planning rounds per episode after the first plan |
+| `--max-replans N` | `12` | Re-planning rounds after the first plan; maximum 50, still bounded by action/time budgets |
 | `--completion-verification / --no-completion-verification` | on | Goal verification before completion declarations |
 | `--verification-timeout N` | `90` | Verification sample timeout |
 | `--max-actions N` | `45` | Emitted environment-action budget, maximum 50 |

@@ -36,7 +36,7 @@ class AgentConfig(ContractModel):
     goal_review_enabled: bool = True
     sample_retries: int = Field(default=1, ge=0, le=5)
     verification_samples: int = Field(default=2, ge=1, le=5)
-    max_replans: int = Field(default=12, ge=0, le=20)
+    max_replans: int = Field(default=12, ge=0, le=50)
     completion_verification: bool = True
     max_action_attempts: int = Field(default=45, ge=1, le=50)
     max_episode_seconds: float = Field(default=285, gt=0, le=300)
