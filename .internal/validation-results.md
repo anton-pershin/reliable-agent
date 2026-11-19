@@ -8,3 +8,4 @@ Runs performed under earlier validation contracts are preserved unchanged in [va
 |--------|------|-----------------|------------|---------------|
 | 20261117T055953-096107Z-35ebc2cac9b0 | [05](specs/05-sdd-validation-contract-migration-kiss-spec.md) | b490da19b8a919b9c8867c1b54efdf87fc5af958 | aborted | /home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261117T055953-096107Z-35ebc2cac9b0 |
 | 20261117T150114-324103Z-9acb73d41f31 | [05](specs/05-sdd-validation-contract-migration-kiss-spec.md) | b490da19b8a919b9c8867c1b54efdf87fc5af958 | completed | /home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261117T150114-324103Z-9acb73d41f31 |
+| 20261119T104916-200097Z-56ebe409152d | [06](specs/06-observed-state-prefix-consensus-general-spec.md) | 46bddba5bc90a0b2892bb48aea17afe3397ecb34 | completed | /home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261119T104916-200097Z-56ebe409152d |

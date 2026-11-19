@@ -1,6 +1,6 @@
 ## AC3 repeatability on the default profile
 
-**Status**: active
+**Status**: completed — authoritative full `default` validation accepted AC3 and every other project criterion on 2026-11-19.
 
 ### Objective
 
@@ -34,10 +34,13 @@ A complete trace analysis of C18 on 2026-11-19 found that 78 failures ended in t
 
 The legacy model client always sent its configured seed (default 0), even though serving was not deterministic. New candidate runs will enable `--free-sampling`, which omits the provider seed on every request and retry. Historical runs remain useful observational baselines but are not evidence for the revised candidate. The combined candidate is experimental; no performance improvement is claimed before a completed 10-repeat run.
 
-**C28 is the current completed diagnostic reference.** Run `20261119T101214-088465Z-2ff094677400` completed all 20 tasks x 10 unperturbed repeats on `46bddba`: 200/200 successes, VM1 = 1.0, VM4 = 0.0, maximum 40 actions, AC7 = 1.0, and zero missing final responses. This is the investigation's first sustained AC3 acceptance and satisfies spec 06 AC6. Unchanged authoritative full `default` validation is running as `20261119T104916-200097Z-56ebe409152d`; spec 06 AC8 and project-level acceptance remain undecided until that run terminates and is recorded.
+**C28 is the validated accepted implementation.** Diagnostic run `20261119T101214-088465Z-2ff094677400` completed all 20 tasks x 10 unperturbed repeats on `46bddba`: 200/200 successes, VM1 = 1.0, VM4 = 0.0, maximum 40 actions, AC7 = 1.0, and zero missing final responses. Authoritative full `default` run `20261119T104916-200097Z-56ebe409152d` then completed all 840 episodes successfully and accepted AC1–AC7, satisfying spec 06 AC6 and AC8. The implementation is accepted at commit `46bddba`; overall project completion now requires user integration into `main`.
 
 Evidence:
 - [HTML methods and results report](../../reports/ac3-repeatability-report.html)
+- [Full-validation history](../validation-results.md)
+- `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261119T104916-200097Z-56ebe409152d/`
+- `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261119T101214-088465Z-2ff094677400/`
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
 - [Historical validation results](../validation-results-old.md)
 - [Methods report](../reports/methods-report.html)
@@ -77,6 +80,7 @@ Evidence:
 | C27-full | `9ebc189`, identical reviewed C27 implementation | Completed all 20 tasks x 10 unperturbed repeats (200 episodes), no early stopping | Same original self-hosted A10 runtime and free sampling | VM1 = 0.985; rates 1.0/1.0/1.0/0.95/1.0/0.95/1.0/0.95/1.0/1.0; computed VM4 = 0.050000000000000044, strictly rejected; AC6/AC7 accepted |
 | C28 | `46bddba`, C27 plus failure-triggered unknown-rule exploration and write-completion race fix | Completed `restack_bca`/`tower_four` x 3 targeted gate (6 episodes) | Same self-hosted runtime and sampling | 6/6 successes; subset VM4 = 0.0; maximum 29 actions; AC6/AC7 accepted; independently approved with 171 tests; full run authorized |
 | C28-full | `46bddba`, identical reviewed C28 implementation | Completed all 20 tasks x 10 unperturbed repeats (200 episodes), no early stopping | Original self-hosted A10 runtime; explicit free sampling | 200/200 successes; VM1 = 1.0; VM4 = 0.0; AC6/AC7 accepted; mean 17.65 s; maximum 64.55 s; first sustained AC3 acceptance |
+| C28-authoritative | `46bddba`, unchanged reviewed C28 implementation | Full `default`: 200 unperturbed + 400 prompt + 240 transient-failure episodes; AC1–AC7 | Original self-hosted A10 runtime; explicit free sampling | 840/840 successes; every criterion accepted; maximum 40 actions; AC7 = 1.0; implementation accepted, integration pending |
 
 ### Current understanding
 
@@ -154,6 +158,7 @@ Evidence:
 | E57 | Implement and independently review C28 residual-failure fixes | C28 | Added opt-in failure-triggered exploration of unknown-rule public actions, with required-argument-first enumeration, tried/failed/learned/rejected filtering, explicit learning+tabu prerequisites, horizon/model fallback, and candidate/deadline bounds. Set the protocol write-done event before scheduling future completion on success and error. Independent review approved the final fixes with no blocker. 171 tests, Ruff, and smoke run pass | Commit and push the exact revision. Run only `restack_bca` and `tower_four` x 3; require six successes and accepted AC6/AC7 before another complete 200-episode run. |
 | E58 | Apply the C28 targeted gate and authorize full repetition if passed | C28 | Run `20261119T100903-025933Z-1a059f3262d2` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261119T100903-025933Z-1a059f3262d2/`: both residual tasks succeeded in all three repeats (6/6), subset VM4 = 0.0, maximum 29 actions, AC7 = 1.0 | The predeclared gate passed. Run all 20 tasks x 10 unperturbed repeats on `46bddba` without early stopping. Do not present the six-episode gate as sustained full-population evidence. |
 | E59 | Record C28's completed full-population diagnostic and start authoritative validation | C28-full | Run `20261119T101214-088465Z-2ff094677400` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261119T101214-088465Z-2ff094677400/`: all ten repeat rates were 1.0; VM1 = 1.0 and VM4 = 0.0; maximum 40 actions; AC7 = 1.0. Mean episode time was 17.65 s and maximum 64.55 s, with zero missing final responses | This is the first demonstrated sustained AC3 result and satisfies spec 06 AC6. Start unchanged full `default` validation on `46bddba` (`20261119T104916-200097Z-56ebe409152d`) to evaluate every criterion. Do not claim project acceptance or integration before the terminal full result is recorded. |
+| E60 | Record authoritative full validation and close the AC3 objective | C28-authoritative | Full run `20261119T104916-200097Z-56ebe409152d` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261119T104916-200097Z-56ebe409152d/` completed 840/840 episodes successfully in approximately 2 h 39 min. AC1–AC7 were all accepted: VM1 = 1.0; VM2/VM3 = 1.0; VM4 = 0.0; all prompt/failure losses and ranges = 0.0; maximum actions = 40; timely final responses = 1.0. Mean time was 19.42 s and maximum 148.97 s | Append the terminal record to `.internal/validation-results.md`. Spec 06 AC6 and AC8 are satisfied and the investigation objective is achieved. C28 at `46bddba` is an accepted implementation; overall project completion awaits user integration into `main`. |
 
 ### Next candidates
 
@@ -181,10 +186,11 @@ Evidence:
 - [x] Complete C27's 200-episode run: VM1 = 0.985; computed VM4 = 0.050000000000000044, strictly rejected; analyze all three failures.
 - [x] Screen C28 on `restack_bca` and `tower_four` x 3; all six episodes succeeded, AC6/AC7 passed, and the full 10-repeat run was authorized.
 - [x] Complete C28's 200-episode diagnostic: VM1 = 1.0, VM4 = 0.0, AC6/AC7 accepted; this is completed candidate AC3 evidence.
-- [ ] Authoritative full `default` validation is running as `20261119T104916-200097Z-56ebe409152d`; evaluate every criterion after termination.
-- [ ] Append the terminal full-validation record to `.internal/validation-results.md`, update spec 06/report status, and address any remaining criterion without claiming integration before user review.
+- [x] Complete authoritative full `default` validation `20261119T104916-200097Z-56ebe409152d`: all 840 episodes succeeded and AC1–AC7 were accepted.
+- [x] Append the terminal full-validation record, close the investigation objective, and update spec/report status.
+- [ ] User review and integration of accepted commit `46bddba` into `main`; overall project completion occurs only after integration.
 
 ### Linked specs
 
 - [Spec 04: Repeatable planning](../specs/04-repeatable-planning-general-spec.md) — existing baseline and prior negative results.
-- [Spec 06: Observed-state prefix consensus](../specs/06-observed-state-prefix-consensus-general-spec.md) — AC6 is satisfied by C28's completed 200-episode diagnostic; AC8 full validation is running and remains unrecorded.
+- [Spec 06: Observed-state prefix consensus](../specs/06-observed-state-prefix-consensus-general-spec.md) — AC6 and AC8 are satisfied by C28's completed diagnostic and authoritative full validation; user integration remains pending.
