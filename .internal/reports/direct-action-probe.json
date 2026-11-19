@@ -1,0 +1,566 @@
+[
+  {
+    "task_id": "stack_ab",
+    "sample": 0,
+    "elapsed": 7.49,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "sample": 1,
+    "elapsed": 6.91,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "sample": 2,
+    "elapsed": 7.09,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "sample": 3,
+    "elapsed": 7.07,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "sample": 4,
+    "elapsed": 6.84,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 0,
+    "elapsed": 7.02,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 1,
+    "elapsed": 6.64,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "b"
+      }
+    },
+    "valid": true,
+    "optimal": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 2,
+    "elapsed": 6.88,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 3,
+    "elapsed": 6.68,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 4,
+    "elapsed": 6.59,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ca",
+    "sample": 0,
+    "elapsed": 6.52,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ca",
+    "sample": 1,
+    "elapsed": 6.68,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ca",
+    "sample": 2,
+    "elapsed": 6.76,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "c"
+      }
+    },
+    "valid": true,
+    "optimal": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ca",
+    "sample": 3,
+    "elapsed": 6.5,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ca",
+    "sample": 4,
+    "elapsed": 6.71,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 0,
+    "elapsed": 6.69,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 1,
+    "elapsed": 6.49,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 2,
+    "elapsed": 12.68,
+    "request_error": "UnexpectedModelBehavior: Exceeded maximum output retries (1)"
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 3,
+    "elapsed": 6.72,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 4,
+    "elapsed": 12.67,
+    "request_error": "UnexpectedModelBehavior: Exceeded maximum output retries (1)"
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 0,
+    "elapsed": 12.78,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 1,
+    "elapsed": 13.57,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "b"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 2,
+    "elapsed": 12.78,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "b"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 3,
+    "elapsed": 12.65,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 4,
+    "elapsed": 13.56,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "b"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "sample": 0,
+    "elapsed": 13.34,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "c"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "sample": 1,
+    "elapsed": 15.59,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "c"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "sample": 2,
+    "elapsed": 13.11,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_cab",
+    "sample": 3,
+    "elapsed": 13.75,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "c"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "sample": 4,
+    "elapsed": 13.56,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "c"
+      }
+    },
+    "valid": false,
+    "optimal": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 0,
+    "elapsed": 13.61,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 1,
+    "elapsed": 13.57,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 2,
+    "elapsed": 13.56,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 3,
+    "elapsed": 13.57,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 4,
+    "elapsed": 13.86,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 0,
+    "elapsed": 13.77,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 1,
+    "elapsed": 13.56,
+    "request_error": null,
+    "action": {
+      "name": "get_action_catalog",
+      "arguments": {}
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 2,
+    "elapsed": 13.61,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 3,
+    "elapsed": 14.97,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 4,
+    "elapsed": 14.97,
+    "request_error": null,
+    "action": {
+      "name": "pick_up",
+      "arguments": {
+        "block": "a"
+      }
+    },
+    "valid": true,
+    "optimal": false,
+    "error": null
+  }
+]
