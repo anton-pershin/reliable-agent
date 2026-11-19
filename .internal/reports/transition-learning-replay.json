@@ -1,0 +1,1253 @@
+[
+  {
+    "task_id": "restack_abc",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 5,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": []
+  },
+  {
+    "task_id": "restack_bac",
+    "repeat": 1,
+    "actual_success": false,
+    "actual_actions": 17,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "c"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_bca",
+    "repeat": 1,
+    "actual_success": false,
+    "actual_actions": 17,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 10,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_cab",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 8,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 4,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "c",
+          "other_block": "b"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_ac",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 2,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ba",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 11,
+    "learned_rules": [
+      "pick_up",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_ba_on_c",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 4,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_bc",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 3,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 3,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ca",
+    "repeat": 1,
+    "actual_success": false,
+    "actual_actions": 16,
+    "learned_rules": [
+      "pick_up",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 7,
+    "first_plan": [
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_ca_on_b",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 4,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_cb",
+    "repeat": 1,
+    "actual_success": false,
+    "actual_actions": 17,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 8,
+    "first_plan": [
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_three",
+    "repeat": 1,
+    "actual_success": false,
+    "actual_actions": 29,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 6,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "tower_four",
+    "repeat": 1,
+    "actual_success": false,
+    "actual_actions": 28,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "d"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "unstack_tower",
+    "repeat": 1,
+    "actual_success": true,
+    "actual_actions": 9,
+    "learned_rules": [
+      "put_down",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_abc",
+    "repeat": 2,
+    "actual_success": false,
+    "actual_actions": 7,
+    "learned_rules": [
+      "pick_up"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": null,
+    "first_plan": null
+  },
+  {
+    "task_id": "restack_bac",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 6,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 6,
+    "first_plan": []
+  },
+  {
+    "task_id": "restack_bca",
+    "repeat": 2,
+    "actual_success": false,
+    "actual_actions": 18,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 9,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "a",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_cab",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 4,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 4,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ac",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 2,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ba",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 2,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ba_on_c",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 4,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_bc",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 14,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 9,
+    "first_plan": [
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_ca",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 2,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ca_on_b",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 4,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_cb",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 9,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 6,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_three",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 9,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "tower_four",
+    "repeat": 2,
+    "actual_success": false,
+    "actual_actions": 30,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 12,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "d"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "unstack_tower",
+    "repeat": 2,
+    "actual_success": true,
+    "actual_actions": 8,
+    "learned_rules": [
+      "put_down",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 3,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_abc",
+    "repeat": 3,
+    "actual_success": false,
+    "actual_actions": 13,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "c",
+          "other_block": "b"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_bac",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 22,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 6,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "c"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_bca",
+    "repeat": 3,
+    "actual_success": false,
+    "actual_actions": 9,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 6,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "restack_cab",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 5,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ac",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 2,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ba",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 6,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 6,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ba_on_c",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 4,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_bc",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 20,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 9,
+    "first_plan": [
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_ca",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 6,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 6,
+    "first_plan": []
+  },
+  {
+    "task_id": "stack_ca_on_b",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 4,
+    "learned_rules": [
+      "pick_up",
+      "stack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 2,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "a"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_cb",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 11,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 8,
+    "first_plan": [
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "stack_three",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 9,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "tower_four",
+    "repeat": 3,
+    "actual_success": false,
+    "actual_actions": 25,
+    "learned_rules": [
+      "pick_up",
+      "put_down",
+      "stack",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 10,
+    "first_plan": [
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "c"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "c",
+          "other_block": "d"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ]
+  },
+  {
+    "task_id": "unstack_tower",
+    "repeat": 3,
+    "actual_success": true,
+    "actual_actions": 12,
+    "learned_rules": [
+      "put_down",
+      "unstack"
+    ],
+    "rule_changes": 0,
+    "first_solving_step": 5,
+    "first_plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      }
+    ]
+  }
+]
