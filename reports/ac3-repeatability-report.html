@@ -216,11 +216,11 @@
         <span>18 November 2026 · Updated 19 November 2026</span>
         <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
         <span>Default profile · 20 tasks</span>
-        <span>Investigation through <code>845ab94</code></span>
+        <span>Investigation through <code>d503f33</code></span>
       </div>
       <div class="status-ribbon">
         <strong>Status:</strong>
-        <span>C27 completed all 200 episodes: VM1 = 0.985 and mathematical repeat range 0.05, but computed VM4 = 0.050000000000000044 is strictly rejected. The 42/42 screen was not a guarantee. No accepted 10-repeat AC3 result exists, and spec 06 remains incomplete.</span>
+        <span>C28 completed all 200 episodes successfully: VM1 = 1.0 and VM4 = 0.0, so the 10-repeat AC3 diagnostic is accepted and spec 06 AC6 is satisfied. Authoritative full <code>default</code> validation is running as <code>20261119T104916-200097Z-56ebe409152d</code>; AC8 and project acceptance remain undecided.</span>
       </div>
     </div>
   </header>
@@ -235,18 +235,18 @@
 
   <main class="wrap">
     <div class="kpis" aria-label="Headline results">
-      <div class="kpi"><div class="label">Latest completed 10-repeat VM4</div><div class="value bad">0.0500…</div><div class="note">Computed 0.050000000000000044 · rejected</div></div>
-      <div class="kpi"><div class="label">AC3 acceptance threshold</div><div class="value">0.05</div><div class="note">C27 rates ranged 0.95–1.00</div></div>
-      <div class="kpi"><div class="label">Latest completed 10-repeat VM1</div><div class="value">0.985</div><div class="note">197 successes out of 200 episodes</div></div>
-      <div class="kpi"><div class="label">Accepted 10-repeat runs</div><div class="value bad">0</div><div class="note">Strict AC3 acceptance remains open</div></div>
+      <div class="kpi"><div class="label">Latest completed 10-repeat VM4</div><div class="value good">0.00</div><div class="note">C28 · accepted diagnostic</div></div>
+      <div class="kpi"><div class="label">AC3 acceptance threshold</div><div class="value">0.05</div><div class="note">All ten C28 repeat rates were 1.00</div></div>
+      <div class="kpi"><div class="label">Latest completed 10-repeat VM1</div><div class="value good">1.000</div><div class="note">200 successes out of 200 episodes</div></div>
+      <div class="kpi"><div class="label">Accepted 10-repeat runs</div><div class="value good">1</div><div class="note">Full validation still pending</div></div>
     </div>
 
     <section id="summary">
-      <div class="section-head"><div class="section-num">01</div><div><h2>The evidence, in one page</h2><p>C27 reached the mathematical one-task boundary over 200 episodes, but strict AC3 acceptance remains open.</p></div></div>
+      <div class="section-head"><div class="section-num">01</div><div><h2>The evidence, in one page</h2><p>C28 achieved 200/200 successes and VM4 = 0.0 in a completed diagnostic; authoritative full validation remains pending.</p></div></div>
       <div class="grid-3">
         <div class="card"><span class="badge neutral">C27 mechanism</span><h3 style="margin-top:12px">Learn from public transitions</h3><p class="small muted">Episode-local action rules are learned from observed state changes. Bounded generic search can replace model re-planning once enough consistent rules exist.</p></div>
         <div class="card"><span class="badge neutral">Correctness controls</span><h3 style="margin-top:12px">Exact goals and conservative fallback</h3><p class="small muted">Formal public-goal evidence eliminates false completions. Prediction conflicts, unsupported inputs, and missing rules retain controlled model recovery.</p></div>
-        <div class="card"><span class="badge bad">Completed evidence</span><h3 style="margin-top:12px">Near saturation is not acceptance</h3><p class="small muted">C27 completed at 197/200 with rates from 0.95 to 1.00. The computed range was 0.050000000000000044, strictly above 0.05.</p></div>
+        <div class="card"><span class="badge good">Completed evidence</span><h3 style="margin-top:12px">Sustained AC3 acceptance</h3><p class="small muted">C28 succeeded in every episode across all 20 tasks and ten repeats. VM1 = 1.0, VM4 = 0.0, AC6/AC7 accepted, and no final response was missing.</p></div>
       </div>
       <div class="callout info"><strong>Sampling and runtime boundary.</strong> All included episode results use the self-hosted A10 deployment, temperature 0.7, established serving defaults, and the required Qwen 9B model. C19 and later explicitly omit provider seeds with <code>--free-sampling</code>; earlier runs used the legacy configured seed and are retained as observational baselines, not final sampling-compliance evidence. Deterministic serving, fixed-repeat seed tactics, alternative models, and provider-hosted evidence are excluded.</div>
     </section>
@@ -322,10 +322,10 @@
       <div class="section-head"><div class="section-num">04</div><div><h2>Measured outcomes</h2><p>Completed 10-repeat runs are primary evidence; short screens are retained only to explain investigation decisions.</p></div></div>
       <div class="card">
         <h3>Latest completed candidate VM4 versus the threshold</h3>
-        <p class="small muted">C27 completed all 200 episodes. The exact computed value—not a rounded display—is used for acceptance.</p>
-        <div class="bar-row"><div class="bar-label">C27 transition learning, completed<small>20261119T081342 · completed 10 repeats</small></div><div class="bar-track"><div class="bar-fill" style="width:20%"></div><div class="bar-threshold"></div></div><div class="bar-value bad">0.0500 + ε</div></div>
+        <p class="small muted">C28 completed all 200 episodes. Every repeat rate was 1.0, producing an exact range of zero.</p>
+        <div class="bar-row"><div class="bar-label">C28 transition learning, completed<small>20261119T101214 · completed 10 repeats</small></div><div class="bar-track"><div class="bar-fill pass" style="width:1%"></div><div class="bar-threshold"></div></div><div class="bar-value good">0.0000</div></div>
         <div class="bar-row"><div class="bar-label">AC3 threshold<small>Required maximum repeat range</small></div><div class="bar-track"><div class="bar-fill pass" style="width:20%"></div><div class="bar-threshold"></div></div><div class="bar-value good">0.0500</div></div>
-        <div class="callout danger small"><strong>Strict boundary rejection.</strong> C27's computed candidate range exceeds 0.05 by approximately 4.16×10⁻¹⁷. Three-repeat values are excluded because they are not evidence of sustained repeatability.</div>
+        <div class="callout info small"><strong>Completed diagnostic accepted.</strong> C28 achieved VM4 = 0.0 with VM1 = 1.0 and AC6/AC7 accepted. This satisfies spec 06 AC6; unchanged full validation is required for AC8 and project acceptance.</div>
       </div>
       <div class="card svg-card">
         <h3 style="padding:10px 10px 0">Three-repeat screening observations — superseded</h3>
@@ -406,6 +406,7 @@
             <tr><td><span class="run-id">20261118T110200-342470Z-dad0e927d25a</span><br>H=1 goal regression · early stop</td><td>0.65, 0.65, 0.60</td><td class="mono">0.050000000000000044</td><td class="warn mono">+4.16×10⁻¹⁷</td></tr>
             <tr><td><span class="run-id">20261118T151459-848922Z-5228d0ade946</span><br>H=1 goal regression · <strong>completed</strong></td><td>0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55</td><td class="mono">0.20</td><td class="bad mono">+0.15</td></tr>
             <tr><td><span class="run-id">20261119T081342-066762Z-499ec4d39610</span><br>C27 transition learning · <strong>completed</strong></td><td>1.00, 1.00, 1.00, 0.95, 1.00, 0.95, 1.00, 0.95, 1.00, 1.00</td><td class="mono">0.050000000000000044</td><td class="warn mono">+4.16×10⁻¹⁷</td></tr>
+            <tr><td><span class="run-id">20261119T101214-088465Z-2ff094677400</span><br>C28 transition learning + exploration · <strong>completed</strong></td><td>1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00</td><td class="good mono">0.00 · accepted</td><td class="good mono">0.00</td></tr>
           </tbody>
         </table></div>
         <div class="callout danger"><strong>Aborted, not a completed result.</strong> This short extension retained 63 records and reached a computed range of <code>0.050000000000000044 &gt; 0.05</code>. It is not evidence of 10-repeat improvement; the later completed run returned VM4 = 0.20.</div>
@@ -499,14 +500,15 @@
         <div class="callout danger small" style="margin-top:18px"><strong>Completed 200 episodes: AC3 strictly rejected.</strong> C27 repeat rates were 1.0, 1.0, 1.0, 0.95, 1.0, 0.95, 1.0, 0.95, 1.0, 1.0. VM1 = 0.985; computed VM4 = 0.050000000000000044. Two `restack_bca` timeouts lacked a learned `unstack`; one goal-satisfying `tower_four` episode missed final delivery because of a pending-write race. C28 targets only those residual failures.</div>
       </div>
       <div class="card">
-        <span class="badge warn">C28 gate passed · full run in progress</span>
-        <h3 style="margin-top:14px">Residual-failure fixes earned one final 200-episode test</h3>
-        <p class="small muted">Run <code>20261119T100903-025933Z-1a059f3262d2</code> · revision <code>46bddba</code> · <code>restack_bca</code> and <code>tower_four</code> × 3 repeats. Added bounded unknown-rule exploration after permanent failure and corrected write-done ordering before final delivery.</p>
+        <span class="badge good">C28 completed · AC3 diagnostic accepted</span>
+        <h3 style="margin-top:14px">All 200 episodes succeeded under transition learning and exploration</h3>
+        <p class="small muted">Gate run <code>20261119T100903-025933Z-1a059f3262d2</code> passed 6/6. Completed full-population diagnostic <code>20261119T101214-088465Z-2ff094677400</code> used exact reviewed revision <code>46bddba</code>, with no early stopping.</p>
         <div class="grid-3" style="margin-top:18px">
-          <div class="step"><b>6 / 6 gate successes</b><span>Both residual tasks succeeded in all three targeted repeats.</span></div>
-          <div class="step"><b>29 actions · AC7 1.0</b><span>AC6/AC7 accepted; the gate is not full-population evidence.</span></div>
-          <div class="step"><b>200 episodes running</b><span>All 20 tasks × 10 repeats, exact revision <code>46bddba</code>, no early stopping.</span></div>
+          <div class="step"><b>200 / 200 successes</b><span>All ten repeat rates were 1.0; zero false completions and zero missing finals.</span></div>
+          <div class="step"><b>VM1 1.0 · VM4 0.0</b><span>First sustained AC3 acceptance in the investigation; spec 06 AC6 satisfied.</span></div>
+          <div class="step"><b>17.65 s mean</b><span>Maximum 64.55 s; maximum 40 actions; AC6/AC7 accepted.</span></div>
         </div>
+        <div class="callout info small" style="margin-top:18px"><strong>Authoritative full validation is running.</strong> Run <code>20261119T104916-200097Z-56ebe409152d</code> uses unchanged <code>default</code> on <code>46bddba</code>. AC8 and project-level acceptance remain undecided until it terminates.</div>
       </div>
     </section>
 
@@ -581,8 +583,8 @@ configuration["acceptance_criteria"] = [
           <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
-            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>845ab94</code></td><td><span class="badge warn">C28 full run in progress</span></td></tr>
-            <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6/AC8 open</span></td></tr>
+            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>d503f33</code></td><td><span class="badge warn">C28 full validation running</span></td></tr>
+            <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6 met · AC8 running</span></td></tr>
             <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
             <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; reviewed C28 implementation <code>46bddba</code></td><td><span class="badge good">171 passed</span></td></tr>
             <tr><td>Run evidence</td><td><code>agent-validation/artifacts/runs/&lt;run-id&gt;/</code></td><td><span class="badge neutral">Retained</span></td></tr>
@@ -594,12 +596,12 @@ configuration["acceptance_criteria"] = [
     <section id="gap">
       <div class="final-banner">
         <span class="badge warn">Remaining gap</span>
-        <h2 style="margin-top:14px">AC3 remains strictly rejected.</h2>
-        <p>C27 completed 200 episodes with VM1 = 0.985 and a mathematical repeat range of 0.05. The computed value was 0.050000000000000044, above the strict threshold. C28 passed its six-episode residual gate; its full run is in progress, so no final C28 result is claimed yet.</p>
+        <h2 style="margin-top:14px">Sustained AC3 achieved. Full validation remains.</h2>
+        <p>C28 completed all 200 episodes with VM1 = 1.0 and VM4 = 0.0. The accepted diagnostic satisfies spec 06 AC6. Unchanged full <code>default</code> validation is running as <code>20261119T104916-200097Z-56ebe409152d</code>; AC8 and project-level acceptance are not yet decided.</p>
         <div class="grid-3" style="margin-top:20px">
-          <div><strong style="font-size:20px">1. Preserve the completed baseline</strong><p class="small">C27 is the current completed reference: 197/200 successes, zero false completions, AC6/AC7 accepted.</p></div>
-          <div><strong style="font-size:20px">2. Fix only evidenced residuals</strong><p class="small">Two <code>restack_bca</code> learning-gap timeouts and one <code>tower_four</code> final-delivery race define C28's narrow scope.</p></div>
-          <div><strong style="font-size:20px">3. Keep acceptance and specs honest</strong><p class="small">No validator tolerance or spec completion claim is allowed. A follow-up spec requires completed evidence, and full validation has not run.</p></div>
+          <div><strong style="font-size:20px">1. Preserve the accepted diagnostic</strong><p class="small">C28 is the completed reference: 200/200 successes, zero repeat range, AC6/AC7 accepted.</p></div>
+          <div><strong style="font-size:20px">2. Evaluate every criterion</strong><p class="small">Full validation must measure AC2/AC4/AC5 as well as AC1/AC3/AC6/AC7; no outcome is inferred from the unperturbed screen.</p></div>
+          <div><strong style="font-size:20px">3. Record and review before integration</strong><p class="small">Append the terminal full run to validation history, update spec 06 AC8, and wait for user integration. No project acceptance is claimed yet.</p></div>
         </div>
       </div>
     </section>
@@ -608,7 +610,7 @@ configuration["acceptance_criteria"] = [
   <footer>
     <div class="wrap">
       <strong>Reliable-agent · AC3 repeatability investigation</strong><br>
-      Generated 18 November 2026 and revised 19 November 2026 through the completed C27 200-episode result and subsequent residual-failure analysis. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
+      Generated 18 November 2026 and revised 19 November 2026 through C28's accepted 200-episode diagnostic. Authoritative full validation is pending. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
     </div>
   </footer>
 </body>
