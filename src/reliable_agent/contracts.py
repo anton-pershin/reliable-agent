@@ -18,6 +18,9 @@ class AgentConfig(ContractModel):
     max_output_tokens: int = Field(default=8000, ge=1)
     prompt_version: str = "consistent-planning-v1"
     planning_strategy: Literal["forward", "goal_regression"] = "forward"
+    transition_tabu_enabled: bool = False
+    verification_consensus_enabled: bool = False
+    free_sampling_enabled: bool = False
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
     plan_spares: int = Field(default=1, ge=0, le=10)
@@ -181,6 +184,7 @@ class TaskState(ContractModel):
     active_plan_key: str | None = None
     active_plan_reaches_goal: bool = True
     failed_plan_keys: list[str] = Field(default_factory=list)
+    tried_transitions: dict[str, list[ActionRequest]] = Field(default_factory=dict)
 
     @property
     def action_attempts(self) -> int:

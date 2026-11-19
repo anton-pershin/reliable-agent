@@ -124,6 +124,7 @@ class DecisionEngine:
             return decision
 
     def record_attempt(self, state: TaskState, attempt: ActionAttempt) -> None:
+        observation_key = self._public_observation_key(state)
         state.attempts.append(attempt)
         self.logger.log(
             "action_observation",
@@ -151,6 +152,7 @@ class DecisionEngine:
                     )
         state.pending_retry_actions = pending
         self._update_plan(state, attempt)
+        self._record_observed_transition(state, observation_key, attempt)
 
     def stop(self, state: TaskState, reason: str, details: str | None = None) -> FinalDecision:
         state.termination_reason = reason
@@ -329,6 +331,45 @@ class DecisionEngine:
                 horizon=horizon,
                 truncated=truncated,
             )
+        if state.config.transition_tabu_enabled:
+            tried = state.tried_transitions.get(self._public_observation_key(state), [])
+            repeated = []
+            novel = []
+            for index, candidate in valid:
+                if candidate.actions and candidate.actions[0] in tried:
+                    repeated.append((index, candidate))
+                else:
+                    novel.append((index, candidate))
+            if repeated:
+                self.logger.log(
+                    "transition_tabu",
+                    plan_round=state.plan_rounds,
+                    suppressed=len(repeated),
+                    remaining=len(novel),
+                    all_repeated=not novel,
+                    actions=[candidate.actions[0].model_dump() for _, candidate in repeated],
+                )
+                if not novel:
+                    descriptions = ", ".join(
+                        candidate.actions[0].name
+                        + "("
+                        + json.dumps(
+                            candidate.actions[0].arguments,
+                            sort_keys=True,
+                            ensure_ascii=False,
+                        )
+                        + ")"
+                        for _, candidate in repeated
+                    )
+                    state.validation_feedback.append(
+                        "Every candidate repeats an action already observed from the current "
+                        f"public state: {descriptions}. Propose a different action or an empty "
+                        "completion claim only when public evidence satisfies the objective."
+                    )
+                    state.plan_broken = True
+                    state.replan_cause = "repeated_transition"
+                    return None
+                valid = novel
         fresh = [
             (index, candidate)
             for index, candidate in valid
@@ -604,6 +645,52 @@ class DecisionEngine:
             decision=decision.model_dump(),
         )
         return decision
+
+    def _record_observed_transition(
+        self, state: TaskState, observation_key: str, attempt: ActionAttempt
+    ) -> None:
+        """Remember one public state/action pair for optional cycle suppression."""
+        if (
+            not state.config.transition_tabu_enabled
+            or len(attempt.actions) != 1
+            or len(attempt.results) != 1
+        ):
+            return
+        result = attempt.results[0]
+        if result.error is not None and result.error.type == "transient_failure":
+            # Transient failures are retried independently; they are not evidence
+            # that the same transition should be avoided later.
+            return
+        action = attempt.actions[0]
+        tried = state.tried_transitions.setdefault(observation_key, [])
+        if action not in tried:
+            tried.append(action)
+        self.logger.log(
+            "observed_transition",
+            action=action.model_dump(),
+            status=result.status,
+            known_transitions_from_state=len(tried),
+        )
+
+    @staticmethod
+    def _public_observation_key(state: TaskState) -> str:
+        """Canonicalize the latest public state without interpreting its domain."""
+        if not state.attempts:
+            payload = {"initial_input": state.task.input}
+        else:
+            latest = state.attempts[-1]
+            observations = [result.observation for result in latest.results]
+            if observations and all("state" in observation for observation in observations):
+                # Observation metadata such as the last action name is not part
+                # of the public state and would disguise an otherwise exact cycle.
+                payload = {"states": [observation["state"] for observation in observations]}
+            elif observations:
+                payload = {"observations": observations}
+            else:
+                # With no public observation, different attempts cannot safely
+                # be identified as the same state.
+                payload = {"unobserved_attempt": latest.call_id}
+        return json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str)
 
     def _update_plan(self, state: TaskState, attempt: ActionAttempt) -> None:
         if not state.plan_actions or len(attempt.actions) != 1:
