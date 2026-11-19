@@ -21,6 +21,8 @@ def test_defaults_and_public_configuration() -> None:
     assert agent_config.intermediate_completion_verification_enabled is False
     assert agent_config.formal_goal_checking_enabled is False
     assert agent_config.transition_learning_enabled is False
+    assert agent_config.transition_exploration_enabled is False
+    assert agent_config.exploration_max_candidates == 1024
     assert agent_config.learned_search_max_states == 50_000
     assert "sensitive_values" not in agent_config.public_dict()
     validate_config(agent_config)
@@ -47,6 +49,9 @@ def test_sample_configuration_overrides_parse() -> None:
             "--intermediate-completion-verification",
             "--formal-goal-checking",
             "--transition-learning",
+            "--transition-exploration",
+            "--exploration-max-candidates",
+            "100",
             "--learned-search-max-states",
             "1000",
         ]
@@ -63,6 +68,8 @@ def test_sample_configuration_overrides_parse() -> None:
     assert agent_config.intermediate_completion_verification_enabled is True
     assert agent_config.formal_goal_checking_enabled is True
     assert agent_config.transition_learning_enabled is True
+    assert agent_config.transition_exploration_enabled is True
+    assert agent_config.exploration_max_candidates == 100
     assert agent_config.learned_search_max_states == 1000
     with pytest.raises(ValueError):
         config(plan_max_output_tokens=-1)
@@ -74,6 +81,8 @@ def test_sample_configuration_overrides_parse() -> None:
         config(max_replans=51)
     with pytest.raises(ValueError):
         config(learned_search_max_states=0)
+    with pytest.raises(ValueError):
+        config(exploration_max_candidates=0)
 
 
 def test_override_parsing() -> None:

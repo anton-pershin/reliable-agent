@@ -137,6 +137,8 @@ async def _run_blocking(function, *args, done_event: threading.Event | None = No
         try:
             result = function(*args)
         except Exception as exc:
+            if done_event is not None:
+                done_event.set()
             captured_error = exc
 
             def set_error(error=captured_error) -> None:
@@ -148,6 +150,8 @@ async def _run_blocking(function, *args, done_event: threading.Event | None = No
             except RuntimeError:
                 pass
         else:
+            if done_event is not None:
+                done_event.set()
 
             def set_result() -> None:
                 if not future.cancelled():
@@ -157,9 +161,6 @@ async def _run_blocking(function, *args, done_event: threading.Event | None = No
                 loop.call_soon_threadsafe(set_result)
             except RuntimeError:
                 pass
-        finally:
-            if done_event is not None:
-                done_event.set()
 
     threading.Thread(target=run, daemon=True).start()
     return await future

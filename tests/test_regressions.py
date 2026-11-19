@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import os
+import threading
 import time
 
 import pytest
@@ -196,6 +197,27 @@ async def test_final_delivery_uses_atomic_file_descriptor_write(final_decision) 
     content = os.read(reader, 10000).decode()
     os.close(reader)
     assert json.loads(content)["type"] == "final"
+
+
+async def test_action_write_done_event_precedes_future_completion(action, monkeypatch) -> None:
+    transport = JsonLinesTransport(writer=io.StringIO())
+    loop = asyncio.get_running_loop()
+    original = loop.call_soon_threadsafe
+    release = threading.Event()
+
+    def controlled_schedule(callback, *args):
+        original(callback, *args)
+        # Keep the writer thread from reaching the old finally block. The fixed
+        # implementation marks the event before scheduling this callback.
+        release.wait(1)
+
+    monkeypatch.setattr(loop, "call_soon_threadsafe", controlled_schedule)
+    try:
+        await transport.execute_write(ActionBatch(call_id="write", actions=[action]))
+        assert transport.has_pending_writes() is False
+    finally:
+        release.set()
+    await asyncio.sleep(0.01)
 
 
 async def test_timed_out_action_write_cannot_follow_final(task, action, monkeypatch) -> None:

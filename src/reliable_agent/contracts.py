@@ -25,6 +25,8 @@ class AgentConfig(ContractModel):
     intermediate_completion_verification_enabled: bool = False
     formal_goal_checking_enabled: bool = False
     transition_learning_enabled: bool = False
+    transition_exploration_enabled: bool = False
+    exploration_max_candidates: int = Field(default=1024, ge=1, le=100_000)
     learned_search_max_states: int = Field(default=50_000, ge=1, le=200_000)
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)

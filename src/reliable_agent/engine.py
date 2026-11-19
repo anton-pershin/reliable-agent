@@ -30,6 +30,7 @@ from .observability import EventLogger
 from .planning import plan_key, vote_plans
 from .transition_learning import (
     formal_transition_key,
+    iter_public_actions,
     learn_action_rule,
     predict_action_state,
     search_learned_plan,
@@ -350,6 +351,36 @@ class DecisionEngine:
                 visited_states=visited,
                 learned_actions=sorted(state.learned_action_rules),
             )
+        if (
+            state.config.transition_exploration_enabled
+            and state.config.transition_learning_enabled
+            and state.config.transition_tabu_enabled
+            and state.replan_cause == "action_failure"
+            and not (state.config.plan_execution_horizon or state.config.plan_horizon)
+        ):
+            exploration = self._exploration_action(state)
+            if exploration is not None:
+                candidate = PlanCandidate(actions=[exploration], reaches_goal=False)
+                state.plan_actions = [exploration]
+                state.completion_check_pending = False
+                state.plan_broken = False
+                state.replan_cause = None
+                state.active_plan_key = plan_key(candidate)
+                state.active_plan_reaches_goal = False
+                self.logger.log(
+                    "transition_exploration",
+                    plan_round=state.plan_rounds,
+                    action=exploration.model_dump(),
+                    learned_actions=sorted(state.learned_action_rules),
+                )
+                self.logger.log(
+                    "plan_selected",
+                    plan_round=state.plan_rounds,
+                    reaches_goal=False,
+                    actions=[exploration.model_dump()],
+                    selection_source="public_transition_exploration",
+                )
+                return "planned"
         plan_method = getattr(self.model, "plan", None)
         if plan_method is None:
             state.reactive_mode = True
@@ -857,6 +888,43 @@ class DecisionEngine:
             deadline=self.clock() + max(0.0, self._remaining(state) - self._reserve(state)),
             clock=self.clock,
         )
+
+    def _exploration_action(self, state: TaskState) -> ActionRequest | None:
+        current = self._current_formal_state(state)
+        if current is None:
+            return None
+        tried = set(state.tried_transitions.get(self._public_observation_key(state), []))
+        failed = frozenset(state.failed_formal_transitions)
+        deadline = self.clock() + max(0.0, self._remaining(state) - self._reserve(state))
+        for index, action in enumerate(iter_public_actions(state.task), start=1):
+            if index > state.config.exploration_max_candidates:
+                self.logger.log(
+                    "transition_exploration_exhausted",
+                    reason="candidate_limit",
+                    checked=index - 1,
+                )
+                return None
+            if index % 64 == 0 and self.clock() >= deadline:
+                self.logger.log(
+                    "transition_exploration_exhausted",
+                    level="ERROR",
+                    reason="deadline",
+                    checked=index,
+                )
+                return None
+            if (
+                action.name in state.learned_action_rules
+                or action.name in state.rejected_learned_actions
+            ):
+                continue
+            if self._transition_action_key(action) in tried:
+                continue
+            if formal_transition_key(current, action) in failed:
+                continue
+            if self._validation_errors(state, ActionDecision(actions=[action])):
+                continue
+            return action
+        return None
 
     def _record_observed_transition(
         self, state: TaskState, observation_key: str, attempt: ActionAttempt
