@@ -1,0 +1,2698 @@
+[
+  {
+    "task_id": "stack_ab",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 11.48,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 7.48,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 7.55,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 10.72,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 10.86,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 13.66,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack b on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 7.74,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 8.97,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 13.76,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack b on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 13.43,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack b on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 10.74,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 13.48,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack c on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 10.53,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack c on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 11.5,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 7.52,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 7.07,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 16.69,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 4,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 16.74,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "table"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 17.44,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 16.8,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": false
+    },
+    "valid_prefix": 4,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 20.04,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 3,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack b on c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 10.39,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": false
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 19.86,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 4,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 18.72,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 10.53,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 19.32,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 15.95,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 15.37,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 19.96,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 23.83,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 15.06,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 22.63,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 23.88,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 15.15,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 25.66,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "goal_regression",
+    "sample": 0,
+    "elapsed": 34.36,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "d"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "d",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "goal_regression",
+    "sample": 1,
+    "elapsed": 29.22,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "d"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "goal_regression",
+    "sample": 2,
+    "elapsed": 29.4,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "d"
+          }
+        }
+      ],
+      "reaches_goal": false
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot unstack b from c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "goal_regression",
+    "sample": 3,
+    "elapsed": 31.5,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "d"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "d",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "goal_regression",
+    "sample": 4,
+    "elapsed": 31.58,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "d"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 22.29,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 22.32,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 22.45,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 24.09,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ab",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 23.91,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 25.91,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack b on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 27.69,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot put down c: the hand does not hold it"
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 33.58,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 31.42,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 4,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "stack_ba",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 28.99,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot put down c: the hand does not hold it"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 28.99,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot put down b: the hand does not hold it"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 31.44,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack c on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 33.46,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot put down b: the hand does not hold it"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 31.44,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 1,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot stack c on a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_ca",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 26.82,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 36.58,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 4,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 36.65,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 27.69,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 36.49,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 4,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_abc",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 28.96,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": false
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 35.38,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 29.37,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 37.25,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 38.18,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_bac",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 37.55,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 39.29,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 4,
+    "valid_complete": true,
+    "solves": true,
+    "error": null
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 38.99,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 38.47,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 40.44,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "put_down",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up a: preconditions are not satisfied"
+  },
+  {
+    "task_id": "restack_cab",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 39.49,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "a"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "a"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up c: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 39.81,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 39.84,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 39.81,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 39.89,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "stack_three",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 39.96,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "invariant_ledger",
+    "sample": 0,
+    "elapsed": 41.78,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "d"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "invariant_ledger",
+    "sample": 1,
+    "elapsed": 39.81,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "unstack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "d"
+          }
+        }
+      ],
+      "reaches_goal": false
+    },
+    "valid_prefix": 0,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot unstack a from b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "invariant_ledger",
+    "sample": 2,
+    "elapsed": 36.58,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "invariant_ledger",
+    "sample": 3,
+    "elapsed": 42.77,
+    "request_error": null,
+    "candidate": {
+      "actions": [
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "a"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "a",
+            "other_block": "b"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "b"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "b",
+            "other_block": "c"
+          }
+        },
+        {
+          "name": "pick_up",
+          "arguments": {
+            "block": "c"
+          }
+        },
+        {
+          "name": "stack",
+          "arguments": {
+            "block": "c",
+            "other_block": "d"
+          }
+        }
+      ],
+      "reaches_goal": true
+    },
+    "valid_prefix": 2,
+    "valid_complete": false,
+    "solves": false,
+    "error": "Cannot pick up b: preconditions are not satisfied"
+  },
+  {
+    "task_id": "tower_four",
+    "strategy": "invariant_ledger",
+    "sample": 4,
+    "elapsed": 38.47,
+    "request_error": null,
+    "candidate": {
+      "actions": [],
+      "reaches_goal": true
+    },
+    "valid_prefix": 0,
+    "valid_complete": true,
+    "solves": false,
+    "error": null
+  }
+]
