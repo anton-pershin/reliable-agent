@@ -24,6 +24,8 @@ class AgentConfig(ContractModel):
     state_centered_planning_enabled: bool = False
     intermediate_completion_verification_enabled: bool = False
     formal_goal_checking_enabled: bool = False
+    transition_learning_enabled: bool = False
+    learned_search_max_states: int = Field(default=50_000, ge=1, le=200_000)
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
     plan_spares: int = Field(default=1, ge=0, le=10)
@@ -138,6 +140,15 @@ class PlanCandidate(ContractModel):
     reaches_goal: bool = True
 
 
+class LearnedActionRule(ContractModel):
+    """An episode-local public transition rule generalized through action arguments."""
+
+    name: str
+    preconditions: list[str] = Field(default_factory=list)
+    add_effects: list[str] = Field(default_factory=list)
+    delete_effects: list[str] = Field(default_factory=list)
+
+
 class PlanReview(ContractModel):
     valid: StrictBool
     first_invalid_action_index: int | None = None
@@ -188,6 +199,9 @@ class TaskState(ContractModel):
     active_plan_reaches_goal: bool = True
     failed_plan_keys: list[str] = Field(default_factory=list)
     tried_transitions: dict[str, list[str]] = Field(default_factory=dict)
+    learned_action_rules: dict[str, LearnedActionRule] = Field(default_factory=dict)
+    rejected_learned_actions: list[str] = Field(default_factory=list)
+    failed_formal_transitions: list[str] = Field(default_factory=list)
     completion_check_pending: bool = False
 
     @property
