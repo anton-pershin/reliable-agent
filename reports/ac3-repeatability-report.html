@@ -564,6 +564,25 @@
         </div>
       </div>
       <div class="card">
+        <h3>C28 reviewed and completed candidate</h3>
+        <div class="code-label">Exact solution overrides</div>
+        <pre>--model openai:qwen/qwen3.5-9b
+--temperature 0.7
+--model-timeout 90 --sample-retries 2
+--plan-max-output-tokens 3000
+--plan-samples 5 --plan-spares 1
+--plan-vote-horizon 1
+--planning-strategy goal_regression
+--transition-tabu --transition-learning --transition-exploration
+--verification-consensus --verification-samples 3
+--free-sampling --formal-goal-checking
+--state-centered-planning --intermediate-completion-verification
+--max-replans 50
+--no-plan-review --no-goal-review
+--log-level ERROR</pre>
+        <p class="small muted">Revision <code>46bddba5bc90a0b2892bb48aea17afe3397ecb34</code><br>Accepted completed diagnostic <code>20261119T101214-088465Z-2ff094677400</code><br>Full validation <code>20261119T104916-200097Z-56ebe409152d</code> is pending.</p>
+      </div>
+      <div class="card">
         <h3>Partial-validation configuration pattern</h3>
         <div class="code-label">Complete modified default configuration</div>
         <pre><span class="comment"># Preserve every discovered field; change only the diagnostic scope.</span>
