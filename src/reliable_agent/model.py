@@ -206,6 +206,11 @@ class PydanticAIModelClient:
             format_hint="Return PlanCandidate only",
             operation_prefix=f"plan-{state.plan_rounds}",
             seed_offset=0,
+            prompt=(
+                self._plan_prompt(state)
+                if self.config.state_centered_planning_enabled
+                else None
+            ),
         )
         if not candidates:
             raise ModelRequestError(
@@ -680,6 +685,38 @@ class PydanticAIModelClient:
                 "validation_feedback": state.validation_feedback,
                 "prompt_version": self.config.prompt_version,
                 "format": format_hint,
+            },
+            ensure_ascii=False,
+            default=str,
+        )
+
+    def _plan_prompt(self, state: TaskState) -> str:
+        """Build a state-centred plan prompt only for complete public snapshots."""
+        latest_results = None
+        if state.attempts:
+            latest = state.attempts[-1].results
+            if not latest or not all("state" in result.observation for result in latest):
+                # Delta or unstructured observations require the raw history;
+                # dropping it could discard facts needed for the next plan.
+                return self._prompt(state, "Return PlanCandidate only")
+            latest_results = [result.model_dump() for result in latest]
+        feedback = state.validation_feedback[-1:]
+        self.logger.log(
+            "state_centered_prompt",
+            omitted_attempts=max(0, len(state.attempts) - 1),
+            retained_feedback=len(feedback),
+        )
+        return json.dumps(
+            {
+                "task": state.task.model_dump(),
+                "action_attempts": state.action_attempts,
+                "remaining_action_attempts": max(
+                    0, self.config.max_action_attempts - state.action_attempts
+                ),
+                "latest_observation": latest_results,
+                "validation_feedback": feedback,
+                "prompt_version": self.config.prompt_version,
+                "format": "Return PlanCandidate only",
             },
             ensure_ascii=False,
             default=str,

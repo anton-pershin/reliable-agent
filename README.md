@@ -42,7 +42,7 @@ With `--plan-horizon N`, the planner returns at most N actions per candidate plu
 
 `--plan-execution-horizon N` enforces a prefix without changing those plan instructions. The engine can therefore sample ordinary complete plans, truncate every candidate to its first N actions before voting, execute only the winning prefix, and plan again from the resulting observation. This avoids relying on the model to comply with a short-plan prompt. Before the first observation, valid actionable candidates suppress empty completion claims; an empty-only round can still verify an initially satisfied objective. Candidates with the same normalized prefix must unanimously claim completion before the selected prefix can enter completion verification. The default execution horizon is 0, which preserves complete-plan execution.
 
-`--plan-vote-horizon V` makes voting compare only the first V actions without truncating the returned representative. For example, `--plan-vote-horizon 1 --plan-execution-horizon 2` votes on first actions but executes two actions from the winning candidate. Completion unanimity uses the same vote prefix. The default is 0.
+`--plan-vote-horizon V` makes voting compare only the first V actions without truncating the returned representative. For example, `--plan-vote-horizon 1 --plan-execution-horizon 2` votes on first actions but executes two actions from the winning candidate. Completion unanimity uses the vote prefix when executing a prefix; with execution horizon 0, it uses the full retained plan. The default vote horizon is 0.
 
 `--selected-plan-review` adds one validity review after the vote and before execution. Unlike `--plan-review`, which reviews every full candidate concurrently, this reviews only the selected short prefix. An invalid first action causes re-planning without environment execution; an invalid later action truncates the prefix to its valid part. Review failures leave the selected prefix unchanged. The default is off.
 
@@ -53,6 +53,10 @@ With `--plan-horizon N`, the planner returns at most N actions per candidate plu
 `--verification-consensus` waits for all `--verification-samples N` independent verdicts and accepts completion only with a strict majority of the configured sample count. Missing responses and split votes cannot establish completion; negative verdicts contribute missing/conflicting-predicate feedback. Without this flag, the legacy fastest-verdict behavior remains.
 
 `--free-sampling` omits the provider `seed` parameter from every request, including plan samples and retries. Enable it when the serving engine should control stochastic sampling without fixed request seeds.
+
+`--state-centered-planning` replaces stale action history with the latest public observation and most recent public feedback when that observation contains a complete `state` snapshot. Delta or unstructured observations automatically retain the full history. The default is off.
+
+`--intermediate-completion-verification` checks a non-reaching full plan after each successful action and stops it early if independent verification establishes the goal. A negative or unavailable intermediate check continues the plan; exhaustion still replans when the goal is unverified. Horizon-limited prefixes retain immediate replanning without intermediate checks. The default is off.
 
 ## JSON Lines execution
 
@@ -79,6 +83,8 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--transition-tabu / --no-transition-tabu` | off | Suppress actions already observed from the same public state |
 | `--verification-consensus / --no-verification-consensus` | off | Require a strict independent-verifier majority for completion |
 | `--free-sampling / --no-free-sampling` | off | Omit provider seeds from model requests |
+| `--state-centered-planning / --no-state-centered-planning` | off | Plan from the latest complete public state snapshot instead of stale history |
+| `--intermediate-completion-verification / --no-intermediate-completion-verification` | off | Check non-reaching full plans for early goal satisfaction |
 | `--planning / --no-planning` | on | Plan-vote-execute decision flow |
 | `--plan-samples N` | `3` | Candidate plans per vote |
 | `--plan-spares N` | `1` | Extra plan samples per vote; only the fastest completions count |

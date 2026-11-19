@@ -17,6 +17,7 @@ from .contracts import (
     PlanCandidate,
     Task,
     TaskState,
+    VerificationResult,
 )
 from .errors import ModelRequestError
 from .model import DecisionModel
@@ -63,6 +64,12 @@ class DecisionEngine:
             fallback = self._budget_fallback(state)
             if fallback is not None:
                 return fallback
+
+            if state.completion_check_pending:
+                outcome = await self._check_intermediate_completion(state)
+                if isinstance(outcome, FinalDecision):
+                    return outcome
+                continue
 
             if state.plan_actions:
                 return self._emit_plan_action(state)
@@ -201,22 +208,7 @@ class DecisionEngine:
         """
         verdict = await self._verify_completion(state)
         if verdict is not None and verdict.goal_satisfied:
-            state.termination_reason = "completed"
-            decision = FinalDecision(
-                completed=True,
-                answer="Task objective verified as satisfied.",
-                confidence=0.95,
-                likely_incorrect=False,
-                reason=verdict.reason or "Every goal predicate matches the latest observation.",
-            )
-            self.logger.log("final_decision", decision=decision.model_dump(), verified=True)
-            self.logger.log(
-                "termination",
-                termination_reason="completed",
-                action_attempts=state.action_attempts,
-                decision=decision.model_dump(),
-            )
-            return decision
+            return self._verified_completion(state, verdict)
         if verdict is None:
             feedback = "Completion verification is unavailable; the plan outcome is unverified."
             state.replan_cause = "verification_unavailable"
@@ -240,6 +232,42 @@ class DecisionEngine:
         state.plan_broken = True
         self._mark_plan_failed(state)
         return False
+
+    async def _check_intermediate_completion(
+        self, state: TaskState
+    ) -> FinalDecision | bool:
+        """Stop a non-reaching full plan early if its state already satisfies the goal."""
+        verdict = await self._verify_completion(state)
+        state.completion_check_pending = False
+        if verdict is not None and verdict.goal_satisfied:
+            return self._verified_completion(state, verdict)
+        self.logger.log(
+            "intermediate_completion_check",
+            verdict="unavailable" if verdict is None else "not_satisfied",
+            remaining_plan_actions=len(state.plan_actions),
+            plan_broken=state.plan_broken,
+        )
+        return False
+
+    def _verified_completion(
+        self, state: TaskState, verdict: VerificationResult
+    ) -> FinalDecision:
+        state.termination_reason = "completed"
+        decision = FinalDecision(
+            completed=True,
+            answer="Task objective verified as satisfied.",
+            confidence=0.95,
+            likely_incorrect=False,
+            reason=verdict.reason or "Every goal predicate matches the latest observation.",
+        )
+        self.logger.log("final_decision", decision=decision.model_dump(), verified=True)
+        self.logger.log(
+            "termination",
+            termination_reason="completed",
+            action_attempts=state.action_attempts,
+            decision=decision.model_dump(),
+        )
+        return decision
 
     @staticmethod
     def _mark_plan_failed(state: TaskState) -> None:
@@ -572,6 +600,7 @@ class DecisionEngine:
         if winner is None:
             return None
         state.plan_actions = list(winner.actions)
+        state.completion_check_pending = False
         state.plan_broken = False
         state.replan_cause = None
         state.active_plan_key = plan_key(winner)
@@ -716,12 +745,25 @@ class DecisionEngine:
         result = attempt.results[0] if attempt.results else None
         if result is not None and result.status == "ok":
             state.plan_actions = state.plan_actions[1:]
+            if (
+                state.config.intermediate_completion_verification_enabled
+                and not state.active_plan_reaches_goal
+                and not (state.config.plan_execution_horizon or state.config.plan_horizon)
+                and self._verification_active(state)
+            ):
+                state.completion_check_pending = True
+                self.logger.log(
+                    "intermediate_completion_check_scheduled",
+                    plan_round=state.plan_rounds,
+                    remaining_plan_actions=len(state.plan_actions),
+                )
             if not state.plan_actions:
                 if state.active_plan_reaches_goal:
                     self.logger.log("plan_completed", plan_round=state.plan_rounds)
                 else:
-                    # A horizon-limited plan ran out without claiming
-                    # completion: re-plan immediately, no verification.
+                    # Exhaustion requests re-planning. An enabled full-plan
+                    # intermediate check can run first and accept a goal that
+                    # was reached before the predicted tail.
                     state.plan_broken = True
                     state.replan_cause = "plan_exhausted"
                     self.logger.log("plan_exhausted", plan_round=state.plan_rounds)
@@ -733,6 +775,7 @@ class DecisionEngine:
         message = result.error.message if result is not None and result.error else "unknown"
         dropped = len(state.plan_actions)
         state.plan_actions = []
+        state.completion_check_pending = False
         state.plan_broken = True
         state.replan_cause = "action_failure"
         self._mark_plan_failed(state)

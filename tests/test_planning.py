@@ -442,6 +442,150 @@ async def test_replanning_limit_stops_episode(task, action) -> None:
     assert termination["termination_reason"] == "replanning_limit_reached"
 
 
+async def test_nonreaching_full_plan_checks_goal_without_rejecting_tail(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            intermediate_completion_verification_enabled=True,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+        ),
+        clock=clock,
+    )
+    model = ScriptedModel(
+        [final_decision],
+        plans=[partial_plan_of(action, second)],
+        verifications=[
+            VerificationResult(goal_satisfied=False, reason="not yet"),
+            VerificationResult(goal_satisfied=True, reason="goal holds"),
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 1
+    assert len(model.verify_calls) == 2
+    assert [batch.actions for batch in executor.batches] == [[action], [second]]
+    assert model.verify_calls and not model.plan_calls[0]["feedback"]
+    event = next(
+        event for event in read_logs(stream) if event["event"] == "intermediate_completion_check"
+    )
+    assert event["verdict"] == "not_satisfied"
+    assert event["remaining_plan_actions"] == 1
+
+
+async def test_intermediate_positive_skips_remaining_full_plan_tail(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    clock = FakeClock()
+    event_logger, _ = logger(
+        config(intermediate_completion_verification_enabled=True), clock=clock
+    )
+    model = ScriptedModel(
+        [final_decision],
+        plans=[partial_plan_of(action, second)],
+        verifications=[VerificationResult(goal_satisfied=True, reason="already satisfied")],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action]]
+    assert len(model.verify_calls) == 1
+
+
+async def test_unavailable_intermediate_check_continues_remaining_tail(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(intermediate_completion_verification_enabled=True), clock=clock
+    )
+    model = ScriptedModel(
+        [final_decision],
+        plans=[partial_plan_of(action, second)],
+        verifications=[
+            ModelRequestError("verification unavailable"),
+            VerificationResult(goal_satisfied=True, reason="goal holds"),
+        ],
+    )
+    executor = ScriptedExecutor()
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action], [second]]
+    event = next(
+        event for event in read_logs(stream) if event["event"] == "intermediate_completion_check"
+    )
+    assert event["verdict"] == "unavailable"
+
+
+async def test_intermediate_negative_at_exhaustion_replans(task, action, final_decision) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    clock = FakeClock()
+    event_logger, _ = logger(
+        config(intermediate_completion_verification_enabled=True), clock=clock
+    )
+    model = ScriptedModel(
+        [final_decision],
+        plans=[partial_plan_of(action), plan_of(second)],
+        verifications=[
+            VerificationResult(goal_satisfied=False, reason="not yet"),
+            VerificationResult(goal_satisfied=True, reason="goal holds"),
+        ],
+    )
+    result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 2
+    assert len(model.verify_calls) == 2
+
+
+async def test_reaching_full_plan_has_no_intermediate_checks(task, action, final_decision) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(intermediate_completion_verification_enabled=True), clock=clock
+    )
+    model = ScriptedModel([final_decision], plans=[plan_of(action, second)])
+    result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.verify_calls) == 1
+    assert not any(
+        event["event"] == "intermediate_completion_check_scheduled"
+        for event in read_logs(stream)
+    )
+
+
+async def test_horizon_prefixes_keep_immediate_replan_with_intermediate_option(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            intermediate_completion_verification_enabled=True,
+            plan_execution_horizon=1,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+        ),
+        clock=clock,
+    )
+    model = ScriptedModel(
+        [final_decision], plans=[plan_of(action, second), plan_of(second)]
+    )
+    result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 2
+    assert len(model.verify_calls) == 1
+    assert not any(
+        event["event"] == "intermediate_completion_check_scheduled"
+        for event in read_logs(stream)
+    )
+
+
 # AC3: completion verification
 
 

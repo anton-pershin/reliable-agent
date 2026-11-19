@@ -21,6 +21,8 @@ class AgentConfig(ContractModel):
     transition_tabu_enabled: bool = False
     verification_consensus_enabled: bool = False
     free_sampling_enabled: bool = False
+    state_centered_planning_enabled: bool = False
+    intermediate_completion_verification_enabled: bool = False
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
     plan_spares: int = Field(default=1, ge=0, le=10)
@@ -185,6 +187,7 @@ class TaskState(ContractModel):
     active_plan_reaches_goal: bool = True
     failed_plan_keys: list[str] = Field(default_factory=list)
     tried_transitions: dict[str, list[str]] = Field(default_factory=dict)
+    completion_check_pending: bool = False
 
     @property
     def action_attempts(self) -> int:

@@ -37,6 +37,16 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
     )
     parser.add_argument(
+        "--state-centered-planning",
+        dest="state_centered_planning_enabled",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
+        "--intermediate-completion-verification",
+        dest="intermediate_completion_verification_enabled",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
         "--planning", dest="planning_enabled", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--plan-samples", type=int)
