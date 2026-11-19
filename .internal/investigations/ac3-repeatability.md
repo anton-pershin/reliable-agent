@@ -20,7 +20,7 @@ Make project acceptance criterion AC3 (`VM4 <= 0.05`) accepted on the authoritat
 
 The current `main` implementation (`1bd6081`) has the spec 04 planning mechanisms. Full `default` run `20261114T053703-525279Z-b864ae241134` used solution commit `c3e5a94` and produced VM1 = 0.67 and VM4 = 0.15. The newer full run `20261117T150114-324103Z-9acb73d41f31` used commit `b490da1` with the same agent settings and produced VM1 = 0.665 and VM4 = 0.25. AC3 therefore remains valid rather than accepted, with substantial run-to-run variation even on the dedicated runtime.
 
-The best experimental implementation is revision `e0847c3`: ordinary complete-plan prompts, one-action voting/execution prefixes, and initial empty-plan suppression. Partial run `20261118T034306-781510Z-53b3a0db4c66` produced the first free-sampling diagnostic AC3 acceptance on the complete 20-task set (three repeats; VM4 = 0.04999999999999993). VM1 was 0.5667. Its 10-repeat extension was early-stopped after 41 episodes because repeat 1 had 9 successes and repeat 2 reached 11, making VM4 >= 0.10 unavoidable.
+An early three-repeat screen of revision `e0847c3` produced VM4 = 0.04999999999999993 with VM1 = 0.5667. This was a screening observation, not sustained AC3 evidence, and is superseded by completed 10-repeat results. Its 10-repeat extension was early-stopped when repeat 1 had 9 successes and repeat 2 reached 11, making VM4 >= 0.10 unavoidable.
 
 H=2 on `fdbf61a` improved self-hosted VM1 to 0.6333 and reduced screening time from 50 to 40 minutes, but its three-repeat VM4 was 0.15. Adding goal regression at H=2 kept VM1 at 0.6333 and increased VM4 to 0.20.
 
@@ -28,7 +28,7 @@ Provider-hosted runs were stopped and excluded after the user determined that th
 
 The targeted optimized/budget H=1 goal-regression run scored repeat rates 0.50, 0.75, 1.00 on the four tasks, producing VM4 = 0.50 despite VM1 = 0.75. It did not justify an optimized full extension. The final original-candidate 10-repeat attempt was early-stopped after repeats of 0.65, 0.65, and 0.60 because its computed range was strictly rejected. A subsequent request explicitly required a complete 10-repeat test of the best candidate. Run `20261118T151459-848922Z-5228d0ade946` therefore used the same H=1 goal-regression configuration and original self-hosted runtime without early stopping. All 200 episodes completed in approximately 2 h 28 min: repeat rates were 0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55; VM1 = 0.56 and VM4 = 0.20. AC6 and AC7 were accepted.
 
-The implementation still provides useful measured improvements: diagnostic three-repeat AC3 acceptance in two configurations, best self-hosted VM1 = 0.7167, race-independent prefix voting, independent vote/execution horizons, empty-plan control, and 114 passing tests. Spec 06's AC6 and AC8 remain unmet; the branch is not represented as an accepted or integration-ready project implementation.
+The implementation provides engineering artifacts—race-independent prefix voting, independent vote/execution horizons, empty-plan control, and 114 passing tests—but **no demonstrated 10-repeat VM4 improvement**. Earlier three-repeat screens are retained only as superseded screening observations. Spec 06's AC6 and AC8 remain unmet; the branch is not represented as an accepted or integration-ready project implementation.
 
 Evidence:
 - [HTML methods and results report](../../reports/ac3-repeatability-report.html)
@@ -66,7 +66,7 @@ Evidence:
 - Whole-plan votes often collapse to lowest-sample-index tie breaking because long sampled plans rarely agree, while first actions have a much stronger mode (spec 04 and methods report).
 - Prompt-only short horizons were not followed reliably; plan and goal reviews did not saturate weak-task success.
 - Provider-latency instability inflates VM4. The current dedicated self-hosted runtime removes that confounder, leaving per-task model sampling noise.
-- Engine-enforced one-action prefixes with full-plan prompts reduced the three-repeat range to 0.05 and suppressed 68 empty candidates, but lowered VM1 to 0.5667 and increased timeout pressure.
+- Engine-enforced one-action prefixes with full-plan prompts produced a three-repeat range of 0.05 and suppressed 68 empty candidates, but this short-screen signal did not establish a 10-repeat improvement.
 
 #### Tentative or unresolved
 
@@ -114,6 +114,7 @@ Evidence:
 | E36 | Final 10-repeat attempt for the original lowest-variance candidate | C17 | Run `20261118T110200-342470Z-dad0e927d25a` uses the exact C6 agent settings and original no-cache/eager runtime over all 200 unperturbed episodes | Monitor completed-repeat rates with the exact floating-point comparison and stop early if VM4 > 0.05 becomes unavoidable. Extend to full validation only if diagnostic AC3 is accepted. |
 | E37 | Evaluate the final original-candidate extension | C17 | Run `20261118T110200-342470Z-dad0e927d25a` was early-stopped at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T110200-342470Z-dad0e927d25a/`. Complete repeats scored 13/20, 13/20, and 12/20; `0.65 - 0.60` evaluated to 0.050000000000000044 and is strictly rejected | Stop the remaining 138 episodes because acceptance cannot recover. Do not run full validation or claim AC3 acceptance. Retain spec 06 AC6/AC8 as unmet and the investigation as active project memory. |
 | E38 | Complete a 10-repeat test of the best candidate without early stopping | C18 | Run `20261118T151459-848922Z-5228d0ade946` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T151459-848922Z-5228d0ade946/`: all 200 episodes completed. Rates: 0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55. VM1 = 0.5599999999999999; VM4 = 0.20; maximum actions = 18; timely final rate = 0.995 | The best candidate remains rejected on AC3 by 0.15 above the threshold. Record the completed result in the investigation and HTML report; do not infer acceptance from earlier screens. |
+| E39 | Correct the improvement narrative using completed-run evidence | C18 | On 2026-11-19, review identified that presenting three-repeat VM4 ≈ 0.05 as an improvement was premature and misleading in light of completed VM4 = 0.20. The completed run also had nine mixed-outcome tasks, not the four suggested by the earlier short sample | Revise the HTML report and current investigation state to make no VM4-improvement claim. Keep spec 06 open rather than presenting it as complete; a next spec requires a new design supported by completed-run evidence or an explicit scope revision. |
 
 ### Next candidates
 
