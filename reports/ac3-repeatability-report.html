@@ -224,6 +224,93 @@
     details > div { padding: 0 16px 16px; }
     details pre { margin-top: 0; }
     .run-id { font-size: 12px; word-break: break-all; }
+    .plain-grid { display: grid; grid-template-columns: 1.35fr .85fr; gap: 24px; align-items: start; }
+    .plain-steps { margin: 14px 0 0; padding: 0; list-style: none; counter-reset: plain; }
+    .plain-steps li { position: relative; padding: 0 0 17px 45px; counter-increment: plain; }
+    .plain-steps li::before {
+      content: counter(plain);
+      position: absolute;
+      left: 0;
+      top: 1px;
+      display: grid;
+      place-items: center;
+      width: 29px;
+      height: 29px;
+      border-radius: 50%;
+      color: white;
+      background: var(--green);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .plain-steps b { display: block; margin-bottom: 2px; }
+    .plain-steps p { margin: 0; color: var(--muted); font-size: 14px; }
+    .role { margin-top: 10px; padding: 13px; border: 1px solid var(--line); border-radius: 11px; background: #f8fafc; font-size: 13px; }
+    .role b { display: block; color: var(--blue); }
+    .role-note { margin: 14px 0 0; padding: 12px; border-radius: 10px; color: #065f46; background: #ecfdf5; font-size: 13px; }
+    .demo-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .demo-controls { display: flex; flex-wrap: wrap; gap: 7px; }
+    .demo-controls button {
+      padding: 7px 11px;
+      border: 1px solid #b9c8d9;
+      border-radius: 8px;
+      color: #243b55;
+      background: white;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .demo-controls button:hover { border-color: var(--green); color: var(--green); }
+    .demo-controls button:disabled { opacity: .4; cursor: default; }
+    .demo-timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 18px 0; }
+    .demo-timeline span { padding: 7px 4px; border-radius: 8px; color: var(--muted); background: #edf1f6; font-size: 11px; font-weight: 750; text-align: center; transition: .25s ease; }
+    .demo-timeline span.active { color: white; background: var(--green); }
+    .demo-timeline span.done { color: #065f46; background: var(--green-light); }
+    .demo-stage { display: grid; grid-template-columns: 1fr 105px 1fr; gap: 12px; align-items: center; }
+    .demo-snapshot { min-height: 205px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafc; }
+    .demo-snapshot h4 { margin: 0 0 11px; font-size: 13px; }
+    .demo-fact { display: block; margin: 6px 0; padding: 6px 8px; border: 1px solid #dbe3ed; border-radius: 7px; background: white; font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; transition: all .45s ease; }
+    .demo-after { opacity: .25; transform: translateX(8px); transition: all .5s ease; }
+    .demo-middle { text-align: center; }
+    .demo-action { padding: 9px 6px; border: 2px solid #cbd5e1; border-radius: 9px; background: white; font-family: monospace; font-size: 11px; transition: all .35s ease; }
+    .demo-arrow { margin: 8px 0; color: var(--green); font-size: 27px; font-weight: 900; }
+    .demo-compare { color: var(--muted); font-size: 10px; }
+    .demo-delta-panel, .demo-search { opacity: 0; transform: translateY(8px); transition: all .45s ease; }
+    .demo-delta-panel { margin-top: 16px; padding: 14px; border: 1px solid #bfdbce; border-radius: 12px; background: #f0fdf4; }
+    .demo-deltas { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+    .demo-delta { padding: 5px 8px; border-radius: 7px; font-family: monospace; font-size: 10px; }
+    .demo-delta.removed { color: #991b1b; background: #fee2e2; }
+    .demo-delta.added { color: #065f46; background: #d1fae5; }
+    .demo-rule { font-size: 12px; line-height: 1.6; }
+    .demo-placeholder { display: inline-block; color: var(--blue); font-weight: 900; }
+    .demo-search { margin-top: 14px; padding: 13px; border: 1px solid #c7d2fe; border-radius: 12px; background: #eef2ff; }
+    .demo-route { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; font-size: 12px; font-weight: 750; }
+    .demo-route span { padding: 7px 9px; border-radius: 8px; background: white; }
+    .demo-caption { min-height: 48px; margin: 16px 0 0; padding-top: 13px; border-top: 1px solid var(--line); color: #334155; font-size: 14px; }
+    .transition-demo[data-step="1"] .demo-action,
+    .transition-demo[data-step="2"] .demo-action,
+    .transition-demo[data-step="3"] .demo-action,
+    .transition-demo[data-step="4"] .demo-action { border-color: var(--green); box-shadow: 0 0 0 4px rgba(5,150,105,.12); }
+    .transition-demo[data-step="2"] .demo-after,
+    .transition-demo[data-step="3"] .demo-after,
+    .transition-demo[data-step="4"] .demo-after { opacity: 1; transform: none; }
+    .transition-demo[data-step="2"] .is-removed,
+    .transition-demo[data-step="3"] .is-removed,
+    .transition-demo[data-step="4"] .is-removed { color: #991b1b; border-color: #fca5a5; background: #fee2e2; text-decoration: line-through; }
+    .transition-demo[data-step="2"] .is-added,
+    .transition-demo[data-step="3"] .is-added,
+    .transition-demo[data-step="4"] .is-added { color: #065f46; border-color: #6ee7b7; background: #d1fae5; transform: scale(1.04); }
+    .transition-demo[data-step="3"] .demo-delta-panel,
+    .transition-demo[data-step="4"] .demo-delta-panel { opacity: 1; transform: none; }
+    .transition-demo[data-step="3"] .demo-placeholder,
+    .transition-demo[data-step="4"] .demo-placeholder { animation: placeholderPulse 1.2s ease-in-out 2; }
+    .transition-demo[data-step="4"] .demo-search { opacity: 1; transform: none; }
+    .transition-demo[data-step="4"] .demo-route span { animation: routeAppear .5s ease both; }
+    .transition-demo[data-step="4"] .demo-route span:nth-of-type(2) { animation-delay: .18s; }
+    .transition-demo[data-step="4"] .demo-route span:nth-of-type(3) { animation-delay: .36s; }
+    @keyframes placeholderPulse { 50% { color: var(--green); transform: scale(1.12); } }
+    @keyframes routeAppear { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .transition-demo * { animation: none !important; transition: none !important; } }
     .footer {
       padding: 26px 0;
       border-top: 1px solid var(--line);
@@ -233,12 +320,19 @@
     }
     @media (max-width: 900px) {
       .kpis, .flow { grid-template-columns: repeat(2, 1fr); }
+      .plain-grid { grid-template-columns: 1fr; }
       .flow-step::after { display: none; }
       .flow-step { min-height: 0; }
       .grid-3 { grid-template-columns: 1fr; }
     }
     @media (max-width: 650px) {
       .kpis, .grid-2, .rule-example, .delta { grid-template-columns: 1fr; }
+      .demo-stage { grid-template-columns: 1fr; }
+      .demo-snapshot { min-height: 0; }
+      .demo-arrow { transform: rotate(90deg); }
+      .demo-after { transform: translateY(8px); }
+      .demo-top { flex-direction: column; }
+      .demo-timeline { overflow-x: auto; grid-template-columns: repeat(5, minmax(70px, 1fr)); }
       .flow { grid-template-columns: 1fr; }
       .recovery { grid-template-columns: 1fr; }
       .recovery .arrow { transform: rotate(90deg); justify-self: center; }
@@ -287,40 +381,108 @@
 
     <section id="solution">
       <div class="section-head">
-        <div class="section-num">01 · The accepted solution</div>
-        <h2>Model proposals become a learned, verifiable planner.</h2>
-        <p>The model does not need to produce a correct plan on every sample. Successful actions teach the engine reusable public transition rules; once enough rules exist, ordinary search supplies the remaining plan.</p>
+        <div class="section-num">01 · The accepted solution, in plain English</div>
+        <h2>Watch what actions do, write down the rules, then use that rulebook.</h2>
+        <p>The agent does not retrain Qwen. It starts with model suggestions, learns a small rulebook inside the current episode, and uses ordinary search once that rulebook is good enough.</p>
       </div>
       <div class="card">
-        <div class="flow">
-          <div class="flow-step">
-            <span class="step-number">1</span>
-            <h3>Bootstrap with model plans</h3>
-            <p>Sample five complete plans plus one spare. Vote on the first action, retain the selected complete plan, and execute it one action at a time. Existing transient retries remain active.</p>
+        <div class="plain-grid">
+          <div>
+            <h3>What happens during an episode</h3>
+            <ol class="plain-steps">
+              <li>
+                <b>The model proposes a move.</b>
+                <p>Five complete-plan samples plus one spare provide candidates. The engine votes on the first action but keeps the selected complete plan. These are proposals to try, not facts to trust.</p>
+              </li>
+              <li>
+                <b>The environment shows what actually happened.</b>
+                <p>Before an action, the agent has a public list of facts. Afterward, it receives another list. Comparing the two reveals exactly which facts disappeared and which appeared.</p>
+              </li>
+              <li>
+                <b>The engine writes down a reusable rule.</b>
+                <p>If <code>pick_up(a)</code> removed <code>(on-table a)</code> and added <code>(holding a)</code>, the engine replaces the argument value <code>a</code> with a placeholder. The same rule can then be tried for <code>b</code> or <code>c</code>.</p>
+              </li>
+              <li>
+                <b>The rulebook takes over when it can find a route.</b>
+                <p>Once enough rules exist, breadth-first search combines them to find a shortest route from the current facts to the goal. This planning step does not call the model. If rules are missing, model proposals continue; after a permanent failure, bounded exploration can try an unknown action to learn another rule.</p>
+              </li>
+              <li>
+                <b>The actual state—not a model claim—decides whether the task is done.</b>
+                <p>After every action, exact goal predicates are checked against the latest observation. A later observation also tests the rule that predicted the result; a contradiction disables that rule and returns control to model recovery.</p>
+              </li>
+            </ol>
           </div>
-          <div class="flow-step">
-            <span class="step-number">2</span>
-            <h3>Learn from each observation</h3>
-            <p>Compare exact public states before and after every successful action. Generalize added and deleted predicates through the action’s argument positions. Observed consumed facts become conservative preconditions.</p>
-          </div>
-          <div class="flow-step">
-            <span class="step-number">3</span>
-            <h3>Search the learned rules</h3>
-            <p>When enough rules are known, bounded breadth-first search finds a shortest remaining plan from the current public state to the formal goal. No model request is needed for this plan.</p>
-          </div>
-          <div class="flow-step">
-            <span class="step-number">4</span>
-            <h3>Verify the actual goal state</h3>
-            <p>Exact grounded goal predicates are checked against the latest public state after every action. Completion is immediate when all goals hold; missing goals continue execution or recovery.</p>
-          </div>
+          <aside>
+            <h3>Three separate jobs</h3>
+            <div class="role"><b>Qwen · suggest</b>Propose plans when the agent needs a starting point or does not yet have enough learned rules.</div>
+            <div class="role"><b>Environment · report</b>Return the actual action result and public state. The environment is the source of evidence.</div>
+            <div class="role"><b>Decision engine · learn, search, check</b>Build rules, find routes, reject contradictions, and verify exact goals.</div>
+            <p class="role-note"><b>No neural-network training occurs.</b><br>Qwen’s weights never change. The rulebook lives in <code>TaskState</code>, belongs only to this episode, and is discarded afterward.</p>
+          </aside>
         </div>
-        <div class="recovery">
-          <div><b>Rule conflict or unsupported input</b><br><span class="muted">Prediction mismatches disable the unsafe rule and its remaining tail. Unsupported goals or observations retain model verification and model planning.</span></div>
-          <div class="arrow">↻</div>
-          <div><b>Missing rule after permanent failure</b><br><span class="muted">Transition tabu prevents known repeats. Bounded exploration may probe one untried unknown-rule action, then learning and search resume.</span></div>
-        </div>
-        <div class="callout success"><strong>Why repeatability improved:</strong> sampling is still free, but success no longer depends on repeatedly drawing a complete correct plan. Correct observed rules support deterministic shortest-path recovery, while exact goal evidence prevents both premature completion and acting after the goal is reached.</div>
       </div>
+
+      <div class="card transition-demo" id="transition-demo" data-step="0">
+        <div class="demo-top">
+          <div>
+            <span class="badge info">Animated transition</span>
+            <h3 style="margin-top:10px">Watch one observation become part of the rulebook</h3>
+          </div>
+          <div class="demo-controls" aria-label="Animation controls">
+            <button id="demo-play" type="button">Play</button>
+            <button id="demo-prev" type="button">Back</button>
+            <button id="demo-next" type="button">Next</button>
+          </div>
+        </div>
+        <div class="demo-timeline" aria-label="Animation stages">
+          <span data-demo-step="0" class="active">1 · Observe</span>
+          <span data-demo-step="1">2 · Act</span>
+          <span data-demo-step="2">3 · Compare</span>
+          <span data-demo-step="3">4 · Generalize</span>
+          <span data-demo-step="4">5 · Search</span>
+        </div>
+        <div class="demo-stage">
+          <div class="demo-snapshot">
+            <h4>Before · known public facts</h4>
+            <span class="demo-fact is-removed">(clear a)</span>
+            <span class="demo-fact is-removed">(on-table a)</span>
+            <span class="demo-fact is-removed">(hand-empty)</span>
+            <span class="demo-fact">(clear b)</span>
+            <span class="demo-fact">(on-table b)</span>
+          </div>
+          <div class="demo-middle">
+            <div class="demo-action">pick_up(a)</div>
+            <div class="demo-arrow">→</div>
+            <div class="demo-compare">actual environment<br>observation</div>
+          </div>
+          <div class="demo-snapshot demo-after">
+            <h4>After · observed public facts</h4>
+            <span class="demo-fact is-added">(holding a)</span>
+            <span class="demo-fact">(clear b)</span>
+            <span class="demo-fact">(on-table b)</span>
+          </div>
+        </div>
+        <div class="demo-delta-panel">
+          <div class="demo-deltas">
+            <span class="demo-delta removed">− clear a</span>
+            <span class="demo-delta removed">− on-table a</span>
+            <span class="demo-delta removed">− hand-empty</span>
+            <span class="demo-delta added">+ holding a</span>
+          </div>
+          <div class="demo-rule">
+            <b>Generalized rule learned from those differences</b><br>
+            Required: <code>(clear <span class="demo-placeholder">{block}</span>)</code>, <code>(on-table <span class="demo-placeholder">{block}</span>)</code>, <code>(hand-empty)</code><br>
+            Remove those facts; add <code>(holding <span class="demo-placeholder">{block}</span>)</code>.
+          </div>
+        </div>
+        <div class="demo-search">
+          <div class="demo-route">
+            <span>Several observed rules</span>→<span>Shortest-path search</span>→<span>Exact goal state</span>
+          </div>
+        </div>
+        <p class="demo-caption" id="demo-caption" aria-live="polite">Start with the facts currently visible to the agent. Nothing has been learned yet.</p>
+      </div>
+      <div class="callout success"><strong>Why this made outcomes repeatable:</strong> the stochastic model still supplies initial proposals, but successful actions accumulate public evidence. Once the evidence is sufficient, recovery is calculated by search instead of repeatedly sampled from the model. Exact goal checks stop the agent as soon as the real state satisfies the objective.</div>
     </section>
 
     <section id="example">
@@ -508,5 +670,89 @@ add effects:
       Self-contained report generated 19 November 2026 from retained validation artifacts and the reviewed implementation. Provider-hosted results are excluded. Historical experiments remain in the closed AC3 investigation.
     </div>
   </footer>
+  <script>
+    (() => {
+      const root = document.getElementById("transition-demo");
+      if (!root) return;
+      const playButton = document.getElementById("demo-play");
+      const previousButton = document.getElementById("demo-prev");
+      const nextButton = document.getElementById("demo-next");
+      const caption = document.getElementById("demo-caption");
+      const stages = [...root.querySelectorAll("[data-demo-step]")];
+      const captions = [
+        "Start with the facts currently visible to the agent. Nothing has been learned yet.",
+        "The model suggests pick_up(a). The environment executes it and returns the facts that actually hold afterward.",
+        "Compare the snapshots. Red facts disappeared; the green fact appeared. These differences are direct public evidence.",
+        "Replace the argument value a with {block}. The observation is now a reusable rule that can apply to other objects. Qwen itself was not retrained.",
+        "After enough rules have been observed, shortest-path search can compose them into a route to the exact goal. A later contradiction disables the affected rule and restores model recovery."
+      ];
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let step = 0;
+      let timer = null;
+
+      function render() {
+        root.dataset.step = String(step);
+        caption.textContent = captions[step];
+        stages.forEach((stage, index) => {
+          stage.classList.toggle("active", index === step);
+          stage.classList.toggle("done", index < step);
+        });
+        previousButton.disabled = step === 0;
+        nextButton.disabled = step === stages.length - 1;
+      }
+
+      function pause() {
+        if (timer !== null) window.clearInterval(timer);
+        timer = null;
+        playButton.textContent = "Play";
+      }
+
+      function play() {
+        if (reducedMotion.matches || timer !== null) return;
+        if (step === stages.length - 1) {
+          step = 0;
+          render();
+        }
+        playButton.textContent = "Pause";
+        timer = window.setInterval(() => {
+          if (step < stages.length - 1) {
+            step += 1;
+            render();
+          }
+          if (step === stages.length - 1) pause();
+        }, 2400);
+      }
+
+      playButton.addEventListener("click", () => timer === null ? play() : pause());
+      previousButton.addEventListener("click", () => {
+        pause();
+        if (step > 0) step -= 1;
+        render();
+      });
+      nextButton.addEventListener("click", () => {
+        pause();
+        if (step < stages.length - 1) step += 1;
+        render();
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) pause();
+      });
+
+      render();
+      if (reducedMotion.matches) {
+        playButton.hidden = true;
+      } else if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            play();
+            observer.disconnect();
+          }
+        }, { threshold: 0.3 });
+        observer.observe(root);
+      } else {
+        play();
+      }
+    })();
+  </script>
 </body>
 </html>
