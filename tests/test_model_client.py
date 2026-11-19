@@ -17,6 +17,7 @@ from pydantic_ai.models.test import TestModel
 from reliable_agent.contracts import (
     ActionAttempt,
     ActionDecision,
+    ActionResult,
     FinalDecision,
     PlanCandidate,
 )
@@ -85,6 +86,59 @@ async def test_context_truncation_is_bounded_and_logged(task, action) -> None:
     assert prompt["history"][0]["call_id"] == "call-2"
     event = next(event for event in read_logs(stream) if event["event"] == "context_truncated")
     assert event["omitted_attempts"] == 2
+
+
+def test_state_centered_plan_prompt_uses_only_latest_complete_snapshot(task, action) -> None:
+    event_logger, stream = logger(config(state_centered_planning_enabled=True))
+    client = PydanticAIModelClient(event_logger, model=TestModel())
+    state = client_decision_state(event_logger, task)
+    for index in range(2):
+        state.attempts.append(
+            ActionAttempt(
+                call_id=f"call-{index}",
+                actions=[action],
+                results=[
+                    ActionResult(status="ok", observation={"state": [f"state-{index}"]})
+                ],
+            )
+        )
+    state.validation_feedback.extend(["stale feedback", "latest public failure"])
+    payload = json.loads(client._plan_prompt(state))
+    assert "history" not in payload
+    assert payload["latest_observation"][0]["observation"]["state"] == ["state-1"]
+    assert payload["validation_feedback"] == ["latest public failure"]
+    assert payload["action_attempts"] == 2
+    assert "call-0" not in json.dumps(payload)
+    event = next(event for event in read_logs(stream) if event["event"] == "state_centered_prompt")
+    assert event["omitted_attempts"] == 1
+
+
+def test_state_centered_plan_prompt_preserves_history_for_delta_observations(
+    task, action
+) -> None:
+    event_logger, _ = logger(config(state_centered_planning_enabled=True))
+    client = PydanticAIModelClient(event_logger, model=TestModel())
+    state = client_decision_state(event_logger, task)
+    state.attempts.append(
+        ActionAttempt(
+            call_id="delta-call",
+            actions=[action],
+            results=[ActionResult(status="ok", observation={"delta": "changed"})],
+        )
+    )
+    payload = json.loads(client._plan_prompt(state))
+    assert payload["history"][0]["call_id"] == "delta-call"
+    assert "latest_observation" not in payload
+
+
+def test_state_centered_plan_prompt_preserves_history_for_missing_results(task, action) -> None:
+    event_logger, _ = logger(config(state_centered_planning_enabled=True))
+    client = PydanticAIModelClient(event_logger, model=TestModel())
+    state = client_decision_state(event_logger, task)
+    state.attempts.append(ActionAttempt(call_id="missing-results", actions=[action], results=[]))
+    payload = json.loads(client._plan_prompt(state))
+    assert payload["history"][0]["call_id"] == "missing-results"
+    assert "latest_observation" not in payload
 
 
 async def test_structured_output_error_is_wrapped_and_logged(task, final_decision) -> None:
