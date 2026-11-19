@@ -216,7 +216,7 @@
         <span>18 November 2026 · Updated 19 November 2026</span>
         <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
         <span>Default profile · 20 tasks</span>
-        <span>Investigation through <code>119cc88</code></span>
+        <span>Investigation through <code>845ab94</code></span>
       </div>
       <div class="status-ribbon">
         <strong>Status:</strong>
@@ -498,6 +498,16 @@
         </div>
         <div class="callout danger small" style="margin-top:18px"><strong>Completed 200 episodes: AC3 strictly rejected.</strong> C27 repeat rates were 1.0, 1.0, 1.0, 0.95, 1.0, 0.95, 1.0, 0.95, 1.0, 1.0. VM1 = 0.985; computed VM4 = 0.050000000000000044. Two `restack_bca` timeouts lacked a learned `unstack`; one goal-satisfying `tower_four` episode missed final delivery because of a pending-write race. C28 targets only those residual failures.</div>
       </div>
+      <div class="card">
+        <span class="badge warn">C28 gate passed · full run in progress</span>
+        <h3 style="margin-top:14px">Residual-failure fixes earned one final 200-episode test</h3>
+        <p class="small muted">Run <code>20261119T100903-025933Z-1a059f3262d2</code> · revision <code>46bddba</code> · <code>restack_bca</code> and <code>tower_four</code> × 3 repeats. Added bounded unknown-rule exploration after permanent failure and corrected write-done ordering before final delivery.</p>
+        <div class="grid-3" style="margin-top:18px">
+          <div class="step"><b>6 / 6 gate successes</b><span>Both residual tasks succeeded in all three targeted repeats.</span></div>
+          <div class="step"><b>29 actions · AC7 1.0</b><span>AC6/AC7 accepted; the gate is not full-population evidence.</span></div>
+          <div class="step"><b>200 episodes running</b><span>All 20 tasks × 10 repeats, exact revision <code>46bddba</code>, no early stopping.</span></div>
+        </div>
+      </div>
     </section>
 
     <section id="negative">
@@ -571,10 +581,10 @@ configuration["acceptance_criteria"] = [
           <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
-            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>119cc88</code></td><td><span class="badge warn">C27 complete · C28 under review</span></td></tr>
+            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>845ab94</code></td><td><span class="badge warn">C28 full run in progress</span></td></tr>
             <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6/AC8 open</span></td></tr>
             <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
-            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; reviewed transition-learning implementation <code>9ebc189</code></td><td><span class="badge good">167 passed</span></td></tr>
+            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; reviewed C28 implementation <code>46bddba</code></td><td><span class="badge good">171 passed</span></td></tr>
             <tr><td>Run evidence</td><td><code>agent-validation/artifacts/runs/&lt;run-id&gt;/</code></td><td><span class="badge neutral">Retained</span></td></tr>
           </tbody>
         </table></div>
@@ -585,7 +595,7 @@ configuration["acceptance_criteria"] = [
       <div class="final-banner">
         <span class="badge warn">Remaining gap</span>
         <h2 style="margin-top:14px">AC3 remains strictly rejected.</h2>
-        <p>C27 completed 200 episodes with VM1 = 0.985 and a mathematical repeat range of 0.05. The computed value was 0.050000000000000044, above the strict threshold. C28 addresses only the three observed residual failures; no completed C28 evidence exists yet.</p>
+        <p>C27 completed 200 episodes with VM1 = 0.985 and a mathematical repeat range of 0.05. The computed value was 0.050000000000000044, above the strict threshold. C28 passed its six-episode residual gate; its full run is in progress, so no final C28 result is claimed yet.</p>
         <div class="grid-3" style="margin-top:20px">
           <div><strong style="font-size:20px">1. Preserve the completed baseline</strong><p class="small">C27 is the current completed reference: 197/200 successes, zero false completions, AC6/AC7 accepted.</p></div>
           <div><strong style="font-size:20px">2. Fix only evidenced residuals</strong><p class="small">Two <code>restack_bca</code> learning-gap timeouts and one <code>tower_four</code> final-delivery race define C28's narrow scope.</p></div>
