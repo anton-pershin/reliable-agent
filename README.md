@@ -62,6 +62,8 @@ With `--plan-horizon N`, the planner returns at most N actions per candidate plu
 
 `--transition-learning` learns formal action rules independently within each episode from successful public state transitions. It generalizes observed add/delete effects through exact action argument tokens and uses observed consumed facts as conservative preconditions. It does not infer persistent preconditions. Generic bounded search can then replace model re-planning with a shortest learned-rule plan. Existing rules are checked against each subsequent observed post-state, including no-ops; prediction conflicts disable the rule and its remaining tail. Observed state/action failures are excluded, and missing rules or unsupported inputs retain ordinary model planning. Search is bounded by remaining actions, `--learned-search-max-states`, and the episode deadline. Learned planning requires complete-plan execution and falls back when either horizon is active. No rules cross episode boundaries. The default is off.
 
+`--transition-exploration` adds bounded recovery after a permanent action failure when both transition learning and transition tabu are active. If learned search has no plan, the engine may select one untried action whose rule is unknown, prioritizing tools with required arguments. Learned, rejected, schema-invalid, and exact tried/failed transitions are skipped. Enumeration is bounded by `--exploration-max-candidates` and the episode deadline. Ordinary plan exhaustion and horizon-controlled prefixes retain model planning without exploration. The default is off.
+
 ## JSON Lines execution
 
 The process entry point is:
@@ -91,6 +93,8 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--intermediate-completion-verification / --no-intermediate-completion-verification` | off | Check non-reaching full plans for early goal satisfaction |
 | `--formal-goal-checking / --no-formal-goal-checking` | off | Exactly verify supported public formal goals against state snapshots |
 | `--transition-learning / --no-transition-learning` | off | Learn episode-local public action rules and search when sufficient |
+| `--transition-exploration / --no-transition-exploration` | off | Probe an untried unknown-rule action after permanent failure; requires learning and tabu |
+| `--exploration-max-candidates N` | `1024` | Maximum public action bindings examined per exploration decision |
 | `--learned-search-max-states N` | `50000` | Maximum states explored per learned-plan search |
 | `--planning / --no-planning` | on | Plan-vote-execute decision flow |
 | `--plan-samples N` | `3` | Candidate plans per vote |

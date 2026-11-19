@@ -15,6 +15,7 @@ from reliable_agent.engine import DecisionEngine
 from reliable_agent.goal_evidence import formal_initial_state, formal_state_predicates
 from reliable_agent.transition_learning import (
     formal_transition_key,
+    iter_public_actions,
     learn_action_rule,
     search_learned_plan,
 )
@@ -383,4 +384,103 @@ async def test_learned_planning_falls_back_when_horizon_active(task, action) -> 
     assert decision.actions == [action]
     assert len(model.plan_calls) == 1
     assert not any(event["event"] == "learned_plan" for event in read_logs(stream))
+
+
+def test_public_action_iterator_uses_schema_domains_and_parameterized_tools_first() -> None:
+    catalog = ToolDescription(
+        name="catalog",
+        description="Public metadata",
+        arguments_schema={"type": "object", "properties": {}, "required": []},
+    )
+    pickup = next(tool for tool in TOOLS if tool.name == "pick_up")
+    pickup = pickup.model_copy(
+        update={
+            "arguments_schema": {
+                "type": "object",
+                "properties": {"block": {"type": "string", "enum": ["a"]}},
+                "required": ["block"],
+            }
+        }
+    )
+    task = Task(
+        id="generic", instructions="Use public actions", input=RESTACK, tools=[catalog, pickup]
+    )
+    actions = list(iter_public_actions(task))
+    assert actions == [
+        ActionRequest(name="pick_up", arguments={"block": "a"}),
+        ActionRequest(name="catalog", arguments={}),
+    ]
+
+
+async def test_permanent_failure_can_explore_unknown_action_without_model(task, action) -> None:
+    task_input = """(define (problem public-exploration)
+      (:domain generic)
+      (:objects a b - block)
+      (:init (on-table a) (clear a) (hand-empty))
+      (:goal (and (holding a))))
+    """
+    formal_task = task.model_copy(update={"input": task_input})
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            transition_learning_enabled=True,
+            transition_exploration_enabled=True,
+            transition_tabu_enabled=True,
+            formal_goal_checking_enabled=True,
+            exploration_max_candidates=1,
+        ),
+        clock=clock,
+    )
+    model = ScriptedModel([])
+    engine = DecisionEngine(model, event_logger, clock=clock)
+    state = engine.new_state(formal_task)
+    engine.record_attempt(
+        state,
+        ActionAttempt(
+            call_id="failed-catalog",
+            actions=[action],
+            results=[
+                ActionResult(
+                    status="error",
+                    observation={"state": ["(on-table a)", "(clear a)", "(hand-empty)"]},
+                    error={"type": "precondition_failed", "message": "public failure"},
+                )
+            ],
+        ),
+    )
+    state.plan_rounds = 1
+    state.plan_broken = True
+    state.replan_cause = "action_failure"
+    decision = await engine.next_decision(state)
+    expected = ActionRequest(name="pick_up", arguments={"block": "a"})
+    assert decision.actions == [expected]
+    assert not model.plan_calls
+    event = next(event for event in read_logs(stream) if event["event"] == "plan_selected")
+    assert event["selection_source"] == "public_transition_exploration"
+    state.learned_action_rules["pick_up"] = learned_rules()["pick_up"]
+    assert engine._exploration_action(state) is None
+
+
+async def test_exploration_without_tabu_uses_model_fallback(task, action) -> None:
+    task_input = """(define (problem public-exploration)
+      (:domain generic)
+      (:objects a - block)
+      (:init (on-table a) (clear a) (hand-empty))
+      (:goal (and (holding a))))
+    """
+    formal_task = task.model_copy(update={"input": task_input})
+    clock = FakeClock()
+    event_logger, _ = logger(
+        config(transition_learning_enabled=True, transition_exploration_enabled=True),
+        clock=clock,
+    )
+    model = ScriptedModel([], plans=[PlanCandidate(actions=[action])])
+    engine = DecisionEngine(model, event_logger, clock=clock)
+    state = engine.new_state(formal_task)
+    state.plan_rounds = 1
+    state.plan_broken = True
+    state.replan_cause = "action_failure"
+    decision = await engine.next_decision(state)
+    assert decision.actions == [action]
+    assert len(model.plan_calls) == 1
 

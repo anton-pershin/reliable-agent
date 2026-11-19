@@ -7,7 +7,7 @@ import json
 import re
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 
 from .contracts import ActionRequest, LearnedActionRule, Task
 from .goal_evidence import formal_goal_predicates, formal_objects
@@ -151,6 +151,28 @@ def search_learned_plan(
                 visited.add(next_state)
                 queue.append((next_state, [*plan, action]))
     return None, len(visited)
+
+
+def iter_public_actions(task: Task) -> Iterator[ActionRequest]:
+    """Enumerate public required-argument bindings, with parameterized tools first."""
+    objects = formal_objects(task.input)
+    if objects is None:
+        return
+    ordered_tools = sorted(
+        enumerate(task.tools),
+        key=lambda item: (not bool(item[1].arguments_schema.get("required", [])), item[0]),
+    )
+    for _, tool in ordered_tools:
+        schema = tool.arguments_schema
+        required = schema.get("required", [])
+        domains = _binding_domains(schema, objects)
+        if domains is None:
+            continue
+        for values in itertools.product(*domains):
+            yield ActionRequest(
+                name=tool.name,
+                arguments=dict(zip(required, values, strict=True)),
+            )
 
 
 def _binding_domains(schema: dict, objects: tuple[str, ...]) -> list[list[str]] | None:
