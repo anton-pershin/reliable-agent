@@ -27,6 +27,7 @@ def vote_plans(
     candidates: list[tuple[int, PlanCandidate]],
     *,
     horizon: int = 0,
+    completion_full_plan: bool = False,
 ) -> tuple[int, PlanCandidate, dict[str, int]]:
     """Select one candidate plan by a majority vote.
 
@@ -34,9 +35,11 @@ def vote_plans(
     When `horizon` is positive, votes compare only that many leading actions
     while the returned winner retains its full candidate actions. The winner
     is the most frequent normalized plan or prefix. Ties select the candidate
-    with the lowest sample index. Candidates sharing that plan must unanimously
-    claim completion; otherwise the winner is non-reaching. Returns the winning
-    sample index, the winning plan, and the vote count for each normalized plan.
+    with the lowest sample index. Candidates sharing the completion key must
+    unanimously claim completion; the key is normally the voted prefix, but
+    `completion_full_plan` uses the full retained plan when that is what will
+    execute. Returns the winning sample index, the winning plan, and the vote
+    count for each normalized plan.
     """
     counts: dict[tuple[tuple[str, str], ...], int] = {}
     first_index: dict[tuple[tuple[str, str], ...], int] = {}
@@ -47,13 +50,17 @@ def vote_plans(
         if horizon > 0:
             key = key[:horizon]
         counts[key] = counts.get(key, 0) + 1
-        reaching[key] = reaching.get(key, True) and candidate.reaches_goal
+        completion_key = normalize_plan(candidate) if completion_full_plan else key
+        reaching[completion_key] = (
+            reaching.get(completion_key, True) and candidate.reaches_goal
+        )
         if key not in first_index or sample_index < first_index[key]:
             first_index[key] = sample_index
             plans[key] = candidate
     winner = min(counts, key=lambda key: (-counts[key], first_index[key]))
     winner_plan = plans[winner]
-    if not reaching[winner] and winner_plan.reaches_goal:
+    completion_key = normalize_plan(winner_plan) if completion_full_plan else winner
+    if not reaching[completion_key] and winner_plan.reaches_goal:
         # A normalized prefix may come from both a short completion claim and
         # a truncated longer plan. Do not let race completion order decide
         # whether to verify: every member must agree that the prefix completes.

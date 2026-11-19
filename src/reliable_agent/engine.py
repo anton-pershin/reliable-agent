@@ -497,13 +497,17 @@ class DecisionEngine:
         if not fresh:
             # Every valid candidate failed before in this episode: allow repeats.
             fresh = valid
+        completion_full_plan = bool(state.config.plan_vote_horizon) and not (
+            state.config.plan_execution_horizon or state.config.plan_horizon
+        )
+        completion_horizon = 0 if completion_full_plan else state.config.plan_vote_horizon
         if self._goal_review_active(state):
             # Preserve completion verdicts for the whole normalized vote group.
             # Goal review checks only reaching candidates; dropping a
             # non-reaching member must not make the survivors look unanimous.
             group_reaching: dict[str, bool] = {}
             for _, candidate in fresh:
-                key = plan_key(candidate, state.config.plan_vote_horizon)
+                key = plan_key(candidate, completion_horizon)
                 group_reaching[key] = group_reaching.get(key, True) and candidate.reaches_goal
             # Candidates that still claim completion are eligible for the goal
             # check. Truncated prefixes make progress by construction instead.
@@ -546,13 +550,15 @@ class DecisionEngine:
                         (
                             index,
                             candidate
-                            if group_reaching[plan_key(candidate, state.config.plan_vote_horizon)]
+                            if group_reaching[plan_key(candidate, completion_horizon)]
                             else candidate.model_copy(update={"reaches_goal": False}),
                         )
                         for index, candidate in filtered
                     ]
         winner_index, winner, counts = vote_plans(
-            fresh, horizon=state.config.plan_vote_horizon
+            fresh,
+            horizon=state.config.plan_vote_horizon,
+            completion_full_plan=completion_full_plan,
         )
         self.logger.log(
             "plan_vote",
