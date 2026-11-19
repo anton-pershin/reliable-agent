@@ -22,6 +22,21 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--prompt-version")
     parser.add_argument("--planning-strategy", choices=["forward", "goal_regression"])
     parser.add_argument(
+        "--transition-tabu",
+        dest="transition_tabu_enabled",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
+        "--verification-consensus",
+        dest="verification_consensus_enabled",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
+        "--free-sampling",
+        dest="free_sampling_enabled",
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
         "--planning", dest="planning_enabled", action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--plan-samples", type=int)

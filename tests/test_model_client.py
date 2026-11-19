@@ -367,3 +367,88 @@ async def test_sample_retries_disabled_by_zero(task) -> None:
         await client.plan(state, 30)
     assert calls == 2
     assert not any(event["event"] == "sample_retry" for event in read_logs(stream))
+
+
+async def test_verification_consensus_requires_independent_majority(task) -> None:
+    calls = []
+
+    def respond(messages, info):
+        seed = info.model_settings.get("seed")
+        calls.append(seed)
+        satisfied = seed in {500, 501}
+        return ModelResponse(
+            parts=[
+                ToolCallPart(
+                    tool_name=info.output_tools[0].name,
+                    args={
+                        "goal_satisfied": satisfied,
+                        "missing_predicates": [] if satisfied else ["(on b a)"],
+                        "conflicting_predicates": [],
+                        "reason": "independent verdict",
+                    },
+                )
+            ],
+            model_name="test",
+        )
+
+    event_logger, stream = logger(
+        config(verification_consensus_enabled=True, verification_samples=3)
+    )
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    verdict = await client.verify(state, 60)
+    assert verdict.goal_satisfied is True
+    assert len(calls) == 3
+    event = next(event for event in read_logs(stream) if event["event"] == "verification_consensus")
+    assert event["satisfied_votes"] == 2
+    assert event["rejected_votes"] == 1
+    assert event["required"] == 2
+
+
+async def test_verification_consensus_rejects_split_vote(task) -> None:
+    def respond(messages, info):
+        satisfied = info.model_settings.get("seed") == 500
+        return ModelResponse(
+            parts=[
+                ToolCallPart(
+                    tool_name=info.output_tools[0].name,
+                    args={
+                        "goal_satisfied": satisfied,
+                        "missing_predicates": [] if satisfied else ["(on b a)"],
+                        "conflicting_predicates": [] if satisfied else ["(on a b)"],
+                        "reason": "goal missing" if not satisfied else "looks complete",
+                    },
+                )
+            ],
+            model_name="test",
+        )
+
+    event_logger, _ = logger(
+        config(verification_consensus_enabled=True, verification_samples=2)
+    )
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    verdict = await client.verify(state, 60)
+    assert verdict.goal_satisfied is False
+    assert verdict.missing_predicates == ["(on b a)"]
+    assert verdict.conflicting_predicates == ["(on a b)"]
+    assert "1 accepted, 1 rejected" in verdict.reason
+
+
+async def test_free_sampling_omits_provider_seed(task) -> None:
+    settings = []
+
+    def respond(messages, info):
+        settings.append(info.model_settings)
+        return _plan_response(messages, info)
+
+    event_logger, stream = logger(
+        config(free_sampling_enabled=True, plan_samples=2, plan_spares=0)
+    )
+    client = PydanticAIModelClient(event_logger, model=FunctionModel(respond))
+    state = client_decision_state(event_logger, task)
+    await client.plan(state, 30)
+    assert len(settings) == 2
+    assert all("seed" not in value for value in settings)
+    requests = [event for event in read_logs(stream) if event["event"] == "model_request"]
+    assert all(event["generation_settings"]["random_seed"] is None for event in requests)

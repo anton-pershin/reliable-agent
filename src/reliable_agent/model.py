@@ -34,9 +34,12 @@ from .planning import derive_sub_seed
 
 _BASELINE_INSTRUCTIONS = """You solve tasks through public observations and tool results.
 Choose either a nonempty batch of actions or a final response. Use only tools described in the task.
-Before each action, check its declared preconditions against the latest public state and choose actions that can be valid.
+Before each action, check its declared preconditions against the latest public state and choose
+actions that can be valid.
 Do not assume an action succeeded when its result is missing, failed, rejected, or uncertain.
-Before declaring completion, compare every goal predicate with the latest public state. If any goal predicate is missing or inconsistent, continue acting or stop with completed=false and likely_incorrect=true.
+Before declaring completion, compare every goal predicate with the latest public state. If any
+goal predicate is missing or inconsistent, continue acting or stop with completed=false and
+likely_incorrect=true.
 Declare completion only when the public evidence establishes that the task objective is satisfied.
 For every final response, give a concise answer, calibrated confidence, a strict likely_incorrect
 boolean, and a short evidence-based reason. Set likely_incorrect=true when the answer is uncertain,
@@ -54,7 +57,8 @@ in their exact order. For each goal predicate with several arguments, choose the
 whose effects produce exactly that argument order, and check the direction again before
 you return the plan.
 """
-_PLAN_GOAL_REGRESSION_INSTRUCTIONS = _PLAN_INSTRUCTIONS + """Work backward from each goal predicate before choosing the first action. Identify an
+_PLAN_GOAL_REGRESSION_INSTRUCTIONS = _PLAN_INSTRUCTIONS + """Work backward from each goal predicate
+before choosing the first action. Identify an
 available action whose effect can establish that predicate, then determine which earlier
 actions are needed to satisfy its preconditions without undoing another goal predicate.
 If the current state contains a conflicting predicate, include the actions needed to
@@ -217,11 +221,12 @@ class PydanticAIModelClient:
         return _PLAN_INSTRUCTIONS
 
     async def verify(self, state: TaskState, remaining_seconds: float) -> VerificationResult:
+        consensus = self.config.verification_consensus_enabled
         verdicts = await self._race_samples(
             state,
             remaining_seconds,
-            count=1,
-            spares=self.config.verification_samples - 1,
+            count=self.config.verification_samples if consensus else 1,
+            spares=0 if consensus else self.config.verification_samples - 1,
             purpose="verification",
             output_type=VerificationResult,
             adapter=_VERIFICATION_ADAPTER,
@@ -233,7 +238,49 @@ class PydanticAIModelClient:
         )
         if not verdicts:
             raise ModelRequestError("All verification samples failed")
-        return verdicts[0][1]
+        if not consensus:
+            return verdicts[0][1]
+        ordered = [verdict for _, verdict in sorted(verdicts, key=lambda item: item[0])]
+        expected = self.config.verification_samples
+        satisfied = [verdict for verdict in ordered if verdict.goal_satisfied]
+        rejected = [verdict for verdict in ordered if not verdict.goal_satisfied]
+        required = expected // 2 + 1
+        goal_satisfied = len(satisfied) >= required
+        self.logger.log(
+            "verification_consensus",
+            expected=expected,
+            received=len(ordered),
+            satisfied_votes=len(satisfied),
+            rejected_votes=len(rejected),
+            required=required,
+            goal_satisfied=goal_satisfied,
+        )
+        if goal_satisfied:
+            return satisfied[0].model_copy(
+                update={
+                    "reason": (
+                        f"{len(satisfied)}/{expected} independent verifiers accepted completion. "
+                        + satisfied[0].reason
+                    )
+                }
+            )
+
+        def unique(values):
+            return list(dict.fromkeys(value for verdict in rejected for value in values(verdict)))
+
+        reason = (
+            f"Completion lacked a {required}-of-{expected} independent verifier majority: "
+            f"{len(satisfied)} accepted, {len(rejected)} rejected, "
+            f"{expected - len(ordered)} unavailable."
+        )
+        if rejected:
+            reason += " " + rejected[0].reason
+        return VerificationResult(
+            goal_satisfied=False,
+            missing_predicates=unique(lambda verdict: verdict.missing_predicates),
+            conflicting_predicates=unique(lambda verdict: verdict.conflicting_predicates),
+            reason=reason,
+        )
 
     async def _call_with_transient_retry(
         self,
@@ -814,16 +861,22 @@ class PydanticAIModelClient:
         values = {
             "temperature": self.config.temperature,
             "max_tokens": max_tokens,
-            "seed": self.config.random_seed if seed is None else seed,
             **overrides,
         }
+        effective_seed = None if self.config.free_sampling_enabled else (
+            self.config.random_seed if seed is None else seed
+        )
+        if effective_seed is not None:
+            values["seed"] = effective_seed
         return ModelSettings(**values)
 
     def _generation_settings(self, seed: int | None = None) -> dict[str, Any]:
         return {
             "temperature": self.config.temperature,
             "max_output_tokens": self.config.max_output_tokens,
-            "random_seed": self.config.random_seed if seed is None else seed,
+            "random_seed": None
+            if self.config.free_sampling_enabled
+            else (self.config.random_seed if seed is None else seed),
             "output_mode": self.config.output_mode,
         }
 

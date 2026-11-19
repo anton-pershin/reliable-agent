@@ -30,6 +30,10 @@ The targeted optimized/budget H=1 goal-regression run scored repeat rates 0.50, 
 
 The implementation provides engineering artifacts—race-independent prefix voting, independent vote/execution horizons, empty-plan control, and 114 passing tests—but **no demonstrated 10-repeat VM4 improvement**. Earlier three-repeat screens are retained only as superseded screening observations. Spec 06's AC6 and AC8 remain unmet; the branch is not represented as an accepted or integration-ready project implementation.
 
+A complete trace analysis of C18 on 2026-11-19 found that 78 failures ended in time exhaustion, nine were false completions, and one hit the retained-output limit. Exact repeated `(public observation, action)` attempts occurred in 71/78 timeouts. Six of nine false-completion rationales explicitly said that the goal was not satisfied despite the accepted boolean verdict. Several mixed-task failures sampled 3–5 valid complete plans initially but discarded those tails under H=1 execution and derailed during later votes. These observations motivate a different candidate: vote on the first action but retain and execute the selected complete plan, suppress observed-transition cycles, require independent completion-verifier consensus, and omit provider seeds explicitly.
+
+The legacy model client always sent its configured seed (default 0), even though serving was not deterministic. New candidate runs will enable `--free-sampling`, which omits the provider seed on every request and retry. Historical runs remain useful observational baselines but are not evidence for the revised candidate. The combined candidate is experimental; no performance improvement is claimed before a completed 10-repeat run.
+
 Evidence:
 - [HTML methods and results report](../../reports/ac3-repeatability-report.html)
 - `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261114T053703-525279Z-b864ae241134/`
@@ -58,6 +62,7 @@ Evidence:
 | C16 | `c32b812`, H=1 goal regression on four previously flipping tasks | Four tasks x 3 unperturbed repeats, AC1/AC3/AC6/AC7 | Optimized self-hosted runtime, 50/298 budgets, error-only logs | VM1 = 0.75; VM4 = 0.50; rejected |
 | C17 | `fdbf61a`, exact original H=1 goal-regression candidate | 10-repeat run early-stopped after three complete repeats | Original self-hosted runtime: no prefix cache, eager execution | Repeats 0.65, 0.65, 0.60; computed VM4 = 0.050000000000000044, rejected |
 | C18 | `fdbf61a`, same best candidate without early stopping | Completed all 20 tasks x 10 unperturbed repeats (200 episodes) | Same original self-hosted runtime as C17 | VM1 = 0.56; VM4 = 0.20; AC6/AC7 accepted |
+| C19 | Investigation branch: first-action vote with complete selected-plan execution, observed-transition tabu, three-verifier consensus, explicit free sampling | Planned targeted diagnostic before any 10-repeat decision | Original self-hosted A10 runtime; no provider seed; otherwise established sampling defaults | Candidate under implementation; no measured result |
 
 ### Current understanding
 
@@ -115,6 +120,8 @@ Evidence:
 | E37 | Evaluate the final original-candidate extension | C17 | Run `20261118T110200-342470Z-dad0e927d25a` was early-stopped at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T110200-342470Z-dad0e927d25a/`. Complete repeats scored 13/20, 13/20, and 12/20; `0.65 - 0.60` evaluated to 0.050000000000000044 and is strictly rejected | Stop the remaining 138 episodes because acceptance cannot recover. Do not run full validation or claim AC3 acceptance. Retain spec 06 AC6/AC8 as unmet and the investigation as active project memory. |
 | E38 | Complete a 10-repeat test of the best candidate without early stopping | C18 | Run `20261118T151459-848922Z-5228d0ade946` at `/home/tony/reps/github/anton-pershin/agent-validation/artifacts/runs/20261118T151459-848922Z-5228d0ade946/`: all 200 episodes completed. Rates: 0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55. VM1 = 0.5599999999999999; VM4 = 0.20; maximum actions = 18; timely final rate = 0.995 | The best candidate remains rejected on AC3 by 0.15 above the threshold. Record the completed result in the investigation and HTML report; do not infer acceptance from earlier screens. |
 | E39 | Correct the improvement narrative using completed-run evidence | C18 | On 2026-11-19, review identified that presenting three-repeat VM4 ≈ 0.05 as an improvement was premature and misleading in light of completed VM4 = 0.20. The completed run also had nine mixed-outcome tasks, not the four suggested by the earlier short sample | Revise the HTML report and current investigation state to make no VM4-improvement claim. Keep spec 06 open rather than presenting it as complete; a next spec requires a new design supported by completed-run evidence or an explicit scope revision. |
+| E40 | Analyze every completed-run failure and select a materially different mechanism | C18 | Across 200 episodes: 78 timeouts, nine false completions, one retained-output termination. Exact repeated public state/action attempts occurred in 71/78 timeouts. Six false-completion rationales contradicted their accepted boolean. Nine mixed tasks had 52 successes and 38 failures; some failures retained 3–5 valid initial full plans but lost their tails through H=1 re-voting | Stop tuning H=1/vote size/budgets. Combine first-action voting with complete-plan execution, public-state transition tabu, and bounded completion consensus. This is a hypothesis, not an improvement claim. |
+| E41 | Implement and provider-independently test the C19 mechanisms | C19 | Added opt-in `transition_tabu_enabled`, `verification_consensus_enabled`, and `free_sampling_enabled` with CLI overrides and documentation. Consensus uses a strict majority of the configured verifier count; tabu is public-state-scoped and exempts transient retries; free sampling omits provider seeds. The actual worktree suite passes 120 tests, changed-file Ruff passes, and overrides parse | Commit and push the exact candidate. Use a small hard-task diagnostic only to decide whether a completed all-task 10-repeat run is justified; do not call the diagnostic AC3 evidence. |
 
 ### Next candidates
 
@@ -132,6 +139,9 @@ Evidence:
 - [x] Complete and reject the targeted optimized/budget four-task diagnostic.
 - [x] Run the final full-population 10-repeat attempt with the exact original lowest-variance candidate; early-stop after definitive rejection.
 - [x] Complete a separate 200-episode, no-early-stopping test of the best candidate and record VM4 = 0.20.
+- [x] Analyze all completed-run failures and identify repeated public transitions, fastest-verifier false completions, and H=1 loss of valid plan tails.
+- [ ] Screen C19 on the hard-task subset; require a substantial cycle/success improvement before spending a full-population 10-repeat run.
+- [ ] If C19 justifies extension, complete all 20 tasks x 10 repeats and treat only that result as candidate AC3 evidence.
 - [ ] Future work: find a general-purpose mechanism that saturates the remaining simple stacking flips sufficiently for 10 repeats, rather than repeating the rejected configurations.
 - [ ] Full `default` validation remains blocked on an accepted self-hosted 10-repeat diagnostic.
 - [ ] Confirm the selected revision with full `default` validation on the self-hosted deployment if time allows; do not use partial acceptance as certification.

@@ -14,6 +14,9 @@ def test_defaults_and_public_configuration() -> None:
     assert agent_config.max_transient_retries == 2
     assert agent_config.plan_max_output_tokens == 0
     assert agent_config.sample_retries == 1
+    assert agent_config.transition_tabu_enabled is False
+    assert agent_config.verification_consensus_enabled is False
+    assert agent_config.free_sampling_enabled is False
     assert "sensitive_values" not in agent_config.public_dict()
     validate_config(agent_config)
 
@@ -30,12 +33,18 @@ def test_sample_configuration_overrides_parse() -> None:
             "--plan-spares",
             "2",
             "--no-plan-review",
+            "--transition-tabu",
+            "--verification-consensus",
+            "--free-sampling",
         ]
     )
     assert agent_config.plan_max_output_tokens == 4000
     assert agent_config.sample_retries == 2
     assert agent_config.plan_spares == 2
     assert agent_config.plan_review_enabled is False
+    assert agent_config.transition_tabu_enabled is True
+    assert agent_config.verification_consensus_enabled is True
+    assert agent_config.free_sampling_enabled is True
     with pytest.raises(ValueError):
         config(plan_max_output_tokens=-1)
     with pytest.raises(ValueError):

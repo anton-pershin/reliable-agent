@@ -48,6 +48,12 @@ With `--plan-horizon N`, the planner returns at most N actions per candidate plu
 
 `--planning-strategy goal_regression` optionally asks the planner to derive required actions backward from goal predicates and conflicts before checking the forward plan. The default `forward` strategy keeps the established complete-plan instructions.
 
+`--transition-tabu` remembers public state/action pairs and excludes candidates whose first action repeats an observed transition from the same state. If every candidate repeats, the engine requests a fresh plan without executing an action. Transient-failure retries are exempt. The default is off.
+
+`--verification-consensus` waits for all `--verification-samples N` independent verdicts and accepts completion only with a strict majority of the configured sample count. Missing responses and split votes cannot establish completion; negative verdicts contribute missing/conflicting-predicate feedback. Without this flag, the legacy fastest-verdict behavior remains.
+
+`--free-sampling` omits the provider `seed` parameter from every request, including plan samples and retries. It therefore uses the serving engine's ordinary stochastic sampling rather than the legacy fixed seed. The new AC3 candidate uses this mode to comply with constitution preference P11.
+
 ## JSON Lines execution
 
 The process entry point is:
@@ -70,6 +76,9 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--max-output-tokens N` | `8000` | Output-token limit |
 | `--prompt-version VERSION` | `consistent-planning-v1` | Prompt version recorded in logs |
 | `--planning-strategy MODE` | `forward` | `forward` or `goal_regression` complete-plan reasoning |
+| `--transition-tabu / --no-transition-tabu` | off | Suppress actions already observed from the same public state |
+| `--verification-consensus / --no-verification-consensus` | off | Require a strict independent-verifier majority for completion |
+| `--free-sampling / --no-free-sampling` | off | Omit provider seeds from model requests |
 | `--planning / --no-planning` | on | Plan-vote-execute decision flow |
 | `--plan-samples N` | `3` | Candidate plans per vote |
 | `--plan-spares N` | `1` | Extra plan samples per vote; only the fastest completions count |
@@ -80,7 +89,7 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--plan-review / --no-plan-review` | on | Validity review of candidate plans with prefix truncation |
 | `--selected-plan-review / --no-selected-plan-review` | off | One post-vote validity review of the selected short prefix |
 | `--sample-retries N` | `1` | Retries per plan or verification sample after a transient failure |
-| `--verification-samples N` | `2` | Concurrent verification samples; the fastest verdict wins |
+| `--verification-samples N` | `2` | Fastest-verdict race size, or independent consensus size with `--verification-consensus` |
 | `--max-replans N` | `12` | Re-planning rounds per episode after the first plan |
 | `--completion-verification / --no-completion-verification` | on | Goal verification before completion declarations |
 | `--verification-timeout N` | `90` | Verification sample timeout |

@@ -193,7 +193,7 @@ async def test_action_failure_triggers_replan(task, action, final_decision) -> N
 
 async def test_transient_retry_keeps_plan_head(task, action, final_decision) -> None:
     clock = FakeClock()
-    event_logger, _ = logger(config(), clock=clock)
+    event_logger, _ = logger(config(transition_tabu_enabled=True), clock=clock)
     second = ActionRequest(name="pick_up", arguments={"block": "a"})
     model = ScriptedModel([final_decision], plans=[plan_of(action, second)])
     executor = ScriptedExecutor(
@@ -272,6 +272,90 @@ async def test_replanning_filters_previously_failed_plans(task, action, final_de
     events = read_logs(stream)
     candidates = [e for e in events if e["event"] == "plan_candidates"]
     assert candidates[1]["already_failed"] == 2
+
+
+async def test_transition_tabu_filters_failed_action_from_same_observation(
+    task, action, final_decision
+) -> None:
+    first = plan_of(action)
+    second = plan_of(ActionRequest(name="pick_up", arguments={"block": "a"}))
+    clock = FakeClock()
+    event_logger, stream = logger(config(transition_tabu_enabled=True), clock=clock)
+    model = ScriptedModel(
+        [final_decision],
+        plans=[first, first, [first, first, second]],
+    )
+    executor = ScriptedExecutor(
+        [
+            failed_observation("episode-test-call-1"),
+            failed_observation("episode-test-call-2"),
+            ok_observation("episode-test-call-3"),
+        ]
+    )
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    # The first failure has a new post-attempt observation key. One repeated
+    # failure establishes memory under that key; the next round must diversify.
+    assert len(model.plan_calls) == 3
+    assert executor.batches[-1].actions == second.actions
+    event = next(event for event in read_logs(stream) if event["event"] == "transition_tabu")
+    assert event["suppressed"] == 2
+    assert event["remaining"] == 1
+    assert event["all_repeated"] is False
+
+
+async def test_transition_tabu_replans_when_every_candidate_repeats(
+    task, action, final_decision
+) -> None:
+    first = plan_of(action)
+    second = plan_of(ActionRequest(name="pick_up", arguments={"block": "a"}))
+    clock = FakeClock()
+    event_logger, stream = logger(config(transition_tabu_enabled=True), clock=clock)
+    model = ScriptedModel(
+        [final_decision], plans=[first, first, first, second]
+    )
+    executor = ScriptedExecutor(
+        [
+            failed_observation("episode-test-call-1"),
+            failed_observation("episode-test-call-2"),
+            ok_observation("episode-test-call-3"),
+        ]
+    )
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 4
+    assert len(executor.batches) == 3  # the all-repeated round executes nothing
+    assert "Every candidate repeats" in model.plan_calls[-1]["feedback"][-1]
+    events = [event for event in read_logs(stream) if event["event"] == "transition_tabu"]
+    assert events[0]["all_repeated"] is True
+
+
+async def test_transition_tabu_also_breaks_successful_observation_cycles(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    repeated_prefix = plan_of(action, second)
+    clock = FakeClock()
+    event_logger, stream = logger(
+        config(
+            transition_tabu_enabled=True,
+            plan_execution_horizon=1,
+            plan_review_enabled=False,
+            goal_review_enabled=False,
+        ),
+        clock=clock,
+    )
+    model = ScriptedModel(
+        [final_decision],
+        plans=[repeated_prefix, repeated_prefix, [repeated_prefix, plan_of(second)]],
+    )
+    executor = ScriptedExecutor()  # every result exposes the same public state
+    result = await runner_for(model, executor, event_logger, clock).run(task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 3
+    assert executor.batches[-1].actions == [second]
+    transitions = [event for event in read_logs(stream) if event["event"] == "observed_transition"]
+    assert any(event["status"] == "ok" for event in transitions)
 
 
 async def test_replanning_limit_stops_episode(task, action) -> None:
