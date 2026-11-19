@@ -58,6 +58,8 @@ With `--plan-horizon N`, the planner returns at most N actions per candidate plu
 
 `--intermediate-completion-verification` checks a non-reaching full plan after each successful action and stops it early if independent verification establishes the goal. A negative or unavailable intermediate check continues the plan; exhaustion still replans when the goal is unverified. Horizon-limited prefixes retain immediate replanning without intermediate checks. The default is off.
 
+`--formal-goal-checking` exactly matches grounded conjunctive PDDL goal predicates against a complete public `state` snapshot. A satisfied goal completes immediately without a model request; a false verdict supplies exact missing/conflicting predicates and suppresses empty completion claims when actionable candidates exist. Unsupported goals or observations fall back to ordinary model verification. This option checks public evidence only—it does not derive plans or action semantics. The default is off.
+
 ## JSON Lines execution
 
 The process entry point is:
@@ -85,6 +87,7 @@ A run starts with a `task` message. The agent returns `actions`, accepts an `obs
 | `--free-sampling / --no-free-sampling` | off | Omit provider seeds from model requests |
 | `--state-centered-planning / --no-state-centered-planning` | off | Plan from the latest complete public state snapshot instead of stale history |
 | `--intermediate-completion-verification / --no-intermediate-completion-verification` | off | Check non-reaching full plans for early goal satisfaction |
+| `--formal-goal-checking / --no-formal-goal-checking` | off | Exactly verify supported public formal goals against state snapshots |
 | `--planning / --no-planning` | on | Plan-vote-execute decision flow |
 | `--plan-samples N` | `3` | Candidate plans per vote |
 | `--plan-spares N` | `1` | Extra plan samples per vote; only the fastest completions count |
