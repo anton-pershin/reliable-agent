@@ -216,11 +216,11 @@
         <span>18 November 2026 · Updated 19 November 2026</span>
         <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
         <span>Default profile · 20 tasks</span>
-        <span>Investigation through <code>89de6e8</code></span>
+        <span>Investigation through <code>119cc88</code></span>
       </div>
       <div class="status-ribbon">
         <strong>Status:</strong>
-        <span>Three-repeat AC3 signals were premature. The completed 200-episode best-candidate run returned VM4 = 0.20 and VM1 = 0.56. No 10-repeat improvement has been demonstrated, full validation was not run, and spec 06 remains incomplete.</span>
+        <span>C27 completed all 200 episodes: VM1 = 0.985 and mathematical repeat range 0.05, but computed VM4 = 0.050000000000000044 is strictly rejected. The 42/42 screen was not a guarantee. No accepted 10-repeat AC3 result exists, and spec 06 remains incomplete.</span>
       </div>
     </div>
   </header>
@@ -235,18 +235,18 @@
 
   <main class="wrap">
     <div class="kpis" aria-label="Headline results">
-      <div class="kpi"><div class="label">Completed 10-repeat VM4</div><div class="value bad">0.20</div><div class="note">Rejected · 0.15 above threshold</div></div>
-      <div class="kpi"><div class="label">AC3 acceptance threshold</div><div class="value">0.05</div><div class="note">Completed rates ranged 0.45–0.65</div></div>
-      <div class="kpi"><div class="label">Completed 10-repeat VM1</div><div class="value">0.56</div><div class="note">112 successes out of 200 episodes</div></div>
-      <div class="kpi"><div class="label">Accepted 10-repeat runs</div><div class="value bad">0</div><div class="note">No demonstrated AC3 improvement</div></div>
+      <div class="kpi"><div class="label">Latest completed 10-repeat VM4</div><div class="value bad">0.0500…</div><div class="note">Computed 0.050000000000000044 · rejected</div></div>
+      <div class="kpi"><div class="label">AC3 acceptance threshold</div><div class="value">0.05</div><div class="note">C27 rates ranged 0.95–1.00</div></div>
+      <div class="kpi"><div class="label">Latest completed 10-repeat VM1</div><div class="value">0.985</div><div class="note">197 successes out of 200 episodes</div></div>
+      <div class="kpi"><div class="label">Accepted 10-repeat runs</div><div class="value bad">0</div><div class="note">Strict AC3 acceptance remains open</div></div>
     </div>
 
     <section id="summary">
-      <div class="section-head"><div class="section-num">01</div><div><h2>The evidence, in one page</h2><p>No 10-repeat VM4 improvement was demonstrated. The completed run rejects the tested candidate.</p></div></div>
+      <div class="section-head"><div class="section-num">01</div><div><h2>The evidence, in one page</h2><p>C27 reached the mathematical one-task boundary over 200 episodes, but strict AC3 acceptance remains open.</p></div></div>
       <div class="grid-3">
-        <div class="card"><span class="badge neutral">Tested mechanism</span><h3 style="margin-top:12px">Consensus before commitment</h3><p class="small muted">The engine samples complete plans, compares short action prefixes, and executes only the winning prefix. It then plans again from the resulting public observation.</p></div>
-        <div class="card"><span class="badge neutral">Implementation change</span><h3 style="margin-top:12px">Separate prompt, vote, and execution lengths</h3><p class="small muted">Independent horizons avoid the all-empty plans produced by prompt-only H=1 and allow one-action consensus with two-action execution.</p></div>
-        <div class="card"><span class="badge bad">Completed evidence</span><h3 style="margin-top:12px">Three repeats are not ten</h3><p class="small muted">Short screens near 0.05 were premature. The final best-candidate run completed all 200 episodes and returned VM4 = 0.20, superseding claims based on those screens.</p></div>
+        <div class="card"><span class="badge neutral">C27 mechanism</span><h3 style="margin-top:12px">Learn from public transitions</h3><p class="small muted">Episode-local action rules are learned from observed state changes. Bounded generic search can replace model re-planning once enough consistent rules exist.</p></div>
+        <div class="card"><span class="badge neutral">Correctness controls</span><h3 style="margin-top:12px">Exact goals and conservative fallback</h3><p class="small muted">Formal public-goal evidence eliminates false completions. Prediction conflicts, unsupported inputs, and missing rules retain controlled model recovery.</p></div>
+        <div class="card"><span class="badge bad">Completed evidence</span><h3 style="margin-top:12px">Near saturation is not acceptance</h3><p class="small muted">C27 completed at 197/200 with rates from 0.95 to 1.00. The computed range was 0.050000000000000044, strictly above 0.05.</p></div>
       </div>
       <div class="callout info"><strong>Sampling and runtime boundary.</strong> All included episode results use the self-hosted A10 deployment, temperature 0.7, established serving defaults, and the required Qwen 9B model. C19 and later explicitly omit provider seeds with <code>--free-sampling</code>; earlier runs used the legacy configured seed and are retained as observational baselines, not final sampling-compliance evidence. Deterministic serving, fixed-repeat seed tactics, alternative models, and provider-hosted evidence are excluded.</div>
     </section>
@@ -319,13 +319,13 @@
     </section>
 
     <section id="results">
-      <div class="section-head"><div class="section-num">04</div><div><h2>Measured outcomes</h2><p>The completed 10-repeat run is the primary evidence; three-repeat screens are retained only to explain the premature inference.</p></div></div>
+      <div class="section-head"><div class="section-num">04</div><div><h2>Measured outcomes</h2><p>Completed 10-repeat runs are primary evidence; short screens are retained only to explain investigation decisions.</p></div></div>
       <div class="card">
-        <h3>Completed candidate VM4 versus the threshold</h3>
-        <p class="small muted">The completed 10-repeat candidate result is the primary evidence. No comparison here is intended to attribute improvement.</p>
-        <div class="bar-row"><div class="bar-label">Best candidate, completed<small>20261118T151459 · completed 10 repeats</small></div><div class="bar-track"><div class="bar-fill" style="width:80%"></div><div class="bar-threshold"></div></div><div class="bar-value bad">0.2000</div></div>
+        <h3>Latest completed candidate VM4 versus the threshold</h3>
+        <p class="small muted">C27 completed all 200 episodes. The exact computed value—not a rounded display—is used for acceptance.</p>
+        <div class="bar-row"><div class="bar-label">C27 transition learning, completed<small>20261119T081342 · completed 10 repeats</small></div><div class="bar-track"><div class="bar-fill" style="width:20%"></div><div class="bar-threshold"></div></div><div class="bar-value bad">0.0500 + ε</div></div>
         <div class="bar-row"><div class="bar-label">AC3 threshold<small>Required maximum repeat range</small></div><div class="bar-track"><div class="bar-fill pass" style="width:20%"></div><div class="bar-threshold"></div></div><div class="bar-value good">0.0500</div></div>
-        <div class="callout danger small"><strong>No VM4 improvement claim.</strong> The completed candidate remains 0.15 above the threshold. Three-repeat values near 0.05 are excluded because they are not evidence of sustained repeatability.</div>
+        <div class="callout danger small"><strong>Strict boundary rejection.</strong> C27's computed candidate range exceeds 0.05 by approximately 4.16×10⁻¹⁷. Three-repeat values are excluded because they are not evidence of sustained repeatability.</div>
       </div>
       <div class="card svg-card">
         <h3 style="padding:10px 10px 0">Three-repeat screening observations — superseded</h3>
@@ -405,10 +405,11 @@
             <tr><td><span class="run-id">20261118T043358-257621Z-989a7cf101d0</span><br>H=1 forward</td><td>0.45, 0.55</td><td class="mono">0.10000000000000003</td><td class="bad mono">+0.05000000000000003</td></tr>
             <tr><td><span class="run-id">20261118T110200-342470Z-dad0e927d25a</span><br>H=1 goal regression · early stop</td><td>0.65, 0.65, 0.60</td><td class="mono">0.050000000000000044</td><td class="warn mono">+4.16×10⁻¹⁷</td></tr>
             <tr><td><span class="run-id">20261118T151459-848922Z-5228d0ade946</span><br>H=1 goal regression · <strong>completed</strong></td><td>0.45, 0.50, 0.45, 0.65, 0.65, 0.65, 0.60, 0.55, 0.55, 0.55</td><td class="mono">0.20</td><td class="bad mono">+0.15</td></tr>
+            <tr><td><span class="run-id">20261119T081342-066762Z-499ec4d39610</span><br>C27 transition learning · <strong>completed</strong></td><td>1.00, 1.00, 1.00, 0.95, 1.00, 0.95, 1.00, 0.95, 1.00, 1.00</td><td class="mono">0.050000000000000044</td><td class="warn mono">+4.16×10⁻¹⁷</td></tr>
           </tbody>
         </table></div>
         <div class="callout danger"><strong>Aborted, not a completed result.</strong> This short extension retained 63 records and reached a computed range of <code>0.050000000000000044 &gt; 0.05</code>. It is not evidence of 10-repeat improvement; the later completed run returned VM4 = 0.20.</div>
-        <h3 style="margin-top:26px">Completed best-candidate 10-repeat trajectory</h3>
+        <h3 style="margin-top:26px">Completed C18 historical 10-repeat trajectory</h3>
         <p class="small muted">Run <code>20261118T151459-848922Z-5228d0ade946</code> · 200 episodes · no early stopping · approximately 2 h 28 min.</p>
         <svg viewBox="0 0 770 230" width="100%" style="min-width:650px; height:auto" role="img" aria-label="Completed ten-repeat success trajectory from 0.45 to 0.65">
           <g stroke="#e2e8f0"><line x1="55" y1="180" x2="720" y2="180"/><line x1="55" y1="142.5" x2="720" y2="142.5"/><line x1="55" y1="105" x2="720" y2="105"/><line x1="55" y1="67.5" x2="720" y2="67.5"/><line x1="55" y1="30" x2="720" y2="30"/></g>
@@ -495,7 +496,7 @@
           <div class="step"><b>37.8 s mean</b><span>Down from 114.7 s in C25. Only two repeated state/action attempts.</span></div>
           <div class="step"><b>VM4 0.0 · AC7 1.0</b><span>Subset-only diagnostic; maximum 19 actions. Not a full-population 10-repeat result.</span></div>
         </div>
-        <div class="callout warn small" style="margin-top:18px"><strong>200-episode extension is running without early stopping.</strong> The predeclared extension criterion was met, but no sustained AC3 improvement is claimed until all 20 tasks × 10 repeats complete.</div>
+        <div class="callout danger small" style="margin-top:18px"><strong>Completed 200 episodes: AC3 strictly rejected.</strong> C27 repeat rates were 1.0, 1.0, 1.0, 0.95, 1.0, 0.95, 1.0, 0.95, 1.0, 1.0. VM1 = 0.985; computed VM4 = 0.050000000000000044. Two `restack_bca` timeouts lacked a learned `unstack`; one goal-satisfying `tower_four` episode missed final delivery because of a pending-write race. C28 targets only those residual failures.</div>
       </div>
     </section>
 
@@ -570,7 +571,7 @@ configuration["acceptance_criteria"] = [
           <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
-            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>89de6e8</code></td><td><span class="badge warn">Active · 200-episode run in progress</span></td></tr>
+            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>119cc88</code></td><td><span class="badge warn">C27 complete · C28 under review</span></td></tr>
             <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6/AC8 open</span></td></tr>
             <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
             <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; reviewed transition-learning implementation <code>9ebc189</code></td><td><span class="badge good">167 passed</span></td></tr>
@@ -583,12 +584,12 @@ configuration["acceptance_criteria"] = [
     <section id="gap">
       <div class="final-banner">
         <span class="badge warn">Remaining gap</span>
-        <h2 style="margin-top:14px">No repeatable improvement was demonstrated.</h2>
-        <p>Three-repeat signals were premature and are superseded for acceptance purposes. The completed 200-episode best-candidate run returned VM4 = 0.20. Engineering changes and tests remain available, but the performance objective in spec 06 is unmet.</p>
+        <h2 style="margin-top:14px">AC3 remains strictly rejected.</h2>
+        <p>C27 completed 200 episodes with VM1 = 0.985 and a mathematical repeat range of 0.05. The computed value was 0.050000000000000044, above the strict threshold. C28 addresses only the three observed residual failures; no completed C28 evidence exists yet.</p>
         <div class="grid-3" style="margin-top:20px">
-          <div><strong style="font-size:20px">1. Reassess nine mixed-outcome tasks</strong><p class="small">The completed run—not the earlier four-task hypothesis—defines the remaining task-level problem.</p></div>
-          <div><strong style="font-size:20px">2. Do not infer success from three repeats</strong><p class="small">Short screens may reject weak candidates, but a near-threshold short screen is not evidence of sustained VM4 improvement.</p></div>
-          <div><strong style="font-size:20px">3. Do not push spec 06 as complete</strong><p class="small">AC6 and AC8 are unmet. Keep the spec open or explicitly revise its scope before integration; a next spec should follow new completed-run evidence.</p></div>
+          <div><strong style="font-size:20px">1. Preserve the completed baseline</strong><p class="small">C27 is the current completed reference: 197/200 successes, zero false completions, AC6/AC7 accepted.</p></div>
+          <div><strong style="font-size:20px">2. Fix only evidenced residuals</strong><p class="small">Two <code>restack_bca</code> learning-gap timeouts and one <code>tower_four</code> final-delivery race define C28's narrow scope.</p></div>
+          <div><strong style="font-size:20px">3. Keep acceptance and specs honest</strong><p class="small">No validator tolerance or spec completion claim is allowed. A follow-up spec requires completed evidence, and full validation has not run.</p></div>
         </div>
       </div>
     </section>
@@ -597,7 +598,7 @@ configuration["acceptance_criteria"] = [
   <footer>
     <div class="wrap">
       <strong>Reliable-agent · AC3 repeatability investigation</strong><br>
-      Generated 18 November 2026 and revised 19 November 2026 after the completed 10-repeat result and the bounded C19/offline continuation experiments. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
+      Generated 18 November 2026 and revised 19 November 2026 through the completed C27 200-episode result and subsequent residual-failure analysis. Provider-hosted results are intentionally excluded. This report is self-contained and uses no external assets.
     </div>
   </footer>
 </body>
