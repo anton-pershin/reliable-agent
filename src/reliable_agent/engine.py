@@ -10,6 +10,7 @@ from jsonschema import ValidationError, validators
 from .contracts import (
     ActionAttempt,
     ActionDecision,
+    ActionRequest,
     Decision,
     FinalDecision,
     PendingRetry,
@@ -336,7 +337,10 @@ class DecisionEngine:
             repeated = []
             novel = []
             for index, candidate in valid:
-                if candidate.actions and candidate.actions[0] in tried:
+                if (
+                    candidate.actions
+                    and self._transition_action_key(candidate.actions[0]) in tried
+                ):
                     repeated.append((index, candidate))
                 else:
                     novel.append((index, candidate))
@@ -662,15 +666,21 @@ class DecisionEngine:
             # that the same transition should be avoided later.
             return
         action = attempt.actions[0]
+        action_key = self._transition_action_key(action)
         tried = state.tried_transitions.setdefault(observation_key, [])
-        if action not in tried:
-            tried.append(action)
+        if action_key not in tried:
+            tried.append(action_key)
         self.logger.log(
             "observed_transition",
             action=action.model_dump(),
             status=result.status,
             known_transitions_from_state=len(tried),
         )
+
+    @staticmethod
+    def _transition_action_key(action: ActionRequest) -> str:
+        """Use the same type-preserving JSON canonicalization as plan voting."""
+        return plan_key(PlanCandidate(actions=[action]))
 
     @staticmethod
     def _public_observation_key(state: TaskState) -> str:
@@ -684,7 +694,7 @@ class DecisionEngine:
                 # Observation metadata such as the last action name is not part
                 # of the public state and would disguise an otherwise exact cycle.
                 payload = {"states": [observation["state"] for observation in observations]}
-            elif observations:
+            elif observations and all(observations):
                 payload = {"observations": observations}
             else:
                 # With no public observation, different attempts cannot safely

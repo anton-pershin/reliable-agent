@@ -52,7 +52,7 @@ With `--plan-horizon N`, the planner returns at most N actions per candidate plu
 
 `--verification-consensus` waits for all `--verification-samples N` independent verdicts and accepts completion only with a strict majority of the configured sample count. Missing responses and split votes cannot establish completion; negative verdicts contribute missing/conflicting-predicate feedback. Without this flag, the legacy fastest-verdict behavior remains.
 
-`--free-sampling` omits the provider `seed` parameter from every request, including plan samples and retries. It therefore uses the serving engine's ordinary stochastic sampling rather than the legacy fixed seed. The new AC3 candidate uses this mode to comply with constitution preference P11.
+`--free-sampling` omits the provider `seed` parameter from every request, including plan samples and retries. Enable it when the serving engine should control stochastic sampling without fixed request seeds.
 
 ## JSON Lines execution
 

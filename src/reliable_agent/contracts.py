@@ -184,7 +184,7 @@ class TaskState(ContractModel):
     active_plan_key: str | None = None
     active_plan_reaches_goal: bool = True
     failed_plan_keys: list[str] = Field(default_factory=list)
-    tried_transitions: dict[str, list[ActionRequest]] = Field(default_factory=dict)
+    tried_transitions: dict[str, list[str]] = Field(default_factory=dict)
 
     @property
     def action_attempts(self) -> int:
