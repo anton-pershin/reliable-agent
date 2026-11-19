@@ -1,0 +1,2274 @@
+[
+  {
+    "task_id": "stack_ab",
+    "sample": 0,
+    "elapsed": 19.82,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(clear a)",
+        "(clear b)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on a b)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {block})",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [
+            "(on-table {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})",
+            "(not (clear {other_block}))"
+          ],
+          "delete_effects": [
+            "(hand-empty)"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(on {block} {other_block})"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_ab",
+    "sample": 1,
+    "elapsed": 20.33,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(clear a)",
+        "(clear b)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on a b)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(hand-not-empty)",
+            "(not (clear {block}))",
+            "(not (on-table {block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})",
+            "(hand-not-empty)"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})",
+            "(hand-not-empty)"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(hand-not-empty)",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})",
+            "(not (clear {other_block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(hand-not-empty)",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_ab",
+    "sample": 2,
+    "elapsed": 18.3,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": false,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "hand"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(clear a)",
+        "(clear b)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(and (on a b))"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(held {block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(hand-empty)",
+            "(on-table {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(held {block})"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(held {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(held {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(held {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(held {block})",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 0,
+    "elapsed": 21.21,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on b a)",
+        "(on-table c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(~hand-empty)",
+            "(holding {block})"
+          ],
+          "delete_effects": [
+            "(~clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})",
+            "~(hand-empty)"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(~clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(~hand-empty)",
+            "(on {block} {other_block})"
+          ],
+          "delete_effects": [
+            "(~clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(~hand-empty)",
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(~holding {block})",
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(~clear {block}), (~(on {block} {other_block}))"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 1,
+    "elapsed": 40.96,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on b a)",
+        "(on-table c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(hand-empty)",
+            "(clear {block})",
+            "(on-table {block})"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(hand-empty)",
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "get_action_catalog",
+          "preconditions": [],
+          "add_effects": [],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_ba",
+    "sample": 2,
+    "elapsed": 20.34,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on b a)",
+        "(on-table c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(hand-empty)",
+            "(clear {block})",
+            "(on-table {block})"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {block})",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [
+            "(clear {block})",
+            "(on-table {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})",
+            "(not (clear {other_block}))"
+          ],
+          "delete_effects": [
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(hand-empty)",
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 0,
+    "elapsed": 40.91,
+    "error": "Cannot pick up b: preconditions are not satisfied",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      }
+    ],
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on a b)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table a)",
+        "(on b c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(hand-empty)",
+            "(clear {block})",
+            "(on-table {block})"
+          ],
+          "add_effects": [
+            "(hand {block})",
+            "(clear {block})",
+            "(not (on-table {block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(hand {block})"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(hand {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(hand {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})",
+            "(not (hand {block}))"
+          ],
+          "delete_effects": [
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(hand-empty)",
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "add_effects": [
+            "(on {block} hand)",
+            "(clear {other_block})",
+            "(hand {block})",
+            "(not (clear {block}))"
+          ],
+          "delete_effects": [
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 1,
+    "elapsed": 18.85,
+    "error": "Cannot pick up b: preconditions are not satisfied",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      }
+    ],
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on a b)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table a)",
+        "(on b c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(on-table {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(hand-empty)",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(on {block} {other_block})"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "restack_abc",
+    "sample": 2,
+    "elapsed": 21.34,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": false,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on a b)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(and (on-table a))",
+        "(on b c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(hand-empty)",
+            "(clear {block})"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(not (hand-empty))",
+            "(not (clear {block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(not (holding {block}))",
+            "(hand-empty)"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(not (clear {block}))",
+            "(not (clear {other_block}))",
+            "(not (holding {block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(clear {other_block})",
+            "(holding {block})",
+            "(not (clear {block}))",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 0,
+    "elapsed": 21.03,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "c"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on b a)",
+        "(on-table a)",
+        "(on-table c)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table b)",
+        "(on a c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(hand {block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(hand-empty)",
+            "(on-table {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(hand {block})"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(hand-empty)",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(hand {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(hand {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(hand {block})",
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(hand {block})",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(hand-empty)",
+            "(on {block} {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 1,
+    "elapsed": 20.06,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on b a)",
+        "(on-table a)",
+        "(on-table c)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table b)",
+        "(on a c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(~(clear {block})), (~(hand-empty))"
+          ],
+          "delete_effects": [
+            "(~(on-table {block}))"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(~(hand-empty))"
+          ],
+          "add_effects": [
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(~(clear {block})), (~(hand-empty))"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(~(hand-empty))",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})"
+          ],
+          "delete_effects": [
+            "(~(clear {block})), (~(hand-empty)), (~(clear {other_block}))"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(~(hand-empty))",
+            "(clear {block})"
+          ],
+          "add_effects": [
+            "(hand-empty)",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(on {block} {other_block}), (~(clear {block}))"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "restack_bac",
+    "sample": 2,
+    "elapsed": 25.37,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "a"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      },
+      {
+        "name": "pick_up",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "stack",
+        "arguments": {
+          "block": "a",
+          "other_block": "c"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on b a)",
+        "(on-table a)",
+        "(on-table c)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table b)",
+        "(on a c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(hand-empty)",
+            "(on-table {block})"
+          ],
+          "add_effects": [
+            "(hand-not-empty)",
+            "(not (hand-empty))",
+            "(not (clear {block}))"
+          ],
+          "delete_effects": [
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(hand-not-empty)"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(hand-not-empty)"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(hand-not-empty)",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})",
+            "(not (on {block} other))",
+            "(not (clear {other_block}))"
+          ],
+          "delete_effects": [
+            "(hand-not-empty)",
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(clear {other_block})",
+            "(hand-not-empty)",
+            "(not (on {block} {other_block}))"
+          ],
+          "delete_effects": [
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "get_action_catalog",
+          "preconditions": [],
+          "add_effects": [],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 0,
+    "elapsed": 52.81,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a b c"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on a b)",
+        "(on b c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear ?block)",
+            "(on-table ?block)",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding ?block)",
+            "(clear ?block)",
+            "(not (on-table ?block))",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding ?block)"
+          ],
+          "add_effects": [
+            "(on-table ?block)",
+            "(clear ?block)",
+            "(not (holding ?block))",
+            "(hand-empty)"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding ?block)",
+            "(clear ?other_block)"
+          ],
+          "add_effects": [
+            "(on ?block ?other_block)",
+            "(clear ?block)",
+            "(not (holding ?block))",
+            "(not (clear ?other_block))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": [
+            [
+              "?block",
+              "?other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear ?block)",
+            "(on ?block ?other_block)"
+          ],
+          "add_effects": [
+            "(holding ?block)",
+            "(clear ?other_block)",
+            "(not (clear ?block))",
+            "(not (holding ?other_block))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": [
+            [
+              "?block",
+              "?other_block"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 1,
+    "elapsed": 38.57,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a b c"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on a b)",
+        "(on b c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(~hand-empty)",
+            "(holding {block})"
+          ],
+          "delete_effects": [
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(clear {other_block})",
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(holding {block})"
+          ],
+          "delete_effects": [
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "block",
+              "other_block"
+            ]
+          ]
+        },
+        {
+          "name": "get_action_catalog",
+          "preconditions": [],
+          "add_effects": [],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "stack_three",
+    "sample": 2,
+    "elapsed": 40.06,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(on-table c)",
+        "(clear a)",
+        "(clear b)",
+        "(clear c)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on a b)",
+        "(on b c)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear ?block)",
+            "(hand-empty)",
+            "(on-table ?block)"
+          ],
+          "add_effects": [
+            "(held ?block)",
+            "(not (clear ?block))",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(held ?block)"
+          ],
+          "add_effects": [
+            "(clear ?block)",
+            "(on-table ?block)",
+            "(not (held ?block))",
+            "(hand-empty)"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(held ?block)",
+            "(clear ?other_block)"
+          ],
+          "add_effects": [
+            "(on ?block ?other_block)",
+            "(not (clear ?block))",
+            "(not (clear ?other_block))",
+            "(not (held ?block))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": [
+            [
+              "?block",
+              "?other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear ?block)",
+            "(on ?block ?other_block)",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(held ?block)",
+            "(clear ?other_block)",
+            "(not (clear ?block))",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": [
+            [
+              "?block",
+              "?other_block"
+            ]
+          ]
+        },
+        {
+          "name": "get_action_catalog",
+          "preconditions": [],
+          "add_effects": [],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 0,
+    "elapsed": 39.34,
+    "error": null,
+    "initial_exact": false,
+    "goals_exact": false,
+    "plan": [],
+    "environment_valid": true,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a b c d"
+      ],
+      "initial_state": [
+        "(on-table a) (on-table b) (on-table c) (on-table d) (clear a) (clear b) (clear c) (clear d) (hand-empty)",
+        "(on a b) (on b c) (on c d)"
+      ],
+      "goals": [
+        "(on a b) (on b c) (on c d)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear ?block) (hand-empty)"
+          ],
+          "add_effects": [
+            "(holding ?block) (clear ?block) (not hand-empty)"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding ?block)"
+          ],
+          "add_effects": [
+            "(on-table ?block) (clear ?block) (hand-empty)"
+          ],
+          "delete_effects": [
+            "(not holding ?block)"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding ?block) (clear ?other_block)"
+          ],
+          "add_effects": [
+            "(on ?block ?other_block) (clear ?block) (not clear ?other_block)"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": [
+            [
+              "?block",
+              "?other_block"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear ?block) (on ?block ?other_block) (hand-empty)"
+          ],
+          "add_effects": [
+            "(clear ?other_block) (holding ?block) (not hand-empty)"
+          ],
+          "delete_effects": [
+            "(on ?block ?other_block)"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 1,
+    "elapsed": 39.1,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "initial_state": [
+        "(on-table a)",
+        "(on-table b)",
+        "(on-table c)",
+        "(on-table d)",
+        "(clear a)",
+        "(clear b)",
+        "(clear c)",
+        "(clear d)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on a b)",
+        "(on b c)",
+        "(on c d)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(hand-empty)",
+            "(clear ?x)"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(on-table {block})",
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})"
+          ],
+          "delete_effects": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "delete_effects": [
+            "(hand-empty)",
+            "(clear {block})"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "tower_four",
+    "sample": 2,
+    "elapsed": 40.37,
+    "error": "no plan",
+    "initial_exact": false,
+    "goals_exact": false,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c",
+        "d"
+      ],
+      "initial_state": [
+        "(on-table a) (on-table b) (on-table c) (on-table d) (clear a) (clear b) (clear c) (clear d) (hand-empty)",
+        "Goal: (and (on a b) (on b c) (on c d))"
+      ],
+      "goals": [
+        "(and (on a b) (on b c) (on c d))"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(hand-empty) (clear {block}) (on-table {block})"
+          ],
+          "add_effects": [
+            "(holding {block}) (not (hand-empty)) (not (clear {block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(on-table {block}) (clear {block}) (not (holding {block})) (hand-empty)"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block}) (clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block}) (clear {block}) (not (clear {other_block})) (not (holding {block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block}) (not (hand-empty)) (on {block} {other_block})"
+          ],
+          "add_effects": [
+            "(clear {block}) (not (on {block} {other_block})) (holding {block})"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "unstack_tower",
+    "sample": 0,
+    "elapsed": 37.56,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on a b)",
+        "(on b c)",
+        "(clear a)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table a)",
+        "(on-table b)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(hand-empty)"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "{block}",
+              "{other_block}"
+            ]
+          ]
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(clear {other_block})",
+            "(holding {block})"
+          ],
+          "delete_effects": [
+            "(on {block} {other_block})"
+          ],
+          "distinct_argument_pairs": [
+            [
+              "{block}",
+              "{other_block}"
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "unstack_tower",
+    "sample": 1,
+    "elapsed": 36.8,
+    "error": "no plan",
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": null,
+    "environment_valid": false,
+    "environment_goal": false,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on a b)",
+        "(on b c)",
+        "(clear a)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table a)",
+        "(on-table b)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(hand-empty)"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(hand-empty)"
+          ],
+          "delete_effects": [
+            "(holding {block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})"
+          ],
+          "delete_effects": [
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(on {block} {other_block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(holding {block})"
+          ],
+          "delete_effects": [
+            "(clear {other_block})"
+          ],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "unstack_tower",
+    "sample": 2,
+    "elapsed": 38.87,
+    "error": null,
+    "initial_exact": true,
+    "goals_exact": true,
+    "plan": [
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "a",
+          "other_block": "b"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "a"
+        }
+      },
+      {
+        "name": "unstack",
+        "arguments": {
+          "block": "b",
+          "other_block": "c"
+        }
+      },
+      {
+        "name": "put_down",
+        "arguments": {
+          "block": "b"
+        }
+      }
+    ],
+    "environment_valid": true,
+    "environment_goal": true,
+    "world_model": {
+      "objects": [
+        "a",
+        "b",
+        "c"
+      ],
+      "initial_state": [
+        "(on a b)",
+        "(on b c)",
+        "(clear a)",
+        "(hand-empty)"
+      ],
+      "goals": [
+        "(on-table a)",
+        "(on-table b)"
+      ],
+      "actions": [
+        {
+          "name": "pick_up",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} ?x)",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(holding {block})",
+            "(not (clear {block}))",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "put_down",
+          "preconditions": [
+            "(holding {block})"
+          ],
+          "add_effects": [
+            "(clear {block})",
+            "(on-table {block})",
+            "(not (holding {block}))",
+            "(hand-empty)"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "stack",
+          "preconditions": [
+            "(holding {block})",
+            "(clear {other_block})"
+          ],
+          "add_effects": [
+            "(on {block} {other_block})",
+            "(clear {block})",
+            "(not (holding {block}))",
+            "(not (clear {other_block}))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        },
+        {
+          "name": "unstack",
+          "preconditions": [
+            "(clear {block})",
+            "(on {block} {other_block})",
+            "(hand-empty)"
+          ],
+          "add_effects": [
+            "(clear {other_block})",
+            "(holding {block})",
+            "(not (clear {block}))",
+            "(not (hand-empty))"
+          ],
+          "delete_effects": [],
+          "distinct_argument_pairs": []
+        }
+      ]
+    }
+  }
+]
