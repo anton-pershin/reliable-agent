@@ -35,6 +35,8 @@ def test_sample_configuration_overrides_parse() -> None:
             "2",
             "--plan-spares",
             "2",
+            "--max-replans",
+            "50",
             "--no-plan-review",
             "--transition-tabu",
             "--verification-consensus",
@@ -47,6 +49,7 @@ def test_sample_configuration_overrides_parse() -> None:
     assert agent_config.plan_max_output_tokens == 4000
     assert agent_config.sample_retries == 2
     assert agent_config.plan_spares == 2
+    assert agent_config.max_replans == 50
     assert agent_config.plan_review_enabled is False
     assert agent_config.transition_tabu_enabled is True
     assert agent_config.verification_consensus_enabled is True
@@ -60,6 +63,8 @@ def test_sample_configuration_overrides_parse() -> None:
         config(sample_retries=6)
     with pytest.raises(ValueError):
         config(plan_spares=-1)
+    with pytest.raises(ValueError):
+        config(max_replans=51)
 
 
 def test_override_parsing() -> None:
