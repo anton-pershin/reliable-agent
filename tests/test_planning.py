@@ -124,6 +124,21 @@ def test_vote_prefix_can_select_without_truncating_winner(action) -> None:
     assert all("pick_up" in key or "get_action_catalog" in key for key in counts)
 
 
+def test_vote_prefix_full_execution_uses_full_plan_completion(action) -> None:
+    tail = ActionRequest(name="pick_up", arguments={"block": "b"})
+    reaching = plan_of(action, tail)
+    other_partial = partial_plan_of(action)
+    index, winner, _ = vote_plans(
+        [(0, reaching), (1, other_partial)],
+        horizon=1,
+        completion_full_plan=True,
+    )
+    assert index == 0
+    assert winner.reaches_goal is True
+    _, legacy_winner, _ = vote_plans([(0, reaching), (1, other_partial)], horizon=1)
+    assert legacy_winner.reaches_goal is False
+
+
 def test_vote_ignores_argument_order_in_json(action) -> None:
     one = PlanCandidate(
         actions=[ActionRequest(name="pick_up", arguments={"a": 1, "b": 2})],
@@ -403,11 +418,12 @@ async def test_first_action_vote_retains_and_executes_complete_plan(
         ),
         clock=clock,
     )
-    model = ScriptedModel([final_decision], plans=[[complete, plan_of(action)]])
+    model = ScriptedModel([final_decision], plans=[[complete, partial_plan_of(action)]])
     executor = ScriptedExecutor()
     result = await runner_for(model, executor, event_logger, clock).run(task)
     assert result.completed is True
     assert len(model.plan_calls) == 1
+    assert len(model.verify_calls) == 1
     assert [batch.actions for batch in executor.batches] == [[action], [second]]
 
 
