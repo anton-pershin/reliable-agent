@@ -216,7 +216,7 @@
         <span>18 November 2026 · Updated 19 November 2026</span>
         <span>Self-hosted <code>qwen/qwen3.5-9b</code></span>
         <span>Default profile · 20 tasks</span>
-        <span>Investigation through <code>c6f2cef</code></span>
+        <span>Investigation through <code>911c140</code></span>
       </div>
       <div class="status-ribbon">
         <strong>Status:</strong>
@@ -455,6 +455,17 @@
         <div class="callout danger small" style="margin-top:18px"><strong>No 200-episode extension.</strong> Five mixed tasks exceeded the extension bar, and three 2/3-consensus false completions appeared. The strong aggregate diagnostic did not establish AC3.</div>
         <div class="callout info small"><strong>C24 offline correctness replay only.</strong> Exact public formal-goal checking agreed with independent labels on all 1,613 retained C18/C23 observations, with zero unsupported cases, and rejected all 12 retained false completions. This says nothing about new episode success until measured.</div>
       </div>
+      <div class="card">
+        <span class="badge bad">C24 diagnostic · extension rejected</span>
+        <h3 style="margin-top:14px">Exact goal evidence removed false completions, not mixed outcomes</h3>
+        <p class="small muted">Run <code>20261119T061150-729119Z-8500c2facaee</code> · revision <code>c6f2cef</code> · same 14 tasks × 3 repeats with formal public-goal checking.</p>
+        <div class="grid-3" style="margin-top:18px">
+          <div class="step"><b>28 / 42</b><span>Successes; repeat rates 0.7143, 0.5714, 0.7143. Six mixed and two persistent-failure tasks.</span></div>
+          <div class="step"><b>0 false completions</b><span>Zero unsuccessful goal-state endings and one timeout; AC6/AC7 accepted.</span></div>
+          <div class="step"><b>13 / 14 failures</b><span>Stopped at the 21-round re-planning cap, usually with action/time headroom.</span></div>
+        </div>
+        <div class="callout danger small" style="margin-top:18px"><strong>No 10-repeat extension.</strong> C24 exceeded the three-mixed-task limit. A final C25 screen tests only the newly exposed round cap with <code>--max-replans 50</code>; it is not yet evidence and no further budget tuning is planned.</div>
+      </div>
     </section>
 
     <section id="negative">
@@ -528,10 +539,10 @@ configuration["acceptance_criteria"] = [
           <thead><tr><th>Artifact</th><th>Location</th><th>Status</th></tr></thead>
           <tbody>
             <tr><td>Implementation branch</td><td><code>20261118_observed_state_prefix_consensus_general_spec</code></td><td><span class="badge neutral">Pushed</span></td></tr>
-            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>c6f2cef</code></td><td><span class="badge warn">Active · no 10-repeat claim</span></td></tr>
+            <tr><td>Continuation investigation</td><td><code>20261119_ac3_repeatability_investigation</code> through <code>911c140</code></td><td><span class="badge warn">Active · no 10-repeat claim</span></td></tr>
             <tr><td>Spec 06</td><td><code>.internal/specs/06-observed-state-prefix-consensus-general-spec.md</code></td><td><span class="badge warn">AC6/AC8 open</span></td></tr>
             <tr><td>Investigation</td><td><code>.internal/investigations/ac3-repeatability.md</code></td><td><span class="badge neutral">Active memory</span></td></tr>
-            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; continuation through <code>c6f2cef</code></td><td><span class="badge good">152 passed</span></td></tr>
+            <tr><td>Automated checks</td><td>Provider-independent pytest suite, changed-file Ruff, scripted smoke run; continuation through <code>911c140</code></td><td><span class="badge good">152 passed</span></td></tr>
             <tr><td>Run evidence</td><td><code>agent-validation/artifacts/runs/&lt;run-id&gt;/</code></td><td><span class="badge neutral">Retained</span></td></tr>
           </tbody>
         </table></div>
