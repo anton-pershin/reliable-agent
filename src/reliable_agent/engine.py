@@ -20,6 +20,7 @@ from .contracts import (
     VerificationResult,
 )
 from .errors import ModelRequestError
+from .goal_evidence import formal_goal_verdict
 from .model import DecisionModel
 from .observability import EventLogger
 from .planning import plan_key, vote_plans
@@ -64,6 +65,9 @@ class DecisionEngine:
             fallback = self._budget_fallback(state)
             if fallback is not None:
                 return fallback
+            formal_completion = self._formal_completion(state)
+            if formal_completion is not None:
+                return formal_completion
 
             if state.completion_check_pending:
                 outcome = await self._check_intermediate_completion(state)
@@ -317,6 +321,17 @@ class DecisionEngine:
                 continue
             if not self._validation_errors(state, ActionDecision(actions=candidate.actions)):
                 valid.append((index, candidate))
+        formal_verdict = self._formal_goal_verdict(state)
+        if formal_verdict is not None and not formal_verdict.goal_satisfied:
+            actionable = [(index, candidate) for index, candidate in valid if candidate.actions]
+            if actionable and len(actionable) < len(valid):
+                self.logger.log(
+                    "formal_empty_completion_suppressed",
+                    plan_round=state.plan_rounds,
+                    suppressed=len(valid) - len(actionable),
+                    missing_predicates=formal_verdict.missing_predicates,
+                )
+                valid = actionable
         if not state.attempts:
             # Before any environment action has supplied evidence, an empty
             # completion claim is only a model assertion. Identical empty
@@ -838,6 +853,31 @@ class DecisionEngine:
                 return None
         return decision
 
+    def _formal_goal_verdict(self, state: TaskState) -> VerificationResult | None:
+        if not state.config.formal_goal_checking_enabled or not state.attempts:
+            return None
+        latest = state.attempts[-1].results
+        if not latest or not all(
+            isinstance(result.observation.get("state"), list) for result in latest
+        ):
+            return None
+        return formal_goal_verdict(
+            state.task.input, latest[-1].observation["state"]
+        )
+
+    def _formal_completion(self, state: TaskState) -> FinalDecision | None:
+        verdict = self._formal_goal_verdict(state)
+        if verdict is None or not verdict.goal_satisfied:
+            return None
+        self.logger.log(
+            "completion_verification",
+            goal_satisfied=True,
+            missing_predicates=[],
+            reason=verdict.reason,
+            verification_source="formal_public_state",
+        )
+        return self._verified_completion(state, verdict)
+
     def _verification_active(self, state: TaskState) -> bool:
         return (
             state.config.completion_verification and getattr(self.model, "verify", None) is not None
@@ -872,6 +912,16 @@ class DecisionEngine:
         return self._remaining(state) > self._reserve(state)
 
     async def _verify_completion(self, state: TaskState):
+        formal_verdict = self._formal_goal_verdict(state)
+        if formal_verdict is not None:
+            self.logger.log(
+                "completion_verification",
+                goal_satisfied=formal_verdict.goal_satisfied,
+                missing_predicates=formal_verdict.missing_predicates,
+                reason=formal_verdict.reason,
+                verification_source="formal_public_state",
+            )
+            return formal_verdict
         remaining = self._remaining(state) - self._reserve(state)
         try:
             verdict = await self.model.verify(state, remaining)

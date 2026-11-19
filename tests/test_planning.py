@@ -48,6 +48,15 @@ def partial_plan_of(*actions: ActionRequest) -> PlanCandidate:
     return PlanCandidate(actions=list(actions), reaches_goal=False)
 
 
+FORMAL_TASK_INPUT = """(define (problem public-formal-task)
+  (:domain generic)
+  (:objects a b)
+  (:init (on-table a))
+  (:goal (and (on a b)))
+)
+"""
+
+
 def ok_observation(call_id: str, count: int = 1) -> Observation:
     return Observation(
         call_id=call_id,
@@ -584,6 +593,119 @@ async def test_horizon_prefixes_keep_immediate_replan_with_intermediate_option(
         event["event"] == "intermediate_completion_check_scheduled"
         for event in read_logs(stream)
     )
+
+
+async def test_formal_goal_completes_before_remaining_full_plan_tail(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    clock = FakeClock()
+    event_logger, stream = logger(config(formal_goal_checking_enabled=True), clock=clock)
+    model = ScriptedModel([final_decision], plans=[partial_plan_of(action, second)])
+    executor = ScriptedExecutor(
+        [
+            Observation(
+                call_id="episode-test-call-1",
+                results=[ActionResult(status="ok", observation={"state": ["(on a b)"]})],
+            )
+        ]
+    )
+    formal_task = task.model_copy(update={"input": FORMAL_TASK_INPUT})
+    result = await runner_for(model, executor, event_logger, clock).run(formal_task)
+    assert result.completed is True
+    assert [batch.actions for batch in executor.batches] == [[action]]
+    assert not model.verify_calls
+    event = next(
+        event
+        for event in read_logs(stream)
+        if event["event"] == "completion_verification"
+    )
+    assert event["verification_source"] == "formal_public_state"
+
+
+async def test_formal_false_verdict_suppresses_empty_completion_claims(
+    task, action, final_decision
+) -> None:
+    second = ActionRequest(name="pick_up", arguments={"block": "a"})
+    empty = PlanCandidate(actions=[], reaches_goal=True)
+    clock = FakeClock()
+    event_logger, stream = logger(config(formal_goal_checking_enabled=True), clock=clock)
+    model = ScriptedModel(
+        [final_decision], plans=[plan_of(action), [empty, empty, plan_of(second)]]
+    )
+    executor = ScriptedExecutor(
+        [
+            Observation(
+                call_id="episode-test-call-1",
+                results=[ActionResult(status="ok", observation={"state": ["(on-table a)"]})],
+            ),
+            Observation(
+                call_id="episode-test-call-2",
+                results=[ActionResult(status="ok", observation={"state": ["(on a b)"]})],
+            ),
+        ]
+    )
+    formal_task = task.model_copy(update={"input": FORMAL_TASK_INPUT})
+    result = await runner_for(model, executor, event_logger, clock).run(formal_task)
+    assert result.completed is True
+    assert len(model.plan_calls) == 2
+    assert not model.verify_calls
+    assert executor.batches[-1].actions == [second]
+    event = next(
+        event
+        for event in read_logs(stream)
+        if event["event"] == "formal_empty_completion_suppressed"
+    )
+    assert event["suppressed"] == 2
+
+
+async def test_formal_goal_fallback_uses_model_for_unstructured_observation(
+    task, action, final_decision
+) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(formal_goal_checking_enabled=True), clock=clock)
+    model = ScriptedModel([final_decision], plans=[plan_of(action)])
+    formal_task = task.model_copy(update={"input": FORMAL_TASK_INPUT})
+    result = await runner_for(model, ScriptedExecutor(), event_logger, clock).run(formal_task)
+    assert result.completed is True
+    assert len(model.verify_calls) == 1
+
+
+async def test_formal_completion_preserves_action_budget_guard(task, action) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(
+        config(formal_goal_checking_enabled=True, max_action_attempts=1), clock=clock
+    )
+    engine = DecisionEngine(ScriptedModel([]), event_logger, clock=clock)
+    state = engine.new_state(task.model_copy(update={"input": FORMAL_TASK_INPUT}))
+    state.attempts.append(
+        ActionAttempt(
+            call_id="goal-at-budget",
+            actions=[action],
+            results=[ActionResult(status="ok", observation={"state": ["(on a b)"]})],
+        )
+    )
+    decision = await engine.next_decision(state)
+    assert decision.completed is False
+    assert state.termination_reason == "action_budget_exhausted"
+
+
+async def test_formal_completion_preserves_time_budget_guard(task, action) -> None:
+    clock = FakeClock()
+    event_logger, _ = logger(config(formal_goal_checking_enabled=True), clock=clock)
+    engine = DecisionEngine(ScriptedModel([]), event_logger, clock=clock)
+    state = engine.new_state(task.model_copy(update={"input": FORMAL_TASK_INPUT}))
+    state.attempts.append(
+        ActionAttempt(
+            call_id="goal-after-time",
+            actions=[action],
+            results=[ActionResult(status="ok", observation={"state": ["(on a b)"]})],
+        )
+    )
+    clock.advance(300)
+    decision = await engine.next_decision(state)
+    assert decision.completed is False
+    assert state.termination_reason == "episode_time_exhausted"
 
 
 # AC3: completion verification

@@ -23,6 +23,7 @@ class AgentConfig(ContractModel):
     free_sampling_enabled: bool = False
     state_centered_planning_enabled: bool = False
     intermediate_completion_verification_enabled: bool = False
+    formal_goal_checking_enabled: bool = False
     planning_enabled: bool = True
     plan_samples: int = Field(default=3, ge=1, le=10)
     plan_spares: int = Field(default=1, ge=0, le=10)
